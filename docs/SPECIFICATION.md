@@ -1,396 +1,101 @@
-# 🚀 Project: SignalOps – Smart Telecom Monitoring System
+# SignalOps Specification
 
-**Status**: Specification Complete | Ready for Implementation  
-**Last Updated**: April 2026  
-**Tech Stack**: Node.js (NestJS), MongoDB, Redis, React/Next.js, Docker, Jenkins
+Status: active
+Last updated: April 2026
 
----
+## 1. Purpose
+SignalOps monitors telecom network quality in near real-time. The system ingests telemetry, detects threshold violations, persists events and alerts, and exposes data to API and dashboard clients.
 
-## 🎯 1. System Objectives
+## 2. Scope
+In scope:
+- Event ingestion pipeline (API -> queue -> worker)
+- Threshold-based alert generation
+- Event and alert persistence in MongoDB
+- REST APIs for events, alerts, and health
+- Realtime stream via WebSocket
+- Local container orchestration with Docker Compose
 
-Build a backend + dashboard system capable of:
+Out of scope for current release:
+- Production IAM and multi-tenant auth model
+- Advanced anomaly ML models
+- Full CI/CD hardening
 
-- Collecting network data (latency, packet loss, signal strength)
-- Detecting anomalies in real-time
-- Creating alerts (alert system)
-- Displaying network status on a map
-- Real-time updates to users
+## 3. High-Level Flow
+1. Simulator or external source sends event payload to API Gateway.
+2. API validates payload and enqueues processing job.
+3. Worker consumes queue jobs and applies detection rules.
+4. Worker stores event and creates alert when thresholds are exceeded.
+5. API and WebSocket endpoints expose data to clients.
 
----
+## 4. Services
+- api-gateway: REST + WebSocket entrypoint
+- worker-service: asynchronous processing and alert generation
+- event-broker: queue-facing event layer
+- simulator: synthetic telemetry generator
+- mongodb: persistent storage
+- redis: queue and transient cache
+- nginx (optional): reverse proxy
 
-## 🧠 2. Overall Workflow Concept
-
-```
-Simulated Network Devices
-        ↓
-   API Gateway
-        ↓
-   Event Broker
-        ↓
-   Redis Queue
-        ↓
-   Worker Services
-        ↓
-   MongoDB (Event + Alert)
-        ↓
-WebSocket + REST API
-        ↓
-   Dashboard UI
-```
-
----
-
-## 🔄 3. Detailed Processing Flow
-
-### Step 1: Data Ingestion
-- Simulator or external system sends network data
-- Data includes:
-  - latency
-  - packet loss
-  - signal strength
-  - location
-
-### Step 2: Event Processing
-- API Gateway receives request
-- Forwards to Event Broker
-- Event Broker pushes to queue (Redis)
-
-### Step 3: Background Processing
-- Worker reads from queue
-- Performs:
-  - data validation
-  - anomaly detection
-  - database storage
-
-### Step 4: Alert Generation
-- If exceeds threshold:
-  - creates alert
-  - classifies severity
-
-### Step 5: Real-time Communication
-- Emits event + alert via WebSocket
-- UI receives and updates immediately
-
-### Step 6: Visualization
-- Dashboard displays:
-  - Map
-  - Alert list
-  - Metrics
-
----
-
-## 🧱 4. System Architecture
-
-### 4.1 Core Services
-
-| Service        | Role                            |
-|---|---|
-| API Gateway    | receive requests, auth, routing |
-| Event Broker   | process events, push queue      |
-| Worker Service | async processing, detection    |
-| Simulator      | generate test data             |
-
-### 4.2 Data Layer
-
-| Component | Role          |
-|---|---|
-| MongoDB   | store events + alerts |
-| Redis     | queue + cache         |
-
-### 4.3 Communication
-
-| Type    | Technology  |
-|---|---|
-| Sync    | REST API    |
-| Async   | Queue (BullMQ) |
-| Realtime| WebSocket   |
-
----
-
-## 🛠️ 5. Tech Stack
-
-### Backend
-- Node.js (NestJS)
-- BullMQ (queue management)
-- ioredis (Redis client)
-
-### Database
-- MongoDB (events, alerts, geo data)
-- Redis (queue + cache)
-
-### Frontend
-- React / Next.js
-- Map library (Leaflet / Mapbox)
-- WebSocket client
-
-### DevOps
-- Docker
-- Docker Compose
-- Jenkins (CI/CD)
-
-### Monitoring (optional advanced)
-- Prometheus
-- Grafana
-
----
-
-## 📊 6. Data Model
-
+## 5. Data Contracts
 ### Event
-```
-{
-  deviceId: string
-  location: { lat, lng }
-  latency: number (ms)
-  packetLoss: number (%)
-  signalStrength: number (dBm)
-  timestamp: Date
-}
-```
+- deviceId: string
+- location: object (lat, lng, name)
+- metrics: object (latency, packetLoss, signalStrength)
+- timestamp: datetime
 
 ### Alert
-```
-{
-  alertId: string
-  type: "latency" | "packet_loss" | "signal"
-  severity: "low" | "medium" | "high"
-  location: { lat, lng }
-  message: string
-  status: "open" | "acknowledged" | "resolved"
-  createdAt: Date
-  updatedAt: Date
-}
-```
+- deviceId: string
+- type: latency | packet_loss | signal
+- severity: low | medium | high
+- status: open | acknowledged | resolved
+- location: object
+- message: string
+- createdAt/updatedAt: datetime
 
----
+## 6. Detection Rules
+- latency > 200 ms -> high latency alert
+- packetLoss > 5% -> high packet_loss alert
+- signalStrength < -90 dBm -> medium signal alert
 
-## 🧠 7. Business Logic
+## 7. API Surface
+Events:
+- POST /api/events
+- GET /api/events
+- GET /api/events/:id
 
-### Threshold Detection
-- latency > 200ms → alert
-- packet loss > 5% → alert
-- signal strength < -90 dBm → alert
+Alerts:
+- GET /api/alerts
+- GET /api/alerts/:id
+- PATCH /api/alerts/:id
 
-### Alert Handling
-- create new alert
-- avoid duplicates (optional)
-- update status
+System:
+- GET /api/health
 
-### Real-time Logic
-- emit event when:
-  - new event arrives
-  - new alert is created
+## 8. Non-Functional Targets
+- Queue-based asynchronous processing
+- Service restart resilience via Redis and MongoDB persistence
+- Structured logging across services
+- Containerized local setup
 
----
+## 9. Runtime and Deployment
+- Node.js (NestJS) services
+- MongoDB for events and alerts
+- Redis/BullMQ for queue processing
+- Docker Compose for local orchestration
+- Optional Nginx reverse proxy at localhost:8080
 
-## 🖥️ 8. UI Requirements
+## 10. Delivery Phases
+- Phase 1: infrastructure and baseline services
+- Phase 2: event flow and queue integration
+- Phase 3: worker detection logic
+- Phase 4: persistence and API completion
+- Phase 5: realtime communication
+- Phase 6: frontend dashboard
+- Phase 7: CI/CD and production hardening
 
-### 8.1 Dashboard
-- total event count
-- active alert count
-- latency chart
-
-### 8.2 Map
-- display markers by location
-- colors:
-  - green → normal
-  - red → error
-
-### 8.3 Alert Table
-- list of alerts
-- filter by:
-  - severity
-  - time
-- actions:
-  - acknowledge
-  - resolve
-
----
-
-## 🔌 9. API Design (High-level)
-
-### Events
-```
-POST   /api/events              (create event)
-GET    /api/events              (list events)
-GET    /api/events/:id          (get event detail)
-```
-
-### Alerts
-```
-GET    /api/alerts              (list alerts)
-GET    /api/alerts/:id          (get alert detail)
-PATCH  /api/alerts/:id          (update alert status)
-```
-
-### System
-```
-GET    /api/health              (health check)
-GET    /api/stats               (system statistics)
-```
-
----
-
-## 🔁 10. Real-time Events (WebSocket)
-
-Emit events on these topics:
-- `event:new` - new network event
-- `alert:new` - new alert created
-- `alert:updated` - alert status changed
-- `device:status` - device status change
-
----
-
-## 🐳 11. Deployment Architecture
-
-### Docker
-- Each service: 1 container
-- MongoDB + Redis: separate containers
-- Nginx: reverse proxy (optional)
-
-### Docker Compose
-- Orchestrate entire system
-- Single command: `docker-compose up -d`
-
-### Jenkins Pipeline
-```
-Pull → Build → Test → Docker Build → Deploy → Verify
-```
-
----
-
-## 📈 12. Non-functional Requirements
-
-- **Async Processing**: Use queue for heavy operations
-- **Scalability**: Easy to scale workers
-- **Real-time**: Sub-second WebSocket delivery
-- **Reliability**: Proper error handling + logging
-- **Monitoring**: Prometheus metrics (optional)
-- **Data Persistence**: All events + alerts stored
-- **Security**: Basic auth/token validation
-
----
-
-## 🧪 13. Testing Strategy
-
-- **Unit Tests**: Service logic
-- **Integration Tests**: Event flow, queue processing
-- **E2E Tests**: Full workflow (optional)
-- **Load Tests**: Queue throughput
-
----
-
-## 🧭 14. Development Roadmap (7 Phases)
-
-### Phase 1: Project Setup & Infrastructure
-- Initialize NestJS project
-- Setup Docker environment
-- Configure MongoDB + Redis
-- Create project structure
-
-### Phase 2: Event Flow & Queue System
-- Event Broker service
-- Redis queue setup (BullMQ)
-- Basic API Gateway
-- Event ingestion endpoint
-
-### Phase 3: Worker & Detection Logic
-- Worker service setup
-- Implement threshold detection
-- Anomaly detection logic
-- Alert generation
-
-### Phase 4: Persistence & API
-- MongoDB schema design
-- Data repository layer
-- Complete REST API
-- Query optimization
-
-### Phase 5: Real-time Communication
-- WebSocket server setup
-- Event emission system
-- Alert notifications
-- Dashboard connection
-
-### Phase 6: Frontend Dashboard
-- React/Next.js setup
-- Map integration (Leaflet)
-- Alert table component
-- Real-time data binding
-
-### Phase 7: CI/CD & DevOps Polish
-- Jenkins pipeline setup
-- Docker image optimization
-- Logging + monitoring setup
-- Production readiness
-
----
-
-## 📁 15. Project Structure
-
-```
-SignalOps/
-├── apps/
-│   ├── api-gateway/          # NestJS main API
-│   ├── event-broker/         # Event processing
-│   ├── worker-service/       # Background jobs
-│   ├── simulator/            # Device data generator
-│   └── dashboard/            # React frontend
-├── libs/
-│   ├── common/               # Shared utilities
-│   ├── models/               # Data models
-│   └── constants/            # Constants
-├── infrastructure/
-│   ├── docker-compose.yml    # Local setup
-│   ├── Dockerfile.api        # API container
-│   ├── Dockerfile.worker     # Worker container
-│   └── Jenkinsfile           # CI/CD pipeline
-├── docs/
-│   ├── SPECIFICATION.md      # This file
-│   ├── ARCHITECTURE.md       # Architecture details
-│   ├── API.md                # API documentation
-│   └── DEPLOYMENT.md         # Deployment guide
-└── package.json              # Monorepo config
-```
-
----
-
-## 💣 16. Key Selling Points
-
-- **🎯 Event-Driven Architecture**: Scalable event processing
-- **⚡ Real-time Processing**: Sub-second anomaly detection
-- **🗺️ Geo-based Monitoring**: Location-aware alerts
-- **📦 Queue-based Async**: Reliable job processing with BullMQ
-- **🔗 Full-Stack System**: Backend + UI + DevOps
-- **📊 Production-Ready**: Logging, monitoring, CI/CD
-- **🚀 Cloud-Native**: Containerized, easy to scale
-
----
-
-## 🎯 17. Success Criteria
-
-✅ Backend services run stably (no crashes)  
-✅ Dashboard UI displays real-time data  
-✅ Map shows network status with correct indicators  
-✅ Full Docker environment runs with single command  
-✅ Jenkins pipeline executes successfully  
-✅ Alerts are triggered correctly per thresholds  
-✅ WebSocket connections are reliable  
-✅ Code is well-documented and structured  
-
----
-
-## 📋 18. Implementation Notes
-
-- Use **NestJS modules** for clean separation
-- Implement **proper error handling** at each layer
-- Add **logging throughout** for debugging
-- Use **environment variables** for configuration
-- Implement **database transactions** for consistency
-- Add **data validation** at API boundaries
-- Use **WebSocket namespaces** for organization
-- Keep **UI state management** simple (consider Redux/Zustand)
-
----
-
-**Next Steps**: Pass to implementation team with this specification. Each phase can be developed independently and integrated.
+## 11. Success Criteria
+- Services start reliably in compose
+- Events are accepted and processed asynchronously
+- Alerts are created according to thresholds
+- Events and alerts are queryable through API
+- Realtime clients can receive updates
