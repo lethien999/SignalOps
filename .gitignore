@@ -139,7 +139,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Local planning / work artifacts
-docs/IMPLEMENTATION_CHECKLIST.md
+docs/internal/
 work/
 scratch/
 drafts/
