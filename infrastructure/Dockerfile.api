@@ -1,0 +1,20 @@
+# Dockerfile for API Gateway service
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY apps/api-gateway ./apps/api-gateway
+COPY libs ./libs
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Build
+RUN npm run build -- --project api-gateway
+
+# Runtime
+EXPOSE 3000
+
+CMD ["node", "dist/apps/api-gateway/src/main.js"]

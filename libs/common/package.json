@@ -1,0 +1,10 @@
+{
+  "name": "@signalops/common",
+  "version": "1.0.0",
+  "description": "SignalOps Common utilities",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  }
+}

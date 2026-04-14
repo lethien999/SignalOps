@@ -1,0 +1,32 @@
+{
+  "name": "signalops",
+  "version": "1.0.0",
+  "description": "SignalOps - Smart Telecom Monitoring System",
+  "author": "SignalOps Team",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "build": "npm --workspaces run build",
+    "start": "npm --workspaces run start",
+    "dev": "npm --workspaces run dev",
+    "test": "npm --workspaces run test",
+    "lint": "npm --workspaces run lint",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.3"
+  }
+}

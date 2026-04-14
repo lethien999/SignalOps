@@ -1,0 +1,14 @@
+# Dockerfile for Simulator service
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/simulator ./apps/simulator
+COPY libs ./libs
+
+RUN npm ci --only=production
+
+RUN npm run build -- --project simulator
+
+CMD ["node", "dist/apps/simulator/src/main.js"]

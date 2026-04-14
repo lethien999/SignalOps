@@ -1,0 +1,17 @@
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { EventModule } from './modules/event/event.module';
+import { AlertModule } from './modules/alert/alert.module';
+import { HealthModule } from './modules/health/health.module';
+import { WebSocketModule } from './modules/websocket/websocket.module';
+
+@Module({
+  imports: [
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/signalops-db'),
+    EventModule,
+    AlertModule,
+    HealthModule,
+    WebSocketModule,
+  ],
+})
+export class AppModule {}

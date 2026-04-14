@@ -1,0 +1,155 @@
+version: '3.9'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: signalops-mongodb
+    environment:
+      MONGO_INITDB_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_INITDB_DATABASE}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - signalops
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: signalops-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - signalops
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.api
+    container_name: signalops-api-gateway
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - signalops
+    volumes:
+      - ./apps/api-gateway:/app/apps/api-gateway
+      - ./libs:/app/libs
+    command: npm run dev -- --project api-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Event Broker
+  event-broker:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.broker
+    container_name: signalops-event-broker
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - signalops
+    volumes:
+      - ./apps/event-broker:/app/apps/event-broker
+      - ./libs:/app/libs
+
+  # Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.worker
+    container_name: signalops-worker
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY}
+      - QUEUE_EVENT_PROCESSING=${QUEUE_EVENT_PROCESSING}
+      - THRESHOLD_LATENCY_MS=${THRESHOLD_LATENCY_MS}
+      - THRESHOLD_PACKET_LOSS_PERCENT=${THRESHOLD_PACKET_LOSS_PERCENT}
+      - THRESHOLD_SIGNAL_STRENGTH_DBM=${THRESHOLD_SIGNAL_STRENGTH_DBM}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - signalops
+    volumes:
+      - ./apps/worker-service:/app/apps/worker-service
+      - ./libs:/app/libs
+    deploy:
+      replicas: 1
+
+  # Simulator
+  simulator:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.simulator
+    container_name: signalops-simulator
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - SIMULATOR_DEVICES_COUNT=${SIMULATOR_DEVICES_COUNT}
+      - SIMULATOR_INTERVAL_MS=${SIMULATOR_INTERVAL_MS}
+      - SIMULATOR_API_URL=${SIMULATOR_API_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - signalops
+    volumes:
+      - ./apps/simulator:/app/apps/simulator
+      - ./libs:/app/libs
+
+networks:
+  signalops:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
