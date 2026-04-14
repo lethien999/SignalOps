@@ -13,18 +13,19 @@ export class EventService {
     private eventBrokerService: EventBrokerService,
   ) {}
 
-  async createEvent(createEventDto: CreateEventDto): Promise<{ id: string; status: string }> {
+  async createEvent(createEventDto: CreateEventDto): Promise<{ id: string; status: string; jobId: string }> {
     try {
       const event = new this.eventModel(createEventDto);
       const savedEvent = await event.save();
 
       // Queue for async processing
-      await this.eventBrokerService.queueEvent(savedEvent.toObject());
+      const jobId = await this.eventBrokerService.queueEvent(savedEvent.toObject());
 
       Logger.info(`Event created and queued: ${savedEvent._id}`);
       return {
         id: savedEvent._id.toString(),
         status: 'queued',
+        jobId,
       };
     } catch (error) {
       Logger.error('Failed to create event', error);
