@@ -37,9 +37,11 @@ async function sendEvent(device: any, metrics: any) {
         lng: device.lng + (Math.random() - 0.5) * 0.01,
         name: device.name,
       },
-      latency: metrics.latency,
-      packetLoss: metrics.packetLoss,
-      signalStrength: metrics.signalStrength,
+      metrics: {
+        latency: metrics.latency,
+        packetLoss: metrics.packetLoss,
+        signalStrength: metrics.signalStrength,
+      },
     };
 
     const response = await axios.post(

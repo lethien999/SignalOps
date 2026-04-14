@@ -39,7 +39,7 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: .
+      context: ..
       dockerfile: infrastructure/Dockerfile.api
     container_name: signalops-api-gateway
     environment:
@@ -68,7 +68,7 @@ services:
   # Event Broker
   event-broker:
     build:
-      context: .
+      context: ..
       dockerfile: infrastructure/Dockerfile.broker
     container_name: signalops-event-broker
     environment:
@@ -91,7 +91,7 @@ services:
   # Worker Service
   worker:
     build:
-      context: .
+      context: ..
       dockerfile: infrastructure/Dockerfile.worker
     container_name: signalops-worker
     environment:
@@ -119,7 +119,7 @@ services:
   # Simulator
   simulator:
     build:
-      context: .
+      context: ..
       dockerfile: infrastructure/Dockerfile.simulator
     container_name: signalops-simulator
     environment:

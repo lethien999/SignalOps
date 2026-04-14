@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsObject, Min, Max } from 'class-validator';
+import { IsString, IsObject } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -11,17 +11,10 @@ export class CreateEventDto {
     name?: string;
   };
 
-  @IsNumber()
-  @Min(0)
-  latency: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  packetLoss: number;
-
-  @IsNumber()
-  @Min(-120)
-  @Max(0)
-  signalStrength: number;
+  @IsObject()
+  metrics: {
+    latency: number;
+    packetLoss: number;
+    signalStrength: number;
+  };
 }
