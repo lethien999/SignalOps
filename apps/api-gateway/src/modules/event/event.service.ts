@@ -53,7 +53,7 @@ export class EventService {
     }
   }
 
-  async getEvent(id: string): Promise<Event> {
+  async getEvent(id: string): Promise<Event | null> {
     try {
       const event = await this.eventModel.findById(id).exec();
       return event;

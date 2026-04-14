@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 
 @Injectable()
 export class EventBrokerService {
   private queue: Queue;
-  private redis: Redis.Redis;
+  private redis: Redis;
 
   constructor() {
     this.redis = new Redis({
@@ -27,8 +27,9 @@ export class EventBrokerService {
           delay: 2000,
         },
       });
-    } catch (error) {
-      throw new Error(`Failed to queue event: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to queue event: ${errorMessage}`);
     }
   }
 

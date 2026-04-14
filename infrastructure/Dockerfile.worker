@@ -3,12 +3,13 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json ./
+COPY tsconfig.json ./
 COPY apps/worker-service ./apps/worker-service
 COPY libs ./libs
 
-RUN npm ci --only=production
+RUN npm install
 
-RUN npm run build -- --project worker-service
+RUN npm run build -w worker-service
 
-CMD ["node", "dist/apps/worker-service/src/main.js"]
+CMD ["node", "dist/apps/worker-service/main.js"]

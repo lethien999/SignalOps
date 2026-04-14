@@ -3,12 +3,13 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json ./
+COPY tsconfig.json ./
 COPY apps/simulator ./apps/simulator
 COPY libs ./libs
 
-RUN npm ci --only=production
+RUN npm install
 
-RUN npm run build -- --project simulator
+RUN npm run build -w simulator
 
-CMD ["node", "dist/apps/simulator/src/main.js"]
+CMD ["node", "dist/apps/simulator/main.js"]

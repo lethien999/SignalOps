@@ -56,7 +56,7 @@ export class AlertService {
     }
   }
 
-  async getAlert(id: string): Promise<Alert> {
+  async getAlert(id: string): Promise<Alert | null> {
     try {
       const alert = await this.alertModel.findById(id).exec();
       return alert;
@@ -66,7 +66,7 @@ export class AlertService {
     }
   }
 
-  async updateAlert(id: string, updateData: any): Promise<Alert> {
+  async updateAlert(id: string, updateData: any): Promise<Alert | null> {
     try {
       const alert = await this.alertModel.findByIdAndUpdate(id, updateData, {
         new: true,

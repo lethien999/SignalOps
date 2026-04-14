@@ -1,6 +1,6 @@
 import { Worker, Queue } from 'bullmq';
 import mongoose from 'mongoose';
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 import { Logger } from './common/logger';
 import { ThresholdDetector } from './services/threshold-detector';
 import { AlertRepository } from './repositories/alert.repository';
@@ -59,8 +59,9 @@ async function bootstrap() {
           }
 
           return { success: true, alertsCreated: detectedAlerts.length };
-        } catch (error) {
-          Logger.error(`Job processing failed: ${error.message}`, error);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          Logger.error(`Job processing failed: ${errorMessage}`, error);
           throw error;
         }
       },
@@ -75,7 +76,7 @@ async function bootstrap() {
     });
 
     worker.on('failed', (job, err) => {
-      Logger.error(`Job failed: ${job.id}`, err);
+      Logger.error(`Job failed: ${job?.id || 'unknown'}`, err);
     });
 
     Logger.info(`Worker started with ${process.env.WORKER_CONCURRENCY || 5} concurrency`);

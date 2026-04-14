@@ -16,10 +16,10 @@
     "test": "npm --workspaces run test",
     "lint": "npm --workspaces run lint",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:build": "docker compose --env-file .env -f infrastructure/docker-compose.yml build",
+    "docker:up": "docker compose --env-file .env -f infrastructure/docker-compose.yml up -d",
+    "docker:down": "docker compose --env-file .env -f infrastructure/docker-compose.yml down",
+    "docker:logs": "docker compose --env-file .env -f infrastructure/docker-compose.yml logs -f"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
