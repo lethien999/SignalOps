@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "Node16",
     "lib": ["ES2020"],
-    "baseUrl": ".",
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
@@ -17,13 +16,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "paths": {
-      "@signalops/common/*": ["libs/common/src/*"],
-      "@signalops/models/*": ["libs/models/src/*"],
-      "@signalops/constants/*": ["libs/constants/src/*"]
-    }
+    "moduleResolution": "node16",
+    "allowSyntheticDefaultImports": true
   },
   "include": ["apps/**/*", "libs/**/*"],
   "exclude": ["node_modules", "dist"]
