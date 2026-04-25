@@ -3,6 +3,9 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Alert extends Document {
+  @Prop({ required: true, unique: true })
+  alertId: string;
+
   @Prop({ required: true })
   deviceId: string;
 
@@ -46,6 +49,9 @@ export class Alert extends Document {
 
   @Prop()
   resolvedAt?: Date;
+
+  @Prop()
+  eventId?: string;
 }
 
 export const AlertSchema = SchemaFactory.createForClass(Alert);

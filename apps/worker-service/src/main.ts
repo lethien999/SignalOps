@@ -26,6 +26,14 @@ async function bootstrap() {
     const queue = new Queue(process.env.QUEUE_EVENT_PROCESSING || 'event-processing', {
       connection: redis,
     });
+    const dlq = new Queue(
+      `${process.env.QUEUE_EVENT_PROCESSING || 'event-processing'}-dlq`,
+      {
+        connection: redis,
+      },
+    );
+
+    const maxAttempts = parseInt(process.env.WORKER_MAX_ATTEMPTS || '3', 10);
 
     const worker = new Worker(
       process.env.QUEUE_EVENT_PROCESSING || 'event-processing',
@@ -33,7 +41,11 @@ async function bootstrap() {
         Logger.info(`Processing job ${job.id}`, job.data);
 
         try {
-          const eventData = job.data;
+          const eventData = job.data?.eventData || job.data;
+
+          if (!eventData?._id) {
+            throw new Error('Event job payload missing _id');
+          }
 
           // Mark event as processed
           await eventRepository.updateProcessedTime(eventData._id);
@@ -43,7 +55,19 @@ async function bootstrap() {
 
           // Create alerts if needed
           for (const alertType of detectedAlerts) {
+            const existingAlert = await alertRepository.findOpenDuplicate(
+              eventData.deviceId,
+              alertType.type,
+            );
+
+            if (existingAlert) {
+              Logger.info(`Skipping duplicate open alert for ${eventData.deviceId}/${alertType.type}`);
+              continue;
+            }
+
+            const alertId = `${eventData.deviceId}-${alertType.type}-${Date.now()}`;
             const alert = {
+              alertId,
               deviceId: eventData.deviceId,
               type: alertType.type,
               severity: alertType.severity,
@@ -52,9 +76,11 @@ async function bootstrap() {
               status: 'open',
               createdAt: new Date(),
               updatedAt: new Date(),
+              eventId: eventData._id.toString(),
             };
 
-            await alertRepository.create(alert);
+            const savedAlert = await alertRepository.create(alert);
+            await eventRepository.linkAlert(eventData._id, savedAlert._id.toString());
             Logger.info(`Alert created: ${alertType.type}`, alert);
           }
 
@@ -77,6 +103,15 @@ async function bootstrap() {
 
     worker.on('failed', (job, err) => {
       Logger.error(`Job failed: ${job?.id || 'unknown'}`, err);
+
+      if (job && job.attemptsMade >= maxAttempts) {
+        void dlq.add('failed-event', {
+          jobId: job.id,
+          reason: err instanceof Error ? err.message : String(err),
+          payload: job.data,
+          failedAt: new Date().toISOString(),
+        });
+      }
     });
 
     Logger.info(`Worker started with ${process.env.WORKER_CONCURRENCY || 5} concurrency`);
@@ -85,6 +120,8 @@ async function bootstrap() {
     process.on('SIGTERM', async () => {
       Logger.info('SIGTERM received, shutting down worker...');
       await worker.close();
+      await queue.close();
+      await dlq.close();
       await mongoose.disconnect();
       process.exit(0);
     });

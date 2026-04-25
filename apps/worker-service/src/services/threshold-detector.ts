@@ -1,38 +1,70 @@
+export type DetectedAlert = {
+  type: 'latency' | 'packet_loss' | 'signal';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+};
+
+type EventMetrics = {
+  latency?: unknown;
+  packetLoss?: unknown;
+  signalStrength?: unknown;
+};
+
+type EventData = {
+  metrics?: EventMetrics;
+};
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 export class ThresholdDetector {
-  static detectAnomalies(eventData: any): Array<{ type: string; severity: string; message: string }> {
-    const alerts: Array<{ type: string; severity: string; message: string }> = [];
+  static detectAnomalies(eventData: EventData | null | undefined): DetectedAlert[] {
+    const alerts: DetectedAlert[] = [];
 
-    const latencyThreshold = parseInt(process.env.THRESHOLD_LATENCY_MS || '200', 10);
-    const packetLossThreshold = parseInt(process.env.THRESHOLD_PACKET_LOSS_PERCENT || '5', 10);
-    const signalStrengthThreshold = parseInt(
-      process.env.THRESHOLD_SIGNAL_STRENGTH_DBM || '-90',
-      10,
-    );
+    const latencyThreshold = toFiniteNumber(process.env.THRESHOLD_LATENCY_MS) ?? 200;
+    const packetLossThreshold = toFiniteNumber(process.env.THRESHOLD_PACKET_LOSS_PERCENT) ?? 5;
+    const signalStrengthThreshold = toFiniteNumber(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) ?? -90;
 
-    // Check latency
-    if (eventData.metrics.latency > latencyThreshold) {
+    const metrics = eventData?.metrics;
+    if (!metrics) {
+      return alerts;
+    }
+
+    const latency = toFiniteNumber(metrics.latency);
+    const packetLoss = toFiniteNumber(metrics.packetLoss);
+    const signalStrength = toFiniteNumber(metrics.signalStrength);
+
+    if (latency !== null && latency > latencyThreshold) {
       alerts.push({
         type: 'latency',
         severity: 'high',
-        message: `High latency detected: ${eventData.metrics.latency}ms (threshold: ${latencyThreshold}ms)`,
+        message: `High latency detected: ${latency}ms (threshold: ${latencyThreshold}ms)`,
       });
     }
 
-    // Check packet loss
-    if (eventData.metrics.packetLoss > packetLossThreshold) {
+    if (packetLoss !== null && packetLoss > packetLossThreshold) {
       alerts.push({
         type: 'packet_loss',
         severity: 'high',
-        message: `High packet loss detected: ${eventData.metrics.packetLoss}% (threshold: ${packetLossThreshold}%)`,
+        message: `High packet loss detected: ${packetLoss}% (threshold: ${packetLossThreshold}%)`,
       });
     }
 
-    // Check signal strength
-    if (eventData.metrics.signalStrength < signalStrengthThreshold) {
+    if (signalStrength !== null && signalStrength < signalStrengthThreshold) {
       alerts.push({
         type: 'signal',
         severity: 'medium',
-        message: `Low signal strength detected: ${eventData.metrics.signalStrength}dBm (threshold: ${signalStrengthThreshold}dBm)`,
+        message: `Low signal strength detected: ${signalStrength}dBm (threshold: ${signalStrengthThreshold}dBm)`,
       });
     }
 

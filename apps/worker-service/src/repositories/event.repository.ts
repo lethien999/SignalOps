@@ -15,6 +15,7 @@ const eventSchema = new mongoose.Schema(
     },
     timestamp: { type: Date, default: Date.now },
     processedAt: Date,
+    alertId: String,
   },
   { timestamps: true },
 );
@@ -30,6 +31,14 @@ export class EventRepository {
     return EventModel.findByIdAndUpdate(
       id,
       { processedAt: new Date() },
+      { new: true },
+    );
+  }
+
+  async linkAlert(id: string, alertId: string) {
+    return EventModel.findByIdAndUpdate(
+      id,
+      { alertId, processedAt: new Date() },
       { new: true },
     );
   }

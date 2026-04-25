@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Alert } from './schemas/alert.schema';
 import { Logger } from '../../common/logger';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AlertService {
@@ -12,7 +13,10 @@ export class AlertService {
 
   async createAlert(alertData: any): Promise<Alert> {
     try {
-      const alert = new this.alertModel(alertData);
+      const alert = new this.alertModel({
+        alertId: alertData.alertId || randomUUID(),
+        ...alertData,
+      });
       const savedAlert = await alert.save();
       Logger.info(`Alert created: ${savedAlert._id}`);
       return savedAlert;
@@ -68,7 +72,17 @@ export class AlertService {
 
   async updateAlert(id: string, updateData: any): Promise<Alert | null> {
     try {
-      const alert = await this.alertModel.findByIdAndUpdate(id, updateData, {
+      const normalizedUpdate = { ...updateData };
+
+      if (normalizedUpdate.status === 'acknowledged') {
+        normalizedUpdate.acknowledgedAt = normalizedUpdate.acknowledgedAt || new Date();
+      }
+
+      if (normalizedUpdate.status === 'resolved') {
+        normalizedUpdate.resolvedAt = normalizedUpdate.resolvedAt || new Date();
+      }
+
+      const alert = await this.alertModel.findByIdAndUpdate(id, normalizedUpdate, {
         new: true,
       });
       Logger.info(`Alert updated: ${id}`);
