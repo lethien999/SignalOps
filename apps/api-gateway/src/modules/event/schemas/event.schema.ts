@@ -1,17 +1,17 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, strict: 'throw', minimize: false })
 export class Event extends Document {
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   deviceId: string;
 
   @Prop({
     required: true,
     type: {
-      lat: Number,
-      lng: Number,
-      name: String,
+      lat: { type: Number, required: true, min: -90, max: 90 },
+      lng: { type: Number, required: true, min: -180, max: 180 },
+      name: { type: String, trim: true },
     },
   })
   location: {
@@ -23,9 +23,9 @@ export class Event extends Document {
   @Prop({
     required: true,
     type: {
-      latency: Number,
-      packetLoss: Number,
-      signalStrength: Number,
+      latency: { type: Number, required: true, min: 0 },
+      packetLoss: { type: Number, required: true, min: 0, max: 100 },
+      signalStrength: { type: Number, required: true, min: -120, max: 0 },
     },
   })
   metrics: {
@@ -46,3 +46,4 @@ export class Event extends Document {
 
 export const EventSchema = SchemaFactory.createForClass(Event);
 EventSchema.index({ deviceId: 1, timestamp: -1 });
+EventSchema.index({ timestamp: -1 });

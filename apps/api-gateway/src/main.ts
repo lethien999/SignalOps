@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { Logger } from './common/logger';
 import { RequestResponseInterceptor } from './common/interceptors/request-response.interceptor';
@@ -29,6 +30,14 @@ async function bootstrap() {
   // Express-level fallback error middleware.
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.use(errorHandlingMiddleware);
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('SignalOps API')
+    .setDescription('SignalOps API Gateway documentation')
+    .setVersion('1.0.0')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, swaggerDocument);
 
   const port = process.env.API_GATEWAY_PORT || 3000;
   await app.listen(port);

@@ -4,6 +4,26 @@ import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { Logger } from '../../common/logger';
 
+type TelemetryLocation = {
+  lat: number;
+  lng: number;
+  name?: string;
+};
+
+type TelemetryMetrics = {
+  latency: number;
+  packetLoss: number;
+  signalStrength: number;
+};
+
+export type TelemetryEventPayload = {
+  _id: string;
+  deviceId: string;
+  location: TelemetryLocation;
+  metrics: TelemetryMetrics;
+  timestamp?: Date;
+};
+
 @Injectable()
 export class EventBrokerService {
   private queue: Queue;
@@ -13,6 +33,7 @@ export class EventBrokerService {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      maxRetriesPerRequest: null,
     });
 
     this.queue = new Queue(process.env.QUEUE_EVENT_PROCESSING || 'event-processing', {
@@ -20,7 +41,7 @@ export class EventBrokerService {
     });
   }
 
-  async queueEvent(eventData: any): Promise<string> {
+  async queueEvent(eventData: TelemetryEventPayload): Promise<string> {
     try {
       this.validateEventSchema(eventData);
 
@@ -57,14 +78,14 @@ export class EventBrokerService {
     }
   }
 
-  private buildJobId(eventData: any): string {
+  private buildJobId(eventData: TelemetryEventPayload): string {
     const eventId = eventData?._id?.toString() || randomUUID();
     const deviceId = eventData?.deviceId || 'unknown-device';
 
     return `${deviceId}-${eventId}`;
   }
 
-  private validateEventSchema(eventData: any): void {
+  private validateEventSchema(eventData: TelemetryEventPayload): void {
     if (!eventData || typeof eventData !== 'object') {
       throw new Error('eventData must be an object');
     }
@@ -98,5 +119,14 @@ export class EventBrokerService {
 
   getQueue(): Queue {
     return this.queue;
+  }
+
+  async isRedisHealthy(): Promise<boolean> {
+    try {
+      const result = await this.redis.ping();
+      return result === 'PONG';
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,6 +1,5 @@
 import {
   ConnectedSocket,
-  MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -9,6 +8,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '../../common/logger';
+
+type BroadcastPayload = Record<string, unknown>;
 
 @WebSocketGateway({
   namespace: '/socket.io',
@@ -47,11 +48,11 @@ export class EventGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'subscribed', topic: 'events' };
   }
 
-  broadcastAlert(alertData: any) {
+  broadcastAlert(alertData: BroadcastPayload): void {
     this.server.to('alerts').emit('alert:new', alertData);
   }
 
-  broadcastEvent(eventData: any) {
+  broadcastEvent(eventData: BroadcastPayload): void {
     this.server.to('events').emit('event:processed', eventData);
   }
 }

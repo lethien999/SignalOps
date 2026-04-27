@@ -1,24 +1,66 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Alert } from './schemas/alert.schema';
 import { Logger } from '../../common/logger';
 import { randomUUID } from 'crypto';
+import { AlertFindFilters, AlertRepository, AlertStatusUpdate } from './repositories/alert.repository';
+import { AlertsGateway, AlertEmissionPayload } from '../websocket/alerts.gateway';
+
+export type CreateAlertInput = {
+  alertId?: string;
+  deviceId: string;
+  type: 'latency' | 'packet_loss' | 'signal';
+  severity: 'low' | 'medium' | 'high';
+  location: {
+    lat: number;
+    lng: number;
+    name?: string;
+  };
+  message: string;
+  status?: 'open' | 'acknowledged' | 'resolved';
+  acknowledgedBy?: string;
+  acknowledgedAt?: Date;
+  resolvedAt?: Date;
+  eventId?: string;
+};
+
+export type UpdateAlertInput = {
+  status?: 'open' | 'acknowledged' | 'resolved';
+  acknowledgedBy?: string;
+  acknowledgedAt?: Date;
+  resolvedAt?: Date;
+};
 
 @Injectable()
 export class AlertService {
   constructor(
-    @InjectModel(Alert.name) private alertModel: Model<Alert>,
+    private readonly alertRepository: AlertRepository,
+    private readonly alertsGateway: AlertsGateway,
   ) {}
 
-  async createAlert(alertData: any): Promise<Alert> {
+  async createAlert(alertData: CreateAlertInput): Promise<Alert> {
     try {
-      const alert = new this.alertModel({
+      const alert = {
         alertId: alertData.alertId || randomUUID(),
         ...alertData,
-      });
-      const savedAlert = await alert.save();
+      };
+      const savedAlert = await this.alertRepository.save(alert);
       Logger.info(`Alert created: ${savedAlert._id}`);
+
+      // Emit alert:new to WebSocket clients
+      if (savedAlert && savedAlert._id) {
+        const emissionPayload: AlertEmissionPayload = {
+          id: savedAlert._id.toString(),
+          alertId: savedAlert.alertId,
+          type: savedAlert.type,
+          severity: savedAlert.severity,
+          location: savedAlert.location,
+          message: savedAlert.message,
+          timestamp: savedAlert.createdAt?.toISOString() || new Date().toISOString(),
+          deviceId: savedAlert.deviceId,
+        };
+        this.alertsGateway.broadcastAlertNew(emissionPayload);
+      }
+
       return savedAlert;
     } catch (error) {
       Logger.error('Failed to create alert', error);
@@ -26,31 +68,24 @@ export class AlertService {
     }
   }
 
-  async listAlerts(filters: any): Promise<any> {
+  async listAlerts(filters: AlertFindFilters): Promise<{
+    data: Alert[];
+    pagination: { skip: number; limit: number; total: number };
+  }> {
     try {
-      const query: any = {};
+      const normalizedFilters: AlertFindFilters = {
+        ...filters,
+        skip: Math.max(filters.skip, 0),
+        limit: Math.min(Math.max(filters.limit, 1), 200),
+      };
 
-      if (filters.severity) {
-        query.severity = filters.severity;
-      }
-      if (filters.status) {
-        query.status = filters.status;
-      }
-
-      const alerts = await this.alertModel
-        .find(query)
-        .skip(filters.skip)
-        .limit(filters.limit)
-        .sort({ createdAt: -1 })
-        .exec();
-
-      const total = await this.alertModel.countDocuments(query);
+      const { data, total } = await this.alertRepository.find(normalizedFilters);
 
       return {
-        data: alerts,
+        data,
         pagination: {
-          skip: filters.skip,
-          limit: filters.limit,
+          skip: normalizedFilters.skip,
+          limit: normalizedFilters.limit,
           total,
         },
       };
@@ -62,7 +97,7 @@ export class AlertService {
 
   async getAlert(id: string): Promise<Alert | null> {
     try {
-      const alert = await this.alertModel.findById(id).exec();
+      const alert = await this.alertRepository.findById(id);
       return alert;
     } catch (error) {
       Logger.error(`Failed to get alert ${id}`, error);
@@ -70,26 +105,88 @@ export class AlertService {
     }
   }
 
-  async updateAlert(id: string, updateData: any): Promise<Alert | null> {
+  async updateAlert(id: string, updateData: UpdateAlertInput): Promise<Alert | null> {
     try {
-      const normalizedUpdate = { ...updateData };
+      const current = await this.alertRepository.findById(id);
 
-      if (normalizedUpdate.status === 'acknowledged') {
-        normalizedUpdate.acknowledgedAt = normalizedUpdate.acknowledgedAt || new Date();
+      if (!current) {
+        throw new NotFoundException(`Alert ${id} not found`);
       }
 
-      if (normalizedUpdate.status === 'resolved') {
-        normalizedUpdate.resolvedAt = normalizedUpdate.resolvedAt || new Date();
-      }
+      const nextStatus = updateData.status || (current.status as 'open' | 'acknowledged' | 'resolved');
 
-      const alert = await this.alertModel.findByIdAndUpdate(id, normalizedUpdate, {
-        new: true,
-      });
+      this.assertTransitionAllowed(current.status as 'open' | 'acknowledged' | 'resolved', nextStatus);
+
+      const normalizedUpdate = this.buildUpdatePayload(nextStatus, updateData);
+      const alert = await this.alertRepository.updateStatus(id, normalizedUpdate);
+
       Logger.info(`Alert updated: ${id}`);
+
+      // Emit appropriate WebSocket event based on status transition
+      if (alert && alert._id) {
+        const emissionPayload: AlertEmissionPayload = {
+          id: alert._id.toString(),
+          alertId: alert.alertId,
+          type: alert.type,
+          severity: alert.severity,
+          location: alert.location,
+          message: alert.message,
+          timestamp: alert.updatedAt?.toISOString() || new Date().toISOString(),
+          deviceId: alert.deviceId,
+        };
+
+        if (nextStatus === 'acknowledged') {
+          this.alertsGateway.broadcastAlertAcknowledged(emissionPayload);
+        } else if (nextStatus === 'resolved') {
+          this.alertsGateway.broadcastAlertResolved(emissionPayload);
+        }
+      }
+
       return alert;
     } catch (error) {
       Logger.error(`Failed to update alert ${id}`, error);
       throw error;
     }
+  }
+
+  async countActiveAlerts(): Promise<number> {
+    return this.alertRepository.countActiveAlerts();
+  }
+
+  private assertTransitionAllowed(
+    current: 'open' | 'acknowledged' | 'resolved',
+    next: 'open' | 'acknowledged' | 'resolved',
+  ): void {
+    if (current === next) {
+      return;
+    }
+
+    const allowedTransitions: Record<'open' | 'acknowledged' | 'resolved', Array<'open' | 'acknowledged' | 'resolved'>> = {
+      open: ['acknowledged'],
+      acknowledged: ['resolved'],
+      resolved: [],
+    };
+
+    if (!allowedTransitions[current].includes(next)) {
+      throw new BadRequestException(`Invalid status transition: ${current} -> ${next}`);
+    }
+  }
+
+  private buildUpdatePayload(
+    status: 'open' | 'acknowledged' | 'resolved',
+    updateData: UpdateAlertInput,
+  ): AlertStatusUpdate {
+    const payload: AlertStatusUpdate = { status };
+
+    if (status === 'acknowledged') {
+      payload.acknowledgedBy = updateData.acknowledgedBy;
+      payload.acknowledgedAt = updateData.acknowledgedAt || new Date();
+    }
+
+    if (status === 'resolved') {
+      payload.resolvedAt = updateData.resolvedAt || new Date();
+    }
+
+    return payload;
   }
 }

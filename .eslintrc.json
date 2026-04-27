@@ -15,7 +15,6 @@
     "es2020": true
   },
   "rules": {
-    "@typescript-eslint/explicit-function-return-types": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": [
       "error",
@@ -23,6 +22,6 @@
     ],
     "semi": ["error", "always"],
     "quotes": ["error", "single"],
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "no-console": ["warn", { "allow": ["log", "warn", "error"] }]
   }
 }

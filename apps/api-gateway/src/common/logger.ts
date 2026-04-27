@@ -1,7 +1,7 @@
 export class Logger {
   private static logLevel = process.env.LOG_LEVEL || 'info';
 
-  static info(message: string, data?: any) {
+  static info(message: string, data?: Record<string, unknown>) {
     console.log(
       JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -12,18 +12,21 @@ export class Logger {
     );
   }
 
-  static error(message: string, error?: any) {
+  static error(message: string, error?: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : error ? String(error) : undefined;
+
     console.error(
       JSON.stringify({
         timestamp: new Date().toISOString(),
         level: 'error',
         message,
-        ...(error && { error: error.message || error }),
+        ...(errorMessage && { error: errorMessage }),
       }),
     );
   }
 
-  static warn(message: string, data?: any) {
+  static warn(message: string, data?: Record<string, unknown>) {
     console.warn(
       JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -34,7 +37,7 @@ export class Logger {
     );
   }
 
-  static debug(message: string, data?: any) {
+  static debug(message: string, data?: Record<string, unknown>) {
     if (this.logLevel === 'debug') {
       console.log(
         JSON.stringify({

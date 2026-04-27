@@ -1,12 +1,12 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, strict: 'throw', minimize: false })
 export class Alert extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, trim: true })
   alertId: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   deviceId: string;
 
   @Prop({ required: true, enum: ['latency', 'packet_loss', 'signal'] })
@@ -21,9 +21,9 @@ export class Alert extends Document {
   @Prop({
     required: true,
     type: {
-      lat: Number,
-      lng: Number,
-      name: String,
+      lat: { type: Number, required: true, min: -90, max: 90 },
+      lng: { type: Number, required: true, min: -180, max: 180 },
+      name: { type: String, trim: true },
     },
   })
   location: {
@@ -32,7 +32,7 @@ export class Alert extends Document {
     name?: string;
   };
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   message: string;
 
   @Prop({
@@ -52,6 +52,10 @@ export class Alert extends Document {
 
   @Prop()
   eventId?: string;
+
+  createdAt?: Date;
+
+  updatedAt?: Date;
 }
 
 export const AlertSchema = SchemaFactory.createForClass(Alert);

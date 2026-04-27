@@ -15,6 +15,8 @@
     "dev": "npm --workspaces run dev",
     "test": "npm --workspaces run test",
     "lint": "npm --workspaces run lint",
+    "verify:phase4": "node scripts/verify-phase4.mjs",
+    "verify:phase5": "node scripts/verify-phase5.mjs",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "docker:build": "docker compose --env-file .env -f infrastructure/docker-compose.yml build",
     "docker:up": "docker compose --env-file .env -f infrastructure/docker-compose.yml up -d",
@@ -23,10 +25,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "eslint": "^8.55.0",
     "prettier": "^3.1.0",
+    "socket.io-client": "^4.7.2",
     "typescript": "^5.3.3"
   }
 }
