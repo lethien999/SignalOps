@@ -18,8 +18,18 @@ const severityConfig = {
 export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
   const [sortBy, setSortBy] = useState<"severity" | "time">("time");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
-  const sortedAlerts = [...alerts].sort((a, b) => {
+  const filteredAlerts = alerts.filter((alert) => {
+    const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
+    const matchesStatus = statusFilter === "all" || alert.status === statusFilter;
+    return matchesSeverity && matchesStatus;
+  });
+
+  const sortedAlerts = [...filteredAlerts].sort((a, b) => {
     if (sortBy === "severity") {
       const severityOrder = { high: 3, medium: 2, low: 1 };
       return sortOrder === "desc"
@@ -31,6 +41,9 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
       return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     }
   });
+
+  const totalPages = Math.max(1, Math.ceil(sortedAlerts.length / pageSize));
+  const paginatedAlerts = sortedAlerts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (alerts.length === 0) {
     return (
@@ -44,6 +57,60 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 py-4 md:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Filters
+            </h3>
+            <p className="mt-1 text-sm text-gray-600">
+              Lọc alert theo severity và status.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Severity
+              <select
+                value={severityFilter}
+                onChange={(event) => {
+                  setSeverityFilter(event.target.value as typeof severityFilter);
+                  setCurrentPage(1);
+                }}
+                className="min-w-40 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="all">All severities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+
+            <div className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Status
+              <div className="flex flex-wrap gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm">
+                {(["all", "open", "acknowledged", "resolved"] as const).map((status) => (
+                  <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="status-filter"
+                      value={status}
+                      checked={statusFilter === status}
+                      onChange={() => {
+                        setStatusFilter(status);
+                        setCurrentPage(1);
+                      }}
+                      className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="capitalize">{status}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -99,7 +166,7 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sortedAlerts.map((alert) => {
+            {paginatedAlerts.map((alert) => {
               const config = severityConfig[alert.severity];
               const Icon = config.icon;
               return (
@@ -146,6 +213,38 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
           </tbody>
         </table>
       </div>
+
+      {filteredAlerts.length !== alerts.length && (
+        <div className="border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 md:px-6">
+          Showing {filteredAlerts.length} of {alerts.length} alerts.
+        </div>
+      )}
+
+      {sortedAlerts.length > pageSize && (
+        <div className="flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-3 md:px-6">
+          <p className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

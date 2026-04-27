@@ -56,61 +56,83 @@ export function Map({
   }
 
   return (
-    <MapContainer
-      center={center}
-      zoom={zoom}
-      scrollWheelZoom={true}
-      bounds={bounds}
-      className="w-full h-full rounded-lg"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {displayDevices.map((device) => (
-        <Marker
-          key={device.id}
-          position={[device.location.lat, device.location.lng]}
-          icon={createIcon(device.status)}
-          eventHandlers={{
-            click: () => {
-              onDeviceClick?.(device);
-            },
-          }}
-        >
-          <Popup>
-            <div className="p-2">
-              <p className="font-semibold text-gray-900">{device.name}</p>
-              <p className="text-sm text-gray-600">
-                <span
-                  className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                    device.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : device.status === "alert"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {device.status.toUpperCase()}
-                </span>
-              </p>
-              {device.metrics && (
-                <div className="mt-2 text-xs text-gray-600 space-y-1">
-                  {device.metrics.latency && (
-                    <p>Latency: {device.metrics.latency}ms</p>
-                  )}
-                  {device.metrics.packetLoss !== undefined && (
-                    <p>Packet Loss: {device.metrics.packetLoss}%</p>
-                  )}
-                  {device.metrics.signalStrength && (
-                    <p>Signal: {device.metrics.signalStrength} dBm</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="relative w-full h-full rounded-lg overflow-hidden">
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        scrollWheelZoom={true}
+        bounds={bounds}
+        className="w-full h-full"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {displayDevices.map((device) => (
+          <Marker
+            key={device.id}
+            position={[device.location.lat, device.location.lng]}
+            icon={createIcon(device.status)}
+            eventHandlers={{
+              click: () => {
+                onDeviceClick?.(device);
+              },
+            }}
+          >
+            <Popup>
+              <div className="p-2">
+                <p className="font-semibold text-gray-900">{device.name}</p>
+                <p className="text-sm text-gray-600">
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                      device.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : device.status === 'alert'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {device.status.toUpperCase()}
+                  </span>
+                </p>
+                {device.metrics && (
+                  <div className="mt-2 text-xs text-gray-600 space-y-1">
+                    {device.metrics.latency && (
+                      <p>Latency: {device.metrics.latency}ms</p>
+                    )}
+                    {device.metrics.packetLoss !== undefined && (
+                      <p>Packet Loss: {device.metrics.packetLoss}%</p>
+                    )}
+                    {device.metrics.signalStrength && (
+                      <p>Signal: {device.metrics.signalStrength} dBm</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+
+      <div className="absolute top-4 right-4 z-[1000] rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur-sm">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Legend
+        </p>
+        <div className="space-y-2 text-xs text-gray-700">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-green-500" />
+            <span>Active device</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-red-500" />
+            <span>Alert device</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-gray-500" />
+            <span>Inactive device</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
