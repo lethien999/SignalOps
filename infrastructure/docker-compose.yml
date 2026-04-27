@@ -154,6 +154,29 @@ services:
       - signalops
     command: npm run start -w simulator
 
+  # Dashboard
+  dashboard:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.dashboard
+    container_name: signalops-dashboard
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - NEXT_PUBLIC_API_URL=http://api-gateway:3000/api
+      - NEXT_PUBLIC_SOCKET_URL=http://api-gateway:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - signalops
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3001 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   signalops:
     driver: bridge
