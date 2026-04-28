@@ -14,7 +14,6 @@
     "start": "npm --workspaces run start",
     "dev": "node scripts/dev.mjs",
     "dev:api-gateway": "npm run dev -w api-gateway",
-    "dev:event-broker": "npm run dev -w event-broker",
     "dev:worker": "npm run dev -w worker-service",
     "dev:simulator": "npm run dev -w simulator",
     "dev:dashboard": "npm run dev -w dashboard",

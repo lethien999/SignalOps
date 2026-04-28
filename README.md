@@ -200,7 +200,6 @@ Kết nối tới `ws://localhost:3000` bằng Socket.io client.
 SignalOps/
 ├── apps/
 │   ├── api-gateway/         # Cổng HTTP + WebSocket
-│   ├── event-broker/        # Điều phối pipeline sự kiện
 │   ├── worker-service/      # Xử lý nền + phát hiện bất thường
 │   ├── simulator/           # Tạo dữ liệu telemetry mô phỏng
 │   └── dashboard/           # Giao diện Next.js

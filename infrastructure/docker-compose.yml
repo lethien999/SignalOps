@@ -85,30 +85,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Event Broker
-  event-broker:
-    build:
-      context: ..
-      dockerfile: infrastructure/Dockerfile.broker
-    container_name: signalops-event-broker
-    environment:
-      - NODE_ENV=${NODE_ENV}
-      - REDIS_ENABLED=true
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT}
-      - LOG_LEVEL=${LOG_LEVEL}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      api-gateway:
-        condition: service_healthy
-    networks:
-      - signalops
-    command: npm run start -w event-broker
-
   # Worker Service
   worker:
     build:
