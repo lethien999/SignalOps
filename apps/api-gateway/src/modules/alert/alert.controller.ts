@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import { AlertService, UpdateAlertInput } from './alert.service';
@@ -55,6 +56,52 @@ export class AlertController {
     });
   }
 
+  @ApiOperation({ summary: 'Batch update alert statuses' })
+  @ApiBody({
+    schema: {
+      example: {
+        ids: ['id1', 'id2'],
+        status: 'acknowledged',
+        acknowledgedBy: 'Operator A',
+      },
+    },
+  })
+  @ApiOkResponse({ description: 'Batch result with success/failure counts' })
+  @Post('batch')
+  async batchUpdateAlerts(
+    @Body() body: { ids: string[]; status: 'acknowledged' | 'resolved'; acknowledgedBy?: string; resolvedBy?: string; resolutionNote?: string },
+  ) {
+    const results = { success: 0, failed: 0, errors: [] as string[] };
+
+    for (const id of (body.ids || [])) {
+      try {
+        const input: UpdateAlertInput = {
+          status: body.status,
+          acknowledgedBy: body.acknowledgedBy,
+          resolvedBy: body.resolvedBy,
+          resolutionNote: body.resolutionNote,
+        };
+        await this.alertService.updateAlert(id, input);
+        results.success++;
+      } catch (err) {
+        results.failed++;
+        results.errors.push(`${id}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    }
+
+    return results;
+  }
+
+  @ApiOperation({ summary: 'Get alert history aggregated by day' })
+  @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
+  @ApiOkResponse({ description: 'Alert counts by day' })
+  @Get('history')
+  async getAlertHistory(
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+  ) {
+    return this.alertService.getAlertHistory(days);
+  }
+
   @ApiOperation({ summary: 'Get alert by id' })
   @ApiOkResponse({ description: 'Alert detail' })
   @ApiNotFoundResponse({ description: 'Alert not found' })
@@ -78,6 +125,8 @@ export class AlertController {
       acknowledgedBy: updateData.acknowledgedBy,
       acknowledgedAt: updateData.acknowledgedAt ? new Date(updateData.acknowledgedAt) : undefined,
       resolvedAt: updateData.resolvedAt ? new Date(updateData.resolvedAt) : undefined,
+      resolvedBy: updateData.resolvedBy,
+      resolutionNote: updateData.resolutionNote,
     };
 
     return this.alertService.updateAlert(id, normalizedInput);

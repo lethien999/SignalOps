@@ -19,11 +19,20 @@ export class HealthService {
   async getHealth() {
     const mongoStatus = this.resolveMongoStatus(this.mongooseConnection.readyState);
     const redisHealthy = await this.eventBrokerService.isRedisHealthy();
+    const memUsage = process.memoryUsage();
 
     return {
       status: mongoStatus === 'up' && redisHealthy ? 'ok' : 'degraded',
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      node: process.version,
+      memory: {
+        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+      },
       dependencies: {
         mongodb: mongoStatus,
         redis: redisHealthy ? 'up' : 'down',

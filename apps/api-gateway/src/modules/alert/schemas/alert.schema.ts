@@ -51,6 +51,12 @@ export class Alert extends Document {
   resolvedAt?: Date;
 
   @Prop()
+  resolvedBy?: string;
+
+  @Prop()
+  resolutionNote?: string;
+
+  @Prop()
   eventId?: string;
 
   createdAt?: Date;

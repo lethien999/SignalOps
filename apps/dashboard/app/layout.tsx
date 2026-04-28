@@ -1,10 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import { LayoutShell } from './layout-shell';
+
+const inter = Inter({ subsets: ['latin', 'vietnamese'] });
 
 export const metadata: Metadata = {
-  title: 'SignalOps Dashboard',
-  description: 'Real-time device monitoring and alert management system',
-  viewport: 'width=device-width, initial-scale=1',
+  title: 'SignalOps — Giám sát mạng viễn thông',
+  description: 'Hệ thống giám sát chất lượng mạng viễn thông theo thời gian thực. Phát hiện bất thường, tạo cảnh báo, hiển thị trên bản đồ.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -13,9 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {children}
+    <html lang="vi">
+      <body className={`${inter.className} antialiased`}>
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

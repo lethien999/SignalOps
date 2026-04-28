@@ -2,6 +2,7 @@ import { Worker, Queue } from 'bullmq';
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
 import { Logger } from './common/logger';
+import { buildAlertDocument } from './services/alert-factory';
 import { ThresholdDetector } from './services/threshold-detector';
 import { AlertRepository } from './repositories/alert.repository';
 import { EventRepository } from './repositories/event.repository';
@@ -36,6 +37,10 @@ type WorkerContext = {
   worker: Worker;
 };
 
+function isRedisEnabled(): boolean {
+  return String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+}
+
 function resolveQueueName(): string {
   return process.env.QUEUE_EVENT_PROCESSING || 'event-processing';
 }
@@ -55,28 +60,6 @@ function createQueuePair(redis: Redis): { queue: Queue; dlq: Queue } {
   return {
     queue: new Queue(queueName, { connection: redis }),
     dlq: new Queue(`${queueName}-dlq`, { connection: redis }),
-  };
-}
-
-function buildAlertDocument(eventData: WorkerJobPayload, alertType: WorkerAlertResult) {
-  const alertId = `${eventData.deviceId}-${alertType.type}-${Date.now()}`;
-  const safeLocation = {
-    lat: eventData.location.lat,
-    lng: eventData.location.lng,
-    ...(eventData.location.name ? { name: eventData.location.name } : {}),
-  };
-
-  return {
-    alertId,
-    deviceId: eventData.deviceId,
-    type: alertType.type,
-    severity: alertType.severity,
-    location: safeLocation,
-    message: alertType.message,
-    status: 'open' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    eventId: eventData._id.toString(),
   };
 }
 
@@ -125,6 +108,50 @@ async function handleAlertCreation(
   return createdCount;
 }
 
+async function handleAutoResolve(
+  eventData: WorkerJobPayload,
+  detectedAlerts: WorkerAlertResult[],
+  alertRepository: AlertRepository,
+  pubSubRedis: Redis,
+): Promise<number> {
+  // If no anomalies detected, check if there are open alerts for this device that can be auto-resolved
+  if (detectedAlerts.length > 0) return 0;
+
+  const openAlerts = await alertRepository.findOpenAlertsByDevice(eventData.deviceId);
+  if (!openAlerts || openAlerts.length === 0) return 0;
+
+  let resolvedCount = 0;
+  for (const alert of openAlerts) {
+    // Check if the specific metric for this alert type is now normal
+    const alertType = alert.type as string;
+    const latencyThreshold = Number(process.env.THRESHOLD_LATENCY_MS) || 200;
+    const packetLossThreshold = Number(process.env.THRESHOLD_PACKET_LOSS_PERCENT) || 5;
+    const signalThreshold = Number(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) || -90;
+
+    let isNormal = false;
+    if (alertType === 'latency' && eventData.metrics.latency <= latencyThreshold) isNormal = true;
+    if (alertType === 'packet_loss' && eventData.metrics.packetLoss <= packetLossThreshold) isNormal = true;
+    if (alertType === 'signal' && eventData.metrics.signalStrength >= signalThreshold) isNormal = true;
+
+    if (isNormal) {
+      await alertRepository.autoResolve(alert._id.toString());
+      await pubSubRedis.publish('alerts:resolved', JSON.stringify({
+        id: alert._id.toString(),
+        alertId: alert.alertId,
+        type: alert.type,
+        severity: alert.severity,
+        message: 'Tự động đóng: chỉ số đã trở về bình thường',
+        timestamp: new Date().toISOString(),
+        deviceId: eventData.deviceId,
+        autoResolved: true,
+      }));
+      Logger.info(`Auto-resolved alert ${alert._id} for ${eventData.deviceId}/${alertType}`);
+      resolvedCount++;
+    }
+  }
+  return resolvedCount;
+}
+
 function createWorker(
   redis: Redis,
   pubSubRedis: Redis,
@@ -156,6 +183,17 @@ function createWorker(
           eventRepository,
           pubSubRedis,
         );
+
+        // E2: Auto-resolve if metrics are back to normal
+        const autoResolvedCount = await handleAutoResolve(
+          eventData,
+          detectedAlerts,
+          alertRepository,
+          pubSubRedis,
+        );
+        if (autoResolvedCount > 0) {
+          Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
+        }
 
         // Publish event:processed to Redis Pub/Sub for API Gateway to broadcast via WebSocket
         const eventProcessedPayload = JSON.stringify({
@@ -220,6 +258,11 @@ async function bootstrap() {
   let context: WorkerContext | null = null;
 
   try {
+    if (!isRedisEnabled()) {
+      Logger.info('Worker service disabled for local development');
+      return;
+    }
+
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/signalops-db');
     Logger.info('Connected to MongoDB');
 

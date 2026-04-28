@@ -36,6 +36,7 @@ export interface Alert {
   acknowledgedAt?: string;
   resolvedBy?: string;
   resolvedAt?: string;
+  resolutionNote?: string;
 }
 
 export interface Event {

@@ -1,0 +1,55 @@
+# SignalOps Monitoring Stack
+# Chạy: docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: signalops-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - signalops-monitoring
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: signalops-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=signalops2026
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-dashboard.json:/var/lib/grafana/dashboards/signalops.json:ro
+    ports:
+      - "3003:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - signalops-monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: signalops-node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    networks:
+      - signalops-monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  signalops-monitoring:
+    driver: bridge

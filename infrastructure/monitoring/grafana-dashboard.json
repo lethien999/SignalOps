@@ -1,0 +1,43 @@
+{
+  "annotations": { "list": [] },
+  "title": "SignalOps - Tổng quan hệ thống",
+  "uid": "signalops-overview",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Trạng thái API Gateway",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "up{job=\"signalops-api-gateway\"}", "legendFormat": "API Gateway" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }] } }
+    },
+    {
+      "title": "Trạng thái Worker",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [{ "expr": "up{job=\"signalops-worker\"}", "legendFormat": "Worker" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }] } }
+    },
+    {
+      "title": "CPU Usage (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "100 - (avg by(instance)(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "CPU %" }]
+    },
+    {
+      "title": "Memory Usage (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [{ "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024", "legendFormat": "Memory Used (MB)" }]
+    },
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [{ "expr": "rate(http_requests_total[5m])", "legendFormat": "{{method}} {{path}}" }]
+    }
+  ],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "10s"
+}

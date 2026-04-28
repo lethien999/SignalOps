@@ -24,16 +24,26 @@ export type TelemetryEventPayload = {
   timestamp?: Date;
 };
 
+function isRedisEnabled(): boolean {
+  return String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+}
+
 @Injectable()
 export class EventBrokerService {
-  private queue: Queue;
-  private redis: Redis;
+  private queue?: Queue;
+  private redis?: Redis;
+  private readonly redisEnabled = isRedisEnabled();
 
   constructor() {
+    if (!this.redisEnabled) {
+      return;
+    }
+
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       maxRetriesPerRequest: null,
+      lazyConnect: true,
     });
 
     this.queue = new Queue(process.env.QUEUE_EVENT_PROCESSING || 'event-processing', {
@@ -43,6 +53,10 @@ export class EventBrokerService {
 
   async queueEvent(eventData: TelemetryEventPayload): Promise<string> {
     try {
+      if (!this.redisEnabled || !this.queue) {
+        throw new Error('Redis integrations are disabled in local development');
+      }
+
       this.validateEventSchema(eventData);
 
       const jobId = this.buildJobId(eventData);
@@ -118,10 +132,18 @@ export class EventBrokerService {
   }
 
   getQueue(): Queue {
+    if (!this.queue) {
+      throw new Error('Redis integrations are disabled in local development');
+    }
+
     return this.queue;
   }
 
   async isRedisHealthy(): Promise<boolean> {
+    if (!this.redisEnabled || !this.redis) {
+      return false;
+    }
+
     try {
       const result = await this.redis.ping();
       return result === 'PONG';

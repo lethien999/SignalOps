@@ -122,4 +122,44 @@ export class EventService {
 
     return parsedDate;
   }
+
+  /**
+   * E1: Derive device list from recent events (group by deviceId, take latest)
+   */
+  async getDevices() {
+    const recentEvents = await this.eventRepository.findRecent(500);
+
+    const deviceMap = new Map<string, {
+      id: string;
+      name: string;
+      location: { lat: number; lng: number; name?: string };
+      status: string;
+      lastSeen: string;
+      metrics: Record<string, number>;
+    }>();
+
+    for (const ev of recentEvents) {
+      const existing = deviceMap.get(ev.deviceId);
+      const evTime = ev.createdAt ? new Date(ev.createdAt).getTime() : 0;
+      const existingTime = existing ? new Date(existing.lastSeen).getTime() : 0;
+
+      if (!existing || evTime > existingTime) {
+        const isAlert = (ev.metrics?.latency > 200) || (ev.metrics?.packetLoss > 5) || (ev.metrics?.signalStrength < -90);
+        deviceMap.set(ev.deviceId, {
+          id: ev.deviceId,
+          name: ev.location?.name || ev.deviceId,
+          location: ev.location || { lat: 0, lng: 0 },
+          status: isAlert ? 'alert' : 'active',
+          lastSeen: ev.createdAt?.toISOString() || new Date().toISOString(),
+          metrics: {
+            latency: ev.metrics?.latency || 0,
+            packetLoss: ev.metrics?.packetLoss || 0,
+            signalStrength: ev.metrics?.signalStrength || 0,
+          },
+        });
+      }
+    }
+
+    return Array.from(deviceMap.values());
+  }
 }

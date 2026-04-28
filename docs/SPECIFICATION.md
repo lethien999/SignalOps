@@ -84,14 +84,14 @@ System:
 - Docker Compose for local orchestration
 - Optional Nginx reverse proxy at localhost:8080
 
-## 10. Delivery Phases
-- Phase 1: infrastructure and baseline services
-- Phase 2: event flow and queue integration
-- Phase 3: worker detection logic
-- Phase 4: persistence and API completion
-- Phase 5: realtime communication
-- Phase 6: frontend dashboard
-- Phase 7: CI/CD and production hardening
+## 10. Delivery Milestones
+- Milestone 1: infrastructure and baseline services
+- Milestone 2: event flow and queue integration
+- Milestone 3: worker detection logic
+- Milestone 4: persistence and API completion
+- Milestone 5: realtime communication
+- Milestone 6: frontend dashboard
+- Milestone 7: CI/CD and production hardening
 
 ## 11. Success Criteria
 - Services start reliably in compose

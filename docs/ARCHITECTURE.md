@@ -1,57 +1,66 @@
-# SignalOps Architecture
+# Kiến trúc SignalOps
 
-## 1. Overview
-SignalOps uses an event-driven architecture. Request handling is separated from heavy processing through a Redis queue, enabling better responsiveness and scaling.
+## 1. Tổng quan
 
-## 2. Logical Components
-- Client sources: simulator and external telemetry producers
-- API Gateway: validates input, exposes REST and WebSocket APIs
-- Event Broker: prepares and enqueues processing jobs
-- Worker Service: consumes jobs, applies threshold logic, writes data
-- MongoDB: primary persistence for events and alerts
-- Redis: BullMQ queue backend and transient cache
-- Nginx (optional): reverse proxy for unified ingress
+SignalOps sử dụng kiến trúc hướng sự kiện (event-driven). Việc tiếp nhận request được tách biệt khỏi xử lý nặng thông qua hàng đợi Redis, giúp tăng khả năng phản hồi và mở rộng.
 
-## 3. Processing Path
-1. POST /api/events arrives at API Gateway.
-2. Event is validated and queued.
-3. Worker consumes queued event.
-4. Worker stores event and evaluates detection rules.
-5. If triggered, alert is created and published to realtime channel.
+## 2. Các thành phần
 
-## 4. Realtime Path
-- WebSocket endpoint is hosted by API Gateway.
-- Realtime topics include new events and alert updates.
-- Dashboard clients subscribe and update UI without polling.
+- **Nguồn dữ liệu**: Simulator và các thiết bị telemetry bên ngoài
+- **API Gateway**: Xác thực đầu vào, cung cấp REST và WebSocket API
+- **Event Broker**: Chuẩn bị và đẩy job vào hàng đợi
+- **Worker Service**: Xử lý job, áp dụng logic phát hiện ngưỡng, ghi dữ liệu
+- **MongoDB**: Lưu trữ chính cho events và alerts
+- **Redis**: Hàng đợi BullMQ và cache tạm
+- **Nginx** (tùy chọn): Reverse proxy cho ingress thống nhất
 
-## 5. Data Layer
-MongoDB collections:
-- events
-- alerts
-- devices
+## 3. Luồng xử lý
 
-Recommended indexes in current implementation:
-- events: deviceId + timestamp
-- alerts: status + severity + createdAt
+1. `POST /api/events` gửi tới API Gateway
+2. Event được xác thực và đẩy vào hàng đợi
+3. Worker lấy event từ hàng đợi
+4. Worker lưu event và đánh giá quy tắc phát hiện
+5. Nếu vượt ngưỡng → tạo cảnh báo và phát qua kênh realtime
 
-## 6. Scalability Notes
-- Worker can scale horizontally by increasing replicas.
-- Queue decoupling protects API latency from processing spikes.
-- MongoDB/Redis connection settings should be tuned per environment.
+## 4. Luồng Realtime
 
-## 7. Reliability Notes
-- Retries are handled at queue consumer level.
-- Failed jobs should be routed to DLQ in next hardening phase.
-- Health endpoints are exposed for service monitoring.
+- WebSocket endpoint được host bởi API Gateway
+- Các topic bao gồm: sự kiện mới, cập nhật cảnh báo
+- Dashboard client đăng ký và cập nhật UI mà không cần polling
 
-## 8. Security and Ops Baseline
-- Configuration via environment variables
-- Input validation at API boundary
-- Reverse proxy available for ingress control
-- Structured logs across services
+## 5. Tầng dữ liệu
 
-## 9. Deployment Topology (Local)
-- docker-compose orchestrates all services
-- API Gateway available on port 3000
-- Optional Nginx ingress available on port 8080
-- MongoDB and Redis exposed for local diagnostics
+Các collection MongoDB:
+- `events` — sự kiện telemetry
+- `alerts` — cảnh báo
+- `devices` — thông tin thiết bị
+
+Index được khuyến nghị:
+- events: `deviceId` + `timestamp`
+- alerts: `status` + `severity` + `createdAt`
+
+## 6. Khả năng mở rộng
+
+- Worker có thể scale ngang bằng cách tăng replicas
+- Hàng đợi tách biệt bảo vệ API latency khỏi tải xử lý
+- Cấu hình kết nối MongoDB/Redis nên được điều chỉnh theo môi trường
+
+## 7. Độ tin cậy
+
+- Retry được xử lý ở tầng consumer
+- Job thất bại được đẩy vào Dead Letter Queue (DLQ)
+- Health endpoint phục vụ giám sát service
+
+## 8. Bảo mật cơ bản
+
+- Cấu hình qua biến môi trường
+- Xác thực đầu vào tại API boundary
+- Reverse proxy cho kiểm soát ingress
+- Structured logging trên tất cả service
+
+## 9. Topology triển khai (Local)
+
+- Docker Compose điều phối tất cả service
+- API Gateway tại cổng 3000
+- Nginx ingress (tùy chọn) tại cổng 8080
+- MongoDB và Redis expose cho chẩn đoán local

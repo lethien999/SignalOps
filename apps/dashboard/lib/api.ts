@@ -40,14 +40,16 @@ export async function fetchEvents(params?: {
 export async function updateAlertStatus(
   alertId: string,
   status: 'acknowledged' | 'resolved',
+  extra?: Record<string, string>,
 ): Promise<Alert> {
   try {
     const response = await api.patch<Alert>(`/alerts/${alertId}`, {
       status,
+      ...extra,
     });
     return response.data;
   } catch (error) {
-    console.error('Failed to update alert status:', error);
+    console.error('Không thể cập nhật cảnh báo:', error);
     throw error;
   }
 }
@@ -68,6 +70,24 @@ export async function fetchHealth(): Promise<{ status: string; uptime: number }>
     return response.data;
   } catch (error) {
     console.error('Failed to fetch health status:', error);
+    throw error;
+  }
+}
+
+export async function batchUpdateAlerts(
+  ids: string[],
+  status: 'acknowledged' | 'resolved',
+  extra?: Record<string, string>,
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  try {
+    const response = await api.post<{ success: number; failed: number; errors: string[] }>('/alerts/batch', {
+      ids,
+      status,
+      ...extra,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Không thể cập nhật hàng loạt:', error);
     throw error;
   }
 }

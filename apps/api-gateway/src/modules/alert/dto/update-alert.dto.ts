@@ -21,4 +21,14 @@ export class UpdateAlertDto {
   @IsOptional()
   @IsDateString()
   resolvedAt?: string;
+
+  @ApiPropertyOptional({ example: 'Nguyễn Văn B' })
+  @IsOptional()
+  @IsString()
+  resolvedBy?: string;
+
+  @ApiPropertyOptional({ example: 'Đã khởi động lại router, latency trở về bình thường' })
+  @IsOptional()
+  @IsString()
+  resolutionNote?: string;
 }

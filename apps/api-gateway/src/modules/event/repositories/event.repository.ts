@@ -83,6 +83,15 @@ export class EventRepository {
     return this.eventModel.countDocuments();
   }
 
+  async findRecent(limit: number): Promise<Event[]> {
+    return this.eventModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean()
+      .exec() as unknown as Event[];
+  }
+
   private buildQuery(filters: EventFindFilters): FilterQuery<Event> {
     const query: FilterQuery<Event> = {};
 

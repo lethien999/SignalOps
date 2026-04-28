@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Base ─────────────────────────────────────── */
 * {
   @apply box-border;
 }
 
-html,
-body {
+html, body {
   @apply h-full w-full;
 }
 
@@ -15,50 +15,204 @@ body {
   @apply bg-gray-50 text-gray-900;
 }
 
+/* ── Custom scrollbar ────────────────────────── */
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }
-
 ::-webkit-scrollbar-track {
   @apply bg-gray-100;
 }
-
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded;
+  @apply bg-gray-300 rounded-full;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
+  @apply bg-gray-500;
 }
 
-/* Leaflet map fixes */
+/* ── Animations ──────────────────────────────── */
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out;
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Glassmorphism card ──────────────────────── */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-sm border border-white/40 shadow-lg;
+}
+
+/* ── Gradient text ───────────────────────────── */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500;
+}
+
+/* ── Metric card hover glow ──────────────────── */
+.metric-card {
+  @apply relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300;
+}
+.metric-card:hover {
+  @apply shadow-lg -translate-y-0.5;
+}
+.metric-card::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(135deg, rgba(59,130,246,0.04), transparent 60%);
+}
+.metric-card:hover::before {
+  @apply opacity-100;
+}
+
+/* ── Status indicator ────────────────────────── */
+.status-dot {
+  @apply w-2.5 h-2.5 rounded-full;
+}
+.status-dot.online {
+  @apply bg-green-500;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.2);
+}
+.status-dot.alert {
+  @apply bg-red-500;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.2);
+}
+.status-dot.offline {
+  @apply bg-gray-400;
+}
+
+/* ── Leaflet map ─────────────────────────────── */
 .leaflet-container {
-  @apply bg-gray-100;
+  @apply bg-gray-100 rounded-lg;
 }
-
 .leaflet-control-zoom a,
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
   @apply bg-white hover:bg-gray-100 border border-gray-200;
 }
 
-/* Toast notification styles */
+/* ── Toast ────────────────────────────────────── */
 .toast {
   @apply fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg text-white z-50 animate-slide-in;
 }
+.toast.success { @apply bg-green-500; }
+.toast.error   { @apply bg-red-500; }
+.toast.info    { @apply bg-blue-500; }
+.toast.warning { @apply bg-yellow-500; }
 
-.toast.success {
-  @apply bg-green-500;
+/* ── Skeleton loading ────────────────────────── */
+.skeleton {
+  @apply bg-gray-200 rounded;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-.toast.error {
-  @apply bg-red-500;
+/* ── Dark Mode ──────────────────────────────── */
+.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+.dark .glass-card {
+  @apply bg-gray-800/80 border-gray-700/40;
+}
+.dark .metric-card {
+  @apply bg-gray-800 border-gray-700 text-gray-100;
+}
+.dark .metric-card:hover {
+  @apply shadow-gray-900/50;
+}
+.dark .metric-card::before {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent 60%);
 }
 
-.toast.info {
-  @apply bg-blue-500;
+/* Dark mode for white backgrounds */
+.dark .bg-white {
+  @apply !bg-gray-800;
+}
+.dark .bg-gray-50 {
+  @apply !bg-gray-900;
+}
+.dark .bg-gray-100 {
+  @apply !bg-gray-800;
 }
 
-.toast.warning {
-  @apply bg-yellow-500;
+/* Dark mode text */
+.dark .text-gray-900 {
+  @apply !text-gray-100;
+}
+.dark .text-gray-700 {
+  @apply !text-gray-300;
+}
+.dark .text-gray-600 {
+  @apply !text-gray-400;
+}
+.dark .text-gray-500 {
+  @apply !text-gray-400;
+}
+
+/* Dark mode borders */
+.dark .border-gray-200 {
+  @apply !border-gray-700;
+}
+.dark .border-gray-100 {
+  @apply !border-gray-700;
+}
+.dark .border-gray-300 {
+  @apply !border-gray-600;
+}
+
+/* Dark mode inputs */
+.dark input, .dark select, .dark textarea {
+  @apply bg-gray-700 border-gray-600 text-gray-100;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  @apply text-gray-400;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Dark mode leaflet */
+.dark .leaflet-container {
+  @apply bg-gray-800;
+}
+
+/* Dark mode hover states */
+.dark .hover\:bg-gray-50:hover {
+  @apply !bg-gray-700;
+}
+.dark .hover\:bg-gray-100:hover {
+  @apply !bg-gray-700;
+}
+
+/* Dark mode skeleton */
+.dark .skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
 }

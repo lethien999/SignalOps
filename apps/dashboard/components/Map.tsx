@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -50,7 +50,7 @@ export function Map({
   if (displayDevices.length === 0) {
     return (
       <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-        <p className="text-gray-600">No devices to display on map</p>
+        <p className="text-gray-600">Không có thiết bị để hiển thị trên bản đồ</p>
       </div>
     );
   }
@@ -116,20 +116,20 @@ export function Map({
 
       <div className="absolute top-4 right-4 z-[1000] rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur-sm">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Legend
+          Chú thích
         </p>
         <div className="space-y-2 text-xs text-gray-700">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-green-500" />
-            <span>Active device</span>
+            <span>Thiết bị hoạt động</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-red-500" />
-            <span>Alert device</span>
+            <span>Thiết bị cảnh báo</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-gray-500" />
-            <span>Inactive device</span>
+            <span>Thiết bị ngắt KN</span>
           </div>
         </div>
       </div>

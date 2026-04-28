@@ -63,9 +63,10 @@ services:
     container_name: signalops-api-gateway
     environment:
       - NODE_ENV=${NODE_ENV}
+      - REDIS_ENABLED=true
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - MONGODB_URI=${MONGODB_URI}
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT}
       - LOG_LEVEL=${LOG_LEVEL}
     ports:
@@ -92,8 +93,9 @@ services:
     container_name: signalops-event-broker
     environment:
       - NODE_ENV=${NODE_ENV}
+      - REDIS_ENABLED=true
       - MONGODB_URI=${MONGODB_URI}
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT}
       - LOG_LEVEL=${LOG_LEVEL}
     depends_on:
@@ -115,8 +117,9 @@ services:
     container_name: signalops-worker
     environment:
       - NODE_ENV=${NODE_ENV}
+      - REDIS_ENABLED=true
       - MONGODB_URI=${MONGODB_URI}
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT}
       - LOG_LEVEL=${LOG_LEVEL}
       - WORKER_CONCURRENCY=${WORKER_CONCURRENCY}

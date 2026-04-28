@@ -32,7 +32,7 @@ async function main() {
   const startIso = new Date(createdAt.getTime() - 5 * 60 * 1000).toISOString();
   const endIso = new Date(createdAt.getTime() + 5 * 60 * 1000).toISOString();
 
-  const deviceId = `verify-phase4-${Date.now()}`;
+  const deviceId = `verify-api-${Date.now()}`;
   const eventPayload = {
     deviceId,
     location: { lat: 10.77, lng: 106.7, name: 'HCM' },
@@ -86,7 +86,7 @@ async function main() {
   if (firstOpenAlert?._id) {
     const { response: ackRes, body: ackBody } = await requestJson(`/api/alerts/${firstOpenAlert._id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-phase4-script' }),
+      body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-api-script' }),
     });
     assert(ackRes.status === 200, `PATCH acknowledged expected 200, got ${ackRes.status}`);
     assert(ackBody.status === 'acknowledged', 'PATCH did not set acknowledged status');
@@ -126,10 +126,10 @@ async function main() {
 
   assert(avgEventsMs < 100, `Average events latency ${avgEventsMs}ms is not under 100ms`);
 
-  console.log(`VERIFY_PHASE4_OK eventsAvgMs=${avgEventsMs} alertsAvgMs=${avgAlertsMs}`);
+  console.log(`VERIFY_API_OK eventsAvgMs=${avgEventsMs} alertsAvgMs=${avgAlertsMs}`);
 }
 
 main().catch((error) => {
-  console.error(`VERIFY_PHASE4_FAILED ${error.message}`);
+  console.error(`VERIFY_API_FAILED ${error.message}`);
   process.exit(1);
 });

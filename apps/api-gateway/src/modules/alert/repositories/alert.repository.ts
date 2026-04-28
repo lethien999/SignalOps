@@ -15,6 +15,8 @@ export type AlertStatusUpdate = {
   acknowledgedBy?: string;
   acknowledgedAt?: Date;
   resolvedAt?: Date;
+  resolvedBy?: string;
+  resolutionNote?: string;
 };
 
 @Injectable()
@@ -65,5 +67,41 @@ export class AlertRepository {
     }
 
     return query;
+  }
+
+  /**
+   * E3: Aggregate alert counts by day for the last N days
+   */
+  async alertHistory(days: number = 7): Promise<{ date: string; open: number; acknowledged: number; resolved: number; total: number }[]> {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const results = await this.alertModel.aggregate([
+      { $match: { createdAt: { $gte: since } } },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            status: '$status',
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.date': 1 } },
+    ]);
+
+    // Transform to day-level summary
+    const dayMap = new Map<string, { open: number; acknowledged: number; resolved: number; total: number }>();
+    for (const row of results) {
+      const date = row._id.date;
+      if (!dayMap.has(date)) {
+        dayMap.set(date, { open: 0, acknowledged: 0, resolved: 0, total: 0 });
+      }
+      const entry = dayMap.get(date)!;
+      entry[row._id.status as 'open' | 'acknowledged' | 'resolved'] = row.count;
+      entry.total += row.count;
+    }
+
+    return Array.from(dayMap.entries()).map(([date, counts]) => ({ date, ...counts }));
   }
 }

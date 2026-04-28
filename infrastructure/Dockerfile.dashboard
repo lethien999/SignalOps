@@ -17,7 +17,8 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+COPY apps/dashboard/package.json ./apps/dashboard/
+RUN npm install --omit=dev --workspace apps/dashboard --include-workspace-root
 
 COPY --from=builder /app/apps/dashboard/.next ./apps/dashboard/.next
 COPY --from=builder /app/apps/dashboard/public ./apps/dashboard/public

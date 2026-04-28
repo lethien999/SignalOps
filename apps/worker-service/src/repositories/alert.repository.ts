@@ -40,6 +40,8 @@ const alertSchema = new mongoose.Schema(
     acknowledgedBy: String,
     acknowledgedAt: Date,
     resolvedAt: Date,
+    resolvedBy: String,
+    resolutionNote: String,
     eventId: { type: String },
   },
   { timestamps: true, strict: 'throw', minimize: false },
@@ -83,6 +85,23 @@ export class AlertRepository {
       {
         status: 'resolved',
         resolvedAt: new Date(),
+      },
+      { new: true, runValidators: true },
+    );
+  }
+
+  async findOpenAlertsByDevice(deviceId: string) {
+    return AlertModel.find({ deviceId, status: { $in: ['open', 'acknowledged'] } });
+  }
+
+  async autoResolve(id: string) {
+    return AlertModel.findByIdAndUpdate(
+      id,
+      {
+        status: 'resolved',
+        resolvedAt: new Date(),
+        resolvedBy: 'system-auto',
+        resolutionNote: 'Tự động đóng: chỉ số đã trở về bình thường',
       },
       { new: true, runValidators: true },
     );

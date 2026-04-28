@@ -28,6 +28,8 @@ export type UpdateAlertInput = {
   acknowledgedBy?: string;
   acknowledgedAt?: Date;
   resolvedAt?: Date;
+  resolvedBy?: string;
+  resolutionNote?: string;
 };
 
 @Injectable()
@@ -185,8 +187,14 @@ export class AlertService {
 
     if (status === 'resolved') {
       payload.resolvedAt = updateData.resolvedAt || new Date();
+      payload.resolvedBy = updateData.resolvedBy;
+      payload.resolutionNote = updateData.resolutionNote;
     }
 
     return payload;
+  }
+
+  async getAlertHistory(days: number = 7) {
+    return this.alertRepository.alertHistory(days);
   }
 }

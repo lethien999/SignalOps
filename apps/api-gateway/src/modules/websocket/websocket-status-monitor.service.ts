@@ -14,19 +14,26 @@ type QueueCounts = {
 
 @Injectable()
 export class WebSocketStatusMonitorService implements OnModuleInit, OnModuleDestroy {
-  private redis: Redis;
-  private queue: Queue;
+  private redis?: Redis;
+  private queue?: Queue;
   private timer: NodeJS.Timeout | null = null;
   private previousCompleted = 0;
   private previousEmitAt = Date.now();
+  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(private readonly statusGateway: StatusGateway) {}
 
   async onModuleInit() {
+    if (!this.redisEnabled) {
+      Logger.info('WebSocket status monitor disabled for local development');
+      return;
+    }
+
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       maxRetriesPerRequest: null,
+      lazyConnect: true,
     });
 
     this.redis.on('error', (error: unknown) => {
@@ -66,6 +73,10 @@ export class WebSocketStatusMonitorService implements OnModuleInit, OnModuleDest
 
   private async broadcastStatus(): Promise<void> {
     try {
+      if (!this.queue) {
+        return;
+      }
+
       const counts = await this.queue.getJobCounts(
         'waiting',
         'active',

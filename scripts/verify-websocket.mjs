@@ -98,7 +98,7 @@ function disconnectAll(sockets) {
 }
 
 async function main() {
-  console.log('Starting Phase 5 WebSocket verification...\n');
+  console.log('Starting WebSocket verification...\n');
 
   const sockets = [];
 
@@ -109,7 +109,7 @@ async function main() {
     const statusSocket = await connectSocket('/status');
     sockets.push(alertsSocket, eventsSocketA, eventsSocketB, statusSocket);
 
-    const deviceId = `verify-phase5-${Date.now()}`;
+    const deviceId = `verify-websocket-${Date.now()}`;
 
     const waitAlertNew = waitForEvent(
       alertsSocket,
@@ -167,7 +167,7 @@ async function main() {
 
     const { response: ackRes } = await requestJson(`/api/alerts/${targetAlert._id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-phase5-script' }),
+      body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-websocket-script' }),
     });
     assert(ackRes.status === 200, `PATCH acknowledged expected 200, got ${ackRes.status}`);
 
@@ -185,9 +185,9 @@ async function main() {
     await waitForEvent(statusSocket, 'worker:stats');
     console.log('✓ Verified queue:depth and worker:stats periodic emissions');
 
-    console.log('\nVERIFY_PHASE5_OK WebSocket namespaces and emissions working');
+    console.log('\nVERIFY_WEBSOCKET_OK namespaces and emissions working');
   } catch (error) {
-    console.error(`VERIFY_PHASE5_FAILED ${error.message}`);
+    console.error(`VERIFY_WEBSOCKET_FAILED ${error.message}`);
     process.exit(1);
   } finally {
     disconnectAll(sockets);

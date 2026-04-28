@@ -26,7 +26,9 @@ type AlertCreatedMessage = {
 
 @Injectable()
 export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDestroy {
-  private pubSubRedis: Redis;
+  private pubSubRedis?: Redis;
+  private initialized = false;
+  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(
     private readonly eventsGateway: EventsGateway,
@@ -34,11 +36,17 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
   ) {}
 
   async onModuleInit() {
+    if (!this.redisEnabled) {
+      Logger.info('WebSocket Pub/Sub listener disabled for local development');
+      return;
+    }
+
     try {
       // Create a separate Redis connection for Pub/Sub (cannot reuse regular connections)
       this.pubSubRedis = new Redis({
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        lazyConnect: true,
       });
 
       this.pubSubRedis.on('message', (channel: string, message: string) => {
@@ -51,17 +59,20 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
 
       // Subscribe to channels
       await this.pubSubRedis.subscribe('events:processed', 'alerts:created');
+      this.initialized = true;
       Logger.info('WebSocket Pub/Sub listener initialized and subscribed to channels', {
         channels: 'events:processed,alerts:created',
       });
     } catch (error) {
-      Logger.error('Failed to initialize WebSocket Pub/Sub listener', error);
-      throw error;
+      this.initialized = false;
+      Logger.warn('WebSocket Pub/Sub listener disabled because Redis is unavailable', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
   async onModuleDestroy() {
-    if (this.pubSubRedis) {
+    if (this.pubSubRedis && this.initialized) {
       await this.pubSubRedis.unsubscribe();
       await this.pubSubRedis.quit();
       Logger.info('WebSocket Pub/Sub listener closed');
