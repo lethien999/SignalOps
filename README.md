@@ -216,11 +216,9 @@ SignalOps/
 
 ## Quy ước Git
 
-- Mỗi tính năng phải nằm trên một branch riêng
-- Branch mới luôn được tách từ nhánh ổn định như `main` hoặc `develop`
-- Không commit trực tiếp lên `main`
-- Mỗi commit chỉ nên chứa một chức năng hoặc một thay đổi nhỏ, có ý nghĩa rõ ràng
-- Tên branch và commit phải mô tả đúng mục đích, tránh tên chung chung như `fix bug` hay `update code`
+- Quy ước chi tiết: [docs/GIT_BRANCHING_CONVENTION.md](docs/GIT_BRANCHING_CONVENTION.md)
+- Tóm tắt: mỗi feature/fix/hotfix phải có branch riêng, branch mới tách từ nhánh ổn định, và không commit trực tiếp lên `main`
+- Commit cần rõ nghĩa theo kiểu `type(scope): summary`, tránh message chung chung
 
 ---
 

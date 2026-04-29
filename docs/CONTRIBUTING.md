@@ -2,18 +2,13 @@
 
 ## Nhánh (Branching)
 
-- Mỗi tính năng phải có 1 nhánh riêng
-- Tên nhánh nên rõ mục đích, ví dụ: `feature/api-key-guard`, `fix/dashboard-url`, `chore/cleanup-docs`
-- Luôn tách nhánh từ nhánh ổn định như `main` hoặc `develop`
-- Không commit trực tiếp lên `main`
-- Chỉ merge vào `main` khi nhánh đó đã sẵn sàng deploy
+- Xem quy ước chi tiết tại [GIT_BRANCHING_CONVENTION.md](GIT_BRANCHING_CONVENTION.md)
+- Tóm tắt: mỗi tính năng phải có 1 branch riêng, branch mới tách từ `main` hoặc `develop`, và không commit trực tiếp lên `main`
 
 ## Quy tắc commit
 
-- Mỗi commit nên bám 1 chức năng hoặc 1 thay đổi nhỏ, tránh gom nhiều feature vào cùng một commit
-- Tên commit phải mô tả rõ việc đã làm, ví dụ: `feat: add api key guard for events`
-- Tránh message mơ hồ như `fix bug`, `update code`, `cleanup`
-- Nếu một feature lớn, hãy chia thành nhiều commit logic theo từng bước triển khai
+- Xem quy ước chi tiết tại [GIT_BRANCHING_CONVENTION.md](GIT_BRANCHING_CONVENTION.md)
+- Tóm tắt: mỗi commit nên bám một chức năng hoặc một thay đổi nhỏ, có message rõ nghĩa theo Conventional Commits
 - Giữ commit sạch, không kèm file môi trường local hoặc cấu hình editor
 
 ## Thiết lập
