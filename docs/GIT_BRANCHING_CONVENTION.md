@@ -256,16 +256,10 @@ Bảng ánh xạ chi tiết giữa commit và branch đã được loại bỏ k
 
 ## Quy Tắc Khi Tách Commit Vào Branch
 
-- Không đẩy nhiều branch logic vào cùng một branch dài hạn
-- Branch phải khớp một mục tiêu rõ ràng, không dùng branch kiểu "misc" hoặc "temp"
-- Commit trong một branch phải theo thứ tự: nền tảng → chức năng → test → dọn dẹp
-- Nếu commit liên quan tới nhiều subsystem, ưu tiên tách ra branch hẹp hơn trước khi merge
-- Khi review, chỉ review một branch một mục tiêu; nếu có hai mục tiêu, tách branch
 
 ## Luồng làm việc chuẩn
-
-1. Tạo branch từ `main` hoặc `develop`
 2. Làm đúng một feature hoặc một fix trên branch đó
+## Ghi chú về ánh xạ lịch sử
 3. Commit theo từng bước nhỏ, rõ nghĩa
 4. Push branch lên remote
 5. Tạo pull request để review và merge
