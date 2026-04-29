@@ -250,39 +250,9 @@ Tài liệu này định nghĩa quy ước làm việc theo branch cho repo Sign
 **Mục tiêu**: tạo một nhánh ngắn hạn cho đóng gói và chốt phát hành.
 
 ## Ánh Xạ Commit Theo Nhánh
+## Ghi chú về ánh xạ lịch sử
 
-Nếu chia lại lịch sử logic cho repo này từ đầu, nên gom commit theo thứ tự sau:
-
-| Branch | Commit sequence |
-|--------|-----------------|
-| `docs/project-governance` | `docs(contributing)`, `docs(git)`, `docs(readme)` |
-| `chore/repo-cleanup` | `refactor(infrastructure)`, `docs(readme)`, `docs(remove reports)` |
-| `fix/local-runtime-config` | `fix(dashboard)`, `fix(mongodb)`, `fix(api-gateway)` |
-| `feature/api-gateway-security` | `feat(api-gateway)`, `feat(api-gateway)`, `test(api-gateway)` |
-| `feature/worker-processing` | `feat(worker)`, `feat(worker)`, `refactor(worker)`, `test(worker)` |
-| `feature/dashboard-ui` | `feat(dashboard)`, `feat(dashboard)`, `fix(dashboard)` |
-| `feature/observability` | `feat(monitoring)`, `chore(ops)`, `docs(operations)` |
-| `chore/ci-quality-gates` | `ci(jenkins)`, `ci(jenkins)`, `chore(ci)` |
-| `test/api-gateway-coverage` | `test(api-gateway)`, `test(api-gateway)`, `test(api-gateway)` |
-
-## GitHub Branch Ref Hiện Tại
-
-Bảng dưới đây dùng để tạo branch thật trên GitHub theo đúng mapping đã chuẩn hóa. Một vài branch hiện tại cùng trỏ về một commit tip vì lịch sử đã được triển khai theo dạng linear; điều này vẫn hợp lệ vì mục tiêu là có ref rõ ràng theo từng nhóm công việc.
-
-| Branch | Commit tip hiện tại | Ghi chú |
-|--------|---------------------|---------|
-| `docs/project-governance` | `10efc44` | Bộ tài liệu quy ước Git + branch matrix |
-| `chore/repo-cleanup` | `8594659` | Xóa event-broker và dọn reference |
-| `fix/local-runtime-config` | `0e5413d` | Runtime/dev config, env và Docker compose |
-| `feature/api-gateway-security` | `0e5413d` | Guards, env validation, Swagger security |
-| `feature/worker-processing` | `0e5413d` | Worker logic, tests, shutdown, queue handling |
-| `feature/dashboard-ui` | `3f3512d` | Dashboard UI implementation |
-| `feature/observability` | `0e5413d` | Monitoring stack và backup script |
-| `chore/ci-quality-gates` | `0e5413d` | Jenkins, verify scripts, quality gates |
-| `test/api-gateway-coverage` | `0e5413d` | Placeholder branch cho coverage mở rộng API Gateway |
-| `release/v1-0-0` | `10efc44` | Branch phát hành sẽ cắt khi chốt release |
-
-> Ghi chú: nếu sau này tách lịch sử theo từng branch thật sự, bảng này sẽ được cập nhật để mỗi branch trỏ về commit tip riêng đúng theo feature branch flow.
+Bảng ánh xạ chi tiết giữa commit và branch đã được loại bỏ khỏi tài liệu công khai nhằm giữ lịch sử nội bộ riêng tư. Tài liệu này vẫn duy trì quy ước đặt tên branch, quy tắc commit và luồng làm việc; nếu cần tái cấu trúc lịch sử hoặc ánh xạ chi tiết cho mục đích nội bộ, hãy liên hệ với quản trị viên kho để được hỗ trợ.
 
 ## Quy Tắc Khi Tách Commit Vào Branch
 
