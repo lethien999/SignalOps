@@ -265,6 +265,25 @@ Nếu chia lại lịch sử logic cho repo này từ đầu, nên gom commit th
 | `chore/ci-quality-gates` | `ci(jenkins)`, `ci(jenkins)`, `chore(ci)` |
 | `test/api-gateway-coverage` | `test(api-gateway)`, `test(api-gateway)`, `test(api-gateway)` |
 
+## GitHub Branch Ref Hiện Tại
+
+Bảng dưới đây dùng để tạo branch thật trên GitHub theo đúng mapping đã chuẩn hóa. Một vài branch hiện tại cùng trỏ về một commit tip vì lịch sử đã được triển khai theo dạng linear; điều này vẫn hợp lệ vì mục tiêu là có ref rõ ràng theo từng nhóm công việc.
+
+| Branch | Commit tip hiện tại | Ghi chú |
+|--------|---------------------|---------|
+| `docs/project-governance` | `8c17474` | Bộ tài liệu quy ước Git + branch matrix |
+| `chore/repo-cleanup` | `5a89ee9` | Xóa event-broker và dọn reference |
+| `fix/local-runtime-config` | `0e5413d` | Runtime/dev config, env và Docker compose |
+| `feature/api-gateway-security` | `0e5413d` | Guards, env validation, Swagger security |
+| `feature/worker-processing` | `0e5413d` | Worker logic, tests, shutdown, queue handling |
+| `feature/dashboard-ui` | `3f3512d` | Dashboard UI implementation |
+| `feature/observability` | `0e5413d` | Monitoring stack và backup script |
+| `chore/ci-quality-gates` | `0e5413d` | Jenkins, verify scripts, quality gates |
+| `test/api-gateway-coverage` | `0e5413d` | Placeholder branch cho coverage mở rộng API Gateway |
+| `release/v1-0-0` | `8c17474` | Branch phát hành sẽ cắt khi chốt release |
+
+> Ghi chú: nếu sau này tách lịch sử theo từng branch thật sự, bảng này sẽ được cập nhật để mỗi branch trỏ về commit tip riêng đúng theo feature branch flow.
+
 ## Quy Tắc Khi Tách Commit Vào Branch
 
 - Không đẩy nhiều branch logic vào cùng một branch dài hạn
