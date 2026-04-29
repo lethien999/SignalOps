@@ -2,9 +2,19 @@
 
 ## Nhánh (Branching)
 
-- Làm việc trên nhánh feature riêng
-- Giữ commit gọn và tập trung
-- Không commit file môi trường local hoặc cài đặt editor
+- Mỗi tính năng phải có 1 nhánh riêng
+- Tên nhánh nên rõ mục đích, ví dụ: `feature/api-key-guard`, `fix/dashboard-url`, `chore/cleanup-docs`
+- Luôn tách nhánh từ nhánh ổn định như `main` hoặc `develop`
+- Không commit trực tiếp lên `main`
+- Chỉ merge vào `main` khi nhánh đó đã sẵn sàng deploy
+
+## Quy tắc commit
+
+- Mỗi commit nên bám 1 chức năng hoặc 1 thay đổi nhỏ, tránh gom nhiều feature vào cùng một commit
+- Tên commit phải mô tả rõ việc đã làm, ví dụ: `feat: add api key guard for events`
+- Tránh message mơ hồ như `fix bug`, `update code`, `cleanup`
+- Nếu một feature lớn, hãy chia thành nhiều commit logic theo từng bước triển khai
+- Giữ commit sạch, không kèm file môi trường local hoặc cấu hình editor
 
 ## Thiết lập
 
@@ -34,4 +44,5 @@
 
 - Bao gồm tóm tắt ngắn về thay đổi
 - Nêu các bước xác minh đã thực hiện
+- Ghi rõ branch nguồn, branch đích, và tính năng tương ứng
 - Ghi chú các mục chủ ý để lại cho sau

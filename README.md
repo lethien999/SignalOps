@@ -44,11 +44,9 @@ Thiết bị / Simulator
        │
        ▼
   API Gateway ──── WebSocket ────▶ Dashboard (Next.js)
-       │
-  Event Broker
-       │
-  Redis (BullMQ)
-       │
+    │
+   Redis (BullMQ)
+    │
     Worker ──────▶ MongoDB
 ```
 
@@ -56,7 +54,7 @@ Thiết bị / Simulator
 |------|--------|-----------|
 | 1 | Thiết bị gửi dữ liệu: latency, packet loss, signal strength, vị trí | Simulator |
 | 2 | API Gateway nhận và xác thực dữ liệu đầu vào | API Gateway |
-| 3 | Event Broker đẩy vào hàng đợi Redis (xử lý bất đồng bộ) | Event Broker |
+| 3 | API Gateway đẩy vào hàng đợi Redis (xử lý bất đồng bộ) | API Gateway |
 | 4 | Worker lấy từ hàng đợi, áp dụng quy tắc phát hiện bất thường | Worker Service |
 | 5 | Nếu vượt ngưỡng → tạo cảnh báo, lưu vào MongoDB | Worker Service |
 | 6 | Gửi thông báo realtime qua WebSocket | WebSocket |
@@ -69,7 +67,6 @@ Thiết bị / Simulator
 | Dịch vụ | Vai trò | Cổng |
 |---------|---------|------|
 | **API Gateway** | Cổng tiếp nhận REST API, Swagger docs, WebSocket server | `:3000` |
-| **Event Broker** | Xác thực sự kiện, làm giàu dữ liệu, đẩy hàng đợi | — |
 | **Worker Service** | Xử lý nền, phát hiện bất thường, tạo cảnh báo | — |
 | **Simulator** | Tạo dữ liệu telemetry mô phỏng từ thiết bị ảo | — |
 | **Dashboard** | Giao diện Next.js: bản đồ, cảnh báo, biểu đồ | `:3001` |
@@ -216,6 +213,14 @@ SignalOps/
 ├── Jenkinsfile              # CI/CD pipeline
 └── docs/                    # Tài liệu kiến trúc, API, triển khai
 ```
+
+## Quy ước Git
+
+- Mỗi tính năng phải nằm trên một branch riêng
+- Branch mới luôn được tách từ nhánh ổn định như `main` hoặc `develop`
+- Không commit trực tiếp lên `main`
+- Mỗi commit chỉ nên chứa một chức năng hoặc một thay đổi nhỏ, có ý nghĩa rõ ràng
+- Tên branch và commit phải mô tả đúng mục đích, tránh tên chung chung như `fix bug` hay `update code`
 
 ---
 
