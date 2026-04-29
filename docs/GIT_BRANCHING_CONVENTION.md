@@ -271,8 +271,8 @@ Bảng dưới đây dùng để tạo branch thật trên GitHub theo đúng ma
 
 | Branch | Commit tip hiện tại | Ghi chú |
 |--------|---------------------|---------|
-| `docs/project-governance` | `8c17474` | Bộ tài liệu quy ước Git + branch matrix |
-| `chore/repo-cleanup` | `5a89ee9` | Xóa event-broker và dọn reference |
+| `docs/project-governance` | `10efc44` | Bộ tài liệu quy ước Git + branch matrix |
+| `chore/repo-cleanup` | `8594659` | Xóa event-broker và dọn reference |
 | `fix/local-runtime-config` | `0e5413d` | Runtime/dev config, env và Docker compose |
 | `feature/api-gateway-security` | `0e5413d` | Guards, env validation, Swagger security |
 | `feature/worker-processing` | `0e5413d` | Worker logic, tests, shutdown, queue handling |
@@ -280,7 +280,7 @@ Bảng dưới đây dùng để tạo branch thật trên GitHub theo đúng ma
 | `feature/observability` | `0e5413d` | Monitoring stack và backup script |
 | `chore/ci-quality-gates` | `0e5413d` | Jenkins, verify scripts, quality gates |
 | `test/api-gateway-coverage` | `0e5413d` | Placeholder branch cho coverage mở rộng API Gateway |
-| `release/v1-0-0` | `8c17474` | Branch phát hành sẽ cắt khi chốt release |
+| `release/v1-0-0` | `10efc44` | Branch phát hành sẽ cắt khi chốt release |
 
 > Ghi chú: nếu sau này tách lịch sử theo từng branch thật sự, bảng này sẽ được cập nhật để mỗi branch trỏ về commit tip riêng đúng theo feature branch flow.
 
