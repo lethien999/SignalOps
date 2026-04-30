@@ -1,0 +1,7 @@
+services:
+  mongodb:
+    command: mongod --bind_ip_all --auth
+    ports: !reset []
+
+  redis:
+    ports: !reset []

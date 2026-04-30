@@ -19,7 +19,7 @@ const ENV_CHECKS: EnvCheck[] = [
   { key: 'REDIS_ENABLED', required: false, default: 'false', description: 'Bật/tắt Redis' },
   { key: 'REDIS_HOST', required: false, default: 'localhost', description: 'Redis host' },
   { key: 'REDIS_PORT', required: false, default: '6379', description: 'Redis port' },
-  { key: 'CORS_ORIGIN', required: false, default: '*', description: 'CORS origins (phân cách bằng dấu phẩy)' },
+  { key: 'CORS_ORIGIN', required: false, default: 'http://localhost:3001', description: 'CORS origins (phân cách bằng dấu phẩy)' },
   { key: 'WEBSOCKET_AUTH_TOKEN', required: false, description: 'Token xác thực WebSocket' },
   { key: 'RATE_LIMIT_MAX', required: false, default: '100', description: 'Giới hạn request/phút' },
 ];

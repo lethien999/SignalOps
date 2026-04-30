@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, Clock, ShieldAlert, RefreshCw } from "lucide-react";
 import { AlertTable } from "@/components/AlertTable";
 import { AlertDetailModal } from "@/components/AlertDetailModal";
@@ -19,7 +19,7 @@ export default function AlertsPage() {
   const setAlerts = useAlertStore((s) => s.setAlerts);
   const selectAlert = useAlertStore((s) => s.selectAlert);
 
-  const loadAlerts = async (showSpinner = true) => {
+  const loadAlerts = useCallback(async (showSpinner = true) => {
     try {
       if (showSpinner) setLoading(true);
       setRefreshing(true);
@@ -32,9 +32,9 @@ export default function AlertsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [setAlerts]);
 
-  useEffect(() => { loadAlerts(); }, [setAlerts]);
+  useEffect(() => { void loadAlerts(); }, [loadAlerts]);
 
   const openAlerts = alerts.filter((a) => a.status === "open").length;
   const ackAlerts = alerts.filter((a) => a.status === "acknowledged").length;

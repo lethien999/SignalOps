@@ -8,9 +8,15 @@ import {
   useDeviceStore,
   useSystemStore,
 } from '@/stores';
-import type { Alert, Event } from '@/types';
+import type { Alert, DeviceStatus, Event } from '@/types';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+
+type WorkerStatsPayload = {
+  processing: number;
+  completed: number;
+  failed: number;
+};
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
@@ -65,9 +71,9 @@ export function useSocket() {
         addEvent(data);
       });
 
-      socketRef.current.on('device:status:changed', (data: { deviceId: string; status: string }) => {
+      socketRef.current.on('device:status:changed', (data: { deviceId: string; status: DeviceStatus }) => {
         console.log('Received device:status:changed', data);
-        updateDevice(data.deviceId, { status: data.status as any });
+        updateDevice(data.deviceId, { status: data.status });
       });
 
       socketRef.current.on('queue:depth', (data: { depth: number; timestamp: string }) => {
@@ -75,7 +81,7 @@ export function useSocket() {
         updateQueueDepth(data.depth);
       });
 
-      socketRef.current.on('worker:stats', (data: any) => {
+      socketRef.current.on('worker:stats', (data: WorkerStatsPayload) => {
         console.log('Received worker:stats', data);
         updateWorkerStats({
           processing: data.processing,

@@ -1,21 +1,25 @@
 # Hướng dẫn đóng góp SignalOps
 
-## Nhánh (Branching)
+## Nhánh và commit
 
-- Xem quy ước chi tiết tại [GIT_BRANCHING_CONVENTION.md](GIT_BRANCHING_CONVENTION.md)
-- Tóm tắt: mỗi tính năng phải có 1 branch riêng, branch mới tách từ `main` hoặc `develop`, và không commit trực tiếp lên `main`
-
-## Quy tắc commit
-
-- Xem quy ước chi tiết tại [GIT_BRANCHING_CONVENTION.md](GIT_BRANCHING_CONVENTION.md)
-- Tóm tắt: mỗi commit nên bám một chức năng hoặc một thay đổi nhỏ, có message rõ nghĩa theo Conventional Commits
+- Mỗi tính năng, sửa lỗi, hoặc thay đổi lớn phải có một branch riêng
+- Branch mới luôn tách từ `main` hoặc `develop`
+- Không commit trực tiếp lên `main`
+- Branch nên theo mẫu `<type>/<scope>-<short-description>`
+- Dùng Conventional Commits cho message, ví dụ: `feat(api): add api key guard`
 - Giữ commit sạch, không kèm file môi trường local hoặc cấu hình editor
+- Với thay đổi lớn, chia thành các commit nhỏ theo từng bước logic
 
 ## Thiết lập
 
 1. Cài đặt dependencies: `npm install`
 2. Sao chép `.env.example` thành `.env` và điền giá trị local
 3. Chạy `npm run build` trước khi mở PR
+
+### Chạy dev với Docker hot reload
+
+- Dùng cấu hình overlay: `docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.dev.yml up`
+- Dừng stack: `docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.dev.yml down`
 
 ## Quy tắc code
 

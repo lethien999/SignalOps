@@ -8,7 +8,7 @@ describe('AlertRepository', () => {
 
   it('creates alerts through the mongoose model save path', async () => {
     const savedAlert = { _id: 'alert-1', alertId: 'alert-1' };
-    const saveSpy = jest.spyOn(AlertModel.prototype, 'save').mockResolvedValue(savedAlert as any);
+    const saveSpy = jest.spyOn(AlertModel.prototype, 'save').mockResolvedValue(savedAlert as never);
 
     const repository = new AlertRepository();
     await expect(
@@ -31,7 +31,7 @@ describe('AlertRepository', () => {
 
   it('finds open duplicates using the expected query shape', async () => {
     const duplicate = { _id: 'alert-2' };
-    const findOneSpy = jest.spyOn(AlertModel, 'findOne').mockReturnValue(duplicate as any);
+    const findOneSpy = jest.spyOn(AlertModel, 'findOne').mockReturnValue(duplicate as never);
 
     const repository = new AlertRepository();
     await expect(repository.findOpenDuplicate('device-1', 'latency')).resolves.toBe(duplicate);
@@ -44,7 +44,7 @@ describe('AlertRepository', () => {
     jest.useFakeTimers().setSystemTime(now);
 
     const updateResult = { _id: 'alert-3' };
-    const updateSpy = jest.spyOn(AlertModel, 'findByIdAndUpdate').mockReturnValue(updateResult as any);
+    const updateSpy = jest.spyOn(AlertModel, 'findByIdAndUpdate').mockReturnValue(updateResult as never);
 
     const repository = new AlertRepository();
 
@@ -75,7 +75,7 @@ describe('AlertRepository', () => {
 
   it('finds alerts by id through the mongoose model', async () => {
     const alert = { _id: 'alert-4' };
-    const findByIdSpy = jest.spyOn(AlertModel, 'findById').mockReturnValue(alert as any);
+    const findByIdSpy = jest.spyOn(AlertModel, 'findById').mockReturnValue(alert as never);
 
     const repository = new AlertRepository();
     await expect(repository.findById('alert-4')).resolves.toBe(alert);

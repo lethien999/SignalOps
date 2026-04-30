@@ -1,0 +1,24 @@
+services:
+  api-gateway:
+    command: npm run dev -w api-gateway
+    volumes:
+      - ..:/app
+      - /app/node_modules
+
+  worker:
+    command: npm run dev -w worker-service
+    volumes:
+      - ..:/app
+      - /app/node_modules
+
+  simulator:
+    command: npm run dev -w simulator
+    volumes:
+      - ..:/app
+      - /app/node_modules
+
+  dashboard:
+    command: npm run dev -w dashboard
+    volumes:
+      - ..:/app
+      - /app/node_modules

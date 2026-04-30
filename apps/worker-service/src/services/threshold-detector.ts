@@ -4,6 +4,8 @@ export type DetectedAlert = {
   message: string;
 };
 
+export type AlertMetricType = 'latency' | 'packet_loss' | 'signal';
+
 type EventMetrics = {
   latency?: unknown;
   packetLoss?: unknown;
@@ -69,5 +71,32 @@ export class ThresholdDetector {
     }
 
     return alerts;
+  }
+
+  static isMetricNormal(
+    alertType: AlertMetricType,
+    metrics: EventMetrics | undefined,
+  ): boolean {
+    if (!metrics) {
+      return false;
+    }
+
+    const latencyThreshold = toFiniteNumber(process.env.THRESHOLD_LATENCY_MS) ?? 200;
+    const packetLossThreshold = toFiniteNumber(process.env.THRESHOLD_PACKET_LOSS_PERCENT) ?? 5;
+    const signalStrengthThreshold = toFiniteNumber(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) ?? -90;
+
+    const latency = toFiniteNumber(metrics.latency);
+    const packetLoss = toFiniteNumber(metrics.packetLoss);
+    const signalStrength = toFiniteNumber(metrics.signalStrength);
+
+    if (alertType === 'latency') {
+      return latency !== null && latency <= latencyThreshold;
+    }
+
+    if (alertType === 'packet_loss') {
+      return packetLoss !== null && packetLoss <= packetLossThreshold;
+    }
+
+    return signalStrength !== null && signalStrength >= signalStrengthThreshold;
   }
 }

@@ -32,6 +32,12 @@ export type UpdateAlertInput = {
   resolutionNote?: string;
 };
 
+export type BatchUpdateResult = {
+  success: number;
+  failed: number;
+  errors: string[];
+};
+
 @Injectable()
 export class AlertService {
   constructor(
@@ -196,5 +202,40 @@ export class AlertService {
 
   async getAlertHistory(days: number = 7) {
     return this.alertRepository.alertHistory(days);
+  }
+
+  async batchAcknowledge(ids: string[], acknowledgedBy?: string): Promise<BatchUpdateResult> {
+    return this.batchUpdate(ids, {
+      status: 'acknowledged',
+      acknowledgedBy,
+    });
+  }
+
+  async batchResolve(ids: string[], resolvedBy?: string, resolutionNote?: string): Promise<BatchUpdateResult> {
+    return this.batchUpdate(ids, {
+      status: 'resolved',
+      resolvedBy,
+      resolutionNote,
+    });
+  }
+
+  private async batchUpdate(ids: string[], input: UpdateAlertInput): Promise<BatchUpdateResult> {
+    const results: BatchUpdateResult = {
+      success: 0,
+      failed: 0,
+      errors: [],
+    };
+
+    for (const id of ids || []) {
+      try {
+        await this.updateAlert(id, input);
+        results.success += 1;
+      } catch (error) {
+        results.failed += 1;
+        results.errors.push(`${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    return results;
   }
 }

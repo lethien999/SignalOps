@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 const baseUrl = process.env.SIGNALOPS_API_BASE_URL || 'http://localhost:3000';
 const timeoutMs = 12000;
 const wsAuthToken = process.env.WEBSOCKET_AUTH_TOKEN;
+const apiKey = process.env.SIGNALOPS_API_KEY || process.env.API_KEY;
 
 function assert(condition, message) {
   if (!condition) {
@@ -23,6 +24,7 @@ function requestJson(path, init = {}) {
   return fetch(`${baseUrl}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(apiKey ? { 'x-api-key': apiKey } : {}),
       ...(init.headers || {}),
     },
     ...init,

@@ -42,6 +42,9 @@ export class Event extends Document {
 
   @Prop()
   alertId?: string;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);

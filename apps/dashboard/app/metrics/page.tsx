@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import {
-  Activity, TrendingUp, BarChart3, Cpu, Wifi, AlertTriangle,
+  Activity, TrendingUp, BarChart3, Cpu, Wifi,
 } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart,
-  ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { MetricCard } from "@/components/MetricCard";
 import { useEventStore, useSystemStore, useDeviceStore } from "@/stores";

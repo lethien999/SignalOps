@@ -5,7 +5,8 @@ import {
   Settings as SettingsIcon, Server, Wifi, Bell, Shield, Activity,
   CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send,
 } from "lucide-react";
-import { fetchHealth } from "@/lib/api";
+import { fetchDlqFailedJobs, fetchHealth } from "@/lib/api";
+import type { DlqJob } from "@/types";
 
 function InfoRow({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" | "error" }) {
   return (
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [health, setHealth] = useState<{ status: string; uptime: number } | null>(null);
   const [healthError, setHealthError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [dlqJobs, setDlqJobs] = useState<DlqJob[]>([]);
+  const [dlqError, setDlqError] = useState(false);
 
   // Test event
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -45,7 +48,21 @@ export default function SettingsPage() {
       .finally(() => setRefreshing(false));
   };
 
-  useEffect(() => { loadHealth(); }, []);
+  const loadDlqJobs = () => {
+    fetchDlqFailedJobs(20)
+      .then((items) => {
+        setDlqJobs(items);
+        setDlqError(false);
+      })
+      .catch(() => {
+        setDlqError(true);
+      });
+  };
+
+  useEffect(() => {
+    loadHealth();
+    loadDlqJobs();
+  }, []);
 
   const formatUptime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
@@ -163,7 +180,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: "API Gateway", desc: "REST API & WebSocket", icon: Server, color: "text-blue-500" },
-                { name: "Event Broker", desc: "Điều phối sự kiện, đẩy hàng đợi", icon: Activity, color: "text-purple-500" },
+                { name: "Event Broker (API nội bộ)", desc: "Được tích hợp trong API Gateway", icon: Activity, color: "text-purple-500" },
                 { name: "Worker Service", desc: "Xử lý sự kiện, phát hiện bất thường", icon: Shield, color: "text-green-500" },
                 { name: "Simulator", desc: "Tạo dữ liệu mô phỏng", icon: Send, color: "text-orange-500" },
                 { name: "Dashboard", desc: "Giao diện giám sát (Next.js)", icon: Wifi, color: "text-cyan-500" },
@@ -205,6 +222,53 @@ export default function SettingsPage() {
             {testResult && (
               <div className={`mt-3 rounded-lg px-4 py-3 text-sm ${testResult.startsWith("✅") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
                 {testResult}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* DLQ monitor */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Dead Letter Queue (DLQ)</h2>
+            </div>
+            <button
+              onClick={loadDlqJobs}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Làm mới
+            </button>
+          </div>
+          <div className="px-6 py-4">
+            {dlqError && (
+              <p className="text-sm text-red-600">Không thể tải danh sách DLQ.</p>
+            )}
+            {!dlqError && dlqJobs.length === 0 && (
+              <p className="text-sm text-gray-600">Không có failed jobs trong DLQ.</p>
+            )}
+            {!dlqError && dlqJobs.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-gray-500">
+                      <th className="py-2 pr-4">Job ID</th>
+                      <th className="py-2 pr-4">Attempts</th>
+                      <th className="py-2 pr-4">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dlqJobs.map((job) => (
+                      <tr key={String(job.id)} className="border-b border-gray-100">
+                        <td className="py-2 pr-4 text-gray-800">{String(job.id)}</td>
+                        <td className="py-2 pr-4 text-gray-700">{job.attemptsMade ?? 0}</td>
+                        <td className="py-2 pr-4 text-gray-700">{job.failedReason || "N/A"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

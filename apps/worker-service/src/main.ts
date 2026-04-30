@@ -123,15 +123,8 @@ async function handleAutoResolve(
   let resolvedCount = 0;
   for (const alert of openAlerts) {
     // Check if the specific metric for this alert type is now normal
-    const alertType = alert.type as string;
-    const latencyThreshold = Number(process.env.THRESHOLD_LATENCY_MS) || 200;
-    const packetLossThreshold = Number(process.env.THRESHOLD_PACKET_LOSS_PERCENT) || 5;
-    const signalThreshold = Number(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) || -90;
-
-    let isNormal = false;
-    if (alertType === 'latency' && eventData.metrics.latency <= latencyThreshold) isNormal = true;
-    if (alertType === 'packet_loss' && eventData.metrics.packetLoss <= packetLossThreshold) isNormal = true;
-    if (alertType === 'signal' && eventData.metrics.signalStrength >= signalThreshold) isNormal = true;
+    const alertType = alert.type as 'latency' | 'packet_loss' | 'signal';
+    const isNormal = ThresholdDetector.isMetricNormal(alertType, eventData.metrics);
 
     if (isNormal) {
       await alertRepository.autoResolve(alert._id.toString());
@@ -241,9 +234,48 @@ function registerWorkerEvents(worker: Worker, dlq: Queue): void {
   });
 }
 
+function registerDlqMonitoring(dlq: Queue, pubSubRedis: Redis): NodeJS.Timeout {
+  const intervalMs = 5 * 60 * 1000;
+
+  return setInterval(() => {
+    void (async () => {
+      try {
+        const count = await dlq.count();
+
+        if (count > 0) {
+          await pubSubRedis.publish(
+            'dlq:status',
+            JSON.stringify({
+              queue: dlq.name,
+              failedJobs: count,
+              timestamp: new Date().toISOString(),
+            }),
+          );
+        }
+      } catch (error) {
+        Logger.error('Failed to publish DLQ status', error);
+      }
+    })();
+  }, intervalMs);
+}
+
 function registerShutdown(worker: Worker, queue: Queue, dlq: Queue, redis: Redis, pubSubRedis: Redis): void {
+  let dlqMonitorTimer: NodeJS.Timeout | null = null;
+
+  const attachMonitor = () => {
+    if (!dlqMonitorTimer) {
+      dlqMonitorTimer = registerDlqMonitoring(dlq, pubSubRedis);
+    }
+  };
+
+  attachMonitor();
+
   process.on('SIGTERM', async () => {
     Logger.info('SIGTERM received, shutting down worker...');
+    if (dlqMonitorTimer) {
+      clearInterval(dlqMonitorTimer);
+      dlqMonitorTimer = null;
+    }
     await worker.close();
     await queue.close();
     await dlq.close();

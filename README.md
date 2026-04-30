@@ -8,6 +8,8 @@
     <a href="docs/API.md">API</a>
     ·
     <a href="docs/DEPLOYMENT.md">Triển khai</a>
+    ·
+    <a href="docs/CONTRIBUTING.md">Đóng góp</a>
   </p>
 </p>
 
@@ -52,13 +54,66 @@ Thiết bị / Simulator
 
 | Bước | Mô tả | Thành phần |
 |------|--------|-----------|
-| 1 | Thiết bị gửi dữ liệu: latency, packet loss, signal strength, vị trí | Simulator |
-| 2 | API Gateway nhận và xác thực dữ liệu đầu vào | API Gateway |
-| 3 | API Gateway đẩy vào hàng đợi Redis (xử lý bất đồng bộ) | API Gateway |
-| 4 | Worker lấy từ hàng đợi, áp dụng quy tắc phát hiện bất thường | Worker Service |
-| 5 | Nếu vượt ngưỡng → tạo cảnh báo, lưu vào MongoDB | Worker Service |
-| 6 | Gửi thông báo realtime qua WebSocket | WebSocket |
-| 7 | Dashboard cập nhật ngay lập tức (không cần refresh) | Dashboard |
+| 1 | Thiết bị gửi telemetry | Simulator / thiết bị thật |
+| 2 | API Gateway nhận, validate, enqueue | API Gateway |
+| 3 | Worker xử lý và phát hiện bất thường | Worker Service |
+| 4 | Cảnh báo + realtime update | MongoDB / WebSocket / Dashboard |
+
+---
+
+## Quy trình xử lý cảnh báo
+
+Khi dashboard hiện sự cố, quy trình xử lý được tách theo từng vai trò như sau:
+
+### 1) Hệ thống
+
+```mermaid
+flowchart LR
+  A[Telemetry] --> B[API]
+  B --> C[Queue]
+  C --> D[Worker]
+  D --> E[Alert]
+  E --> F[Dashboard]
+```
+
+- 🛠️ **Hệ thống**: nhận dữ liệu từ thiết bị hoặc simulator, kiểm tra API key/rate limit, đẩy job vào Redis, rồi ghi event/alert vào MongoDB và bắn realtime lên dashboard
+
+### 2) Operator
+
+- 👨‍💻 **Operator**: mở chi tiết alert, xem thiết bị/vị trí/mức độ, bấm `Xác nhận cảnh báo` để ghi nhận đã tiếp nhận, điều tra nguyên nhân, rồi bấm `Đánh dấu đã xử lý` khi đã khắc phục xong
+
+### 3) NOC
+
+- 📟 **NOC**: theo dõi nhiều cảnh báo cùng lúc theo khu vực, ưu tiên theo severity, nhìn realtime để biết alert nào đã ack/resolved, và kiểm tra DLQ nếu job xử lý gặp lỗi
+
+### Ví dụ xử lý thực tế
+
+1. 09:10, trạm `bts-hcm-03` báo `signalStrength=-95 dBm` và `packetLoss=8.5%` sau khi mất backhaul.
+2. API Gateway nhận telemetry, kiểm tra `x-api-key`, rồi đẩy job vào Redis.
+3. Worker đọc job, vượt ngưỡng nên tạo alert `open` và lưu vào MongoDB.
+4. Dashboard/NOC thấy alert đỏ ngay lập tức qua WebSocket.
+5. Operator mở alert, bấm `Xác nhận cảnh báo`, nhập tên của mình để ghi `acknowledgedBy`.
+6. Kỹ thuật viên kiểm tra trạm, khôi phục đường truyền backhaul và xác nhận chỉ số đã ổn.
+7. Operator bấm `Đánh dấu đã xử lý`, thêm `resolutionNote`, alert chuyển sang `resolved` và các màn hình khác cập nhật realtime.
+
+```mermaid
+flowchart TD
+  A[Alert mới] --> B[Acknowledge]
+  B --> C[Điều tra]
+  C --> D{OK?}
+  D -- Chưa --> C
+  D -- Rồi --> E[Resolve]
+  E --> F[Realtime]
+```
+
+### Project hỗ trợ người xử lý như thế nào?
+
+- Hiển thị chi tiết cảnh báo: thiết bị, vị trí, mức độ, thời gian tạo, người xác nhận, người xử lý
+- Cho phép operator nhập tên khi `acknowledge` và khi `resolve`
+- Lưu lại `acknowledgedBy`, `acknowledgedAt`, `resolvedBy`, `resolvedAt`, `resolutionNote`
+- Chặn sai luồng trạng thái, ví dụ cảnh báo đã `resolved` thì không acknowledge lại được
+- Đồng bộ realtime qua WebSocket để các màn hình khác thấy thay đổi ngay
+- DLQ trong Settings giúp theo dõi các job lỗi nếu quá trình xử lý gặp vấn đề
 
 ---
 
@@ -82,6 +137,26 @@ Thiết bị / Simulator
 **Dữ liệu:** MongoDB 7.0 · Redis 7.2  
 **Frontend:** Next.js · React · Tailwind CSS · Leaflet · Recharts · Zustand  
 **Hạ tầng:** Docker Compose · Jenkins · Nginx
+
+## Phạm vi bản phát hành
+
+**Trong phạm vi hiện tại:**
+- Event ingestion pipeline: API Gateway → Redis queue → Worker
+- Threshold-based alert generation và realtime dashboard
+- REST API cho events, alerts, health, stats, devices
+- Local orchestration bằng Docker Compose
+
+**Ngoài phạm vi hiện tại:**
+- IAM/multi-tenant auth production
+- ML anomaly detection
+- CI/CD hardening đầy đủ cho production rollout
+
+**Tiêu chí thành công chính:**
+- Service khởi động ổn định trong compose
+- Event được nhận và xử lý bất đồng bộ
+- Alert sinh ra đúng ngưỡng
+- API truy vấn được dữ liệu events/alerts
+- Realtime client nhận cập nhật ngay
 
 ---
 
@@ -173,6 +248,25 @@ GET    /api/stats             Thống kê tổng hợp
 
 Tham khảo đầy đủ: [docs/API.md](docs/API.md)
 
+## Tích hợp dữ liệu thực tế
+
+Thiết bị hoặc hệ thống NMS chỉ cần gửi `HTTP POST /api/events` với JSON gồm `deviceId`, `location`, `metrics`.
+
+Ví dụ tối giản:
+
+```bash
+curl -X POST http://localhost:3000/api/events \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: <your-api-key>" \
+  -d '{
+    "deviceId": "bts-hcm-01",
+    "location": { "lat": 10.77, "lng": 106.70, "name": "Trạm Q1 HCM" },
+    "metrics": { "latency": 250, "packetLoss": 8, "signalStrength": -95 }
+  }'
+```
+
+Xem chi tiết format và adapter mẫu tại [docs/API.md](docs/API.md).
+
 ---
 
 ## WebSocket (Realtime)
@@ -216,7 +310,7 @@ SignalOps/
 
 ## Quy ước Git
 
-- Quy ước chi tiết: [docs/GIT_BRANCHING_CONVENTION.md](docs/GIT_BRANCHING_CONVENTION.md)
+- Quy ước chi tiết: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - Tóm tắt: mỗi feature/fix/hotfix phải có branch riêng, branch mới tách từ nhánh ổn định, và không commit trực tiếp lên `main`
 - Commit cần rõ nghĩa theo kiểu `type(scope): summary`, tránh message chung chung
 
@@ -306,11 +400,9 @@ curl -X POST http://localhost:3000/api/events \
 |-----------|----------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Thiết kế hệ thống và luồng dữ liệu |
 | [API.md](docs/API.md) | Tham khảo REST API & WebSocket |
-| [INTEGRATION.md](docs/INTEGRATION.md) | Hướng dẫn tích hợp dữ liệu thực tế |
 | [OPERATIONS.md](docs/OPERATIONS.md) | Quy trình vận hành và xử lý cảnh báo |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Hướng dẫn triển khai & rollback |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Quy trình phát triển & quy tắc |
-| [SPECIFICATION.md](docs/SPECIFICATION.md) | Đặc tả hệ thống đầy đủ |
 
 ---
 

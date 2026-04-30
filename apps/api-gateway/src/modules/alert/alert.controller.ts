@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { AlertService, UpdateAlertInput } from './alert.service';
+import { AlertService } from './alert.service';
 import { UpdateAlertDto } from './dto/update-alert.dto';
 import {
   ApiBadRequestResponse,
@@ -71,25 +71,11 @@ export class AlertController {
   async batchUpdateAlerts(
     @Body() body: { ids: string[]; status: 'acknowledged' | 'resolved'; acknowledgedBy?: string; resolvedBy?: string; resolutionNote?: string },
   ) {
-    const results = { success: 0, failed: 0, errors: [] as string[] };
-
-    for (const id of (body.ids || [])) {
-      try {
-        const input: UpdateAlertInput = {
-          status: body.status,
-          acknowledgedBy: body.acknowledgedBy,
-          resolvedBy: body.resolvedBy,
-          resolutionNote: body.resolutionNote,
-        };
-        await this.alertService.updateAlert(id, input);
-        results.success++;
-      } catch (err) {
-        results.failed++;
-        results.errors.push(`${id}: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
+    if (body.status === 'acknowledged') {
+      return this.alertService.batchAcknowledge(body.ids || [], body.acknowledgedBy);
     }
 
-    return results;
+    return this.alertService.batchResolve(body.ids || [], body.resolvedBy, body.resolutionNote);
   }
 
   @ApiOperation({ summary: 'Get alert history aggregated by day' })
@@ -120,7 +106,7 @@ export class AlertController {
     @Param('id') id: string,
     @Body() updateData: UpdateAlertDto,
   ) {
-    const normalizedInput: UpdateAlertInput = {
+    const normalizedInput = {
       status: updateData.status,
       acknowledgedBy: updateData.acknowledgedBy,
       acknowledgedAt: updateData.acknowledgedAt ? new Date(updateData.acknowledgedAt) : undefined,

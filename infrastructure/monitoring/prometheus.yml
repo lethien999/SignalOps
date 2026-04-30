@@ -4,20 +4,12 @@ global:
 
 scrape_configs:
   - job_name: 'signalops-api-gateway'
-    metrics_path: '/api/health'
+    metrics_path: '/api/metrics'
     scrape_interval: 10s
     static_configs:
-      - targets: ['api-gateway:3000']
+      - targets: ['signalops-api-gateway:3000']
         labels:
           service: 'api-gateway'
-
-  - job_name: 'signalops-worker'
-    metrics_path: '/metrics'
-    scrape_interval: 10s
-    static_configs:
-      - targets: ['worker-service:3002']
-        labels:
-          service: 'worker-service'
 
   - job_name: 'node-exporter'
     static_configs:
