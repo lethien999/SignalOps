@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
@@ -17,10 +18,12 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 
 @ApiTags('events')
 @Controller('api/events')
@@ -35,6 +38,8 @@ export class EventController {
     },
   })
   @ApiBadRequestResponse({ description: 'Invalid event payload' })
+  @ApiSecurity('api-key')
+  @UseGuards(ApiKeyGuard)
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   async createEvent(@Body() createEventDto: CreateEventDto) {

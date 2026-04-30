@@ -3,6 +3,7 @@
 ## Tổng quan
 
 SignalOps được thiết kế để chạy local với Docker Compose hoặc trong luồng CI/CD Jenkins.
+Lưu ý kiến trúc hiện tại: không triển khai service `event-broker` độc lập; logic broker được tích hợp trong `api-gateway` (`EventBrokerService`).
 
 ## Yêu cầu
 
@@ -21,6 +22,14 @@ SignalOps được thiết kế để chạy local với Docker Compose hoặc t
    - `http://localhost:3001`
    - `http://localhost:8080/nginx-health` (nếu bật Nginx)
 
+## Chế độ Production (không expose DB/Redis)
+
+- Production nên dùng internal Docker network, không bind MongoDB (`27017`) và Redis (`6379`) ra host.
+- Chạy với override file:
+   - `docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml up -d`
+   - `docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml down`
+- Đặt `CORS_ORIGIN` rõ ràng theo domain triển khai, không dùng wildcard.
+
 ## Docker Images
 
 - `infrastructure/Dockerfile.api` — API Gateway
@@ -28,6 +37,16 @@ SignalOps được thiết kế để chạy local với Docker Compose hoặc t
 - `infrastructure/Dockerfile.worker` — Worker Service
 - `infrastructure/Dockerfile.simulator` — Simulator
 - `infrastructure/Dockerfile.dashboard` — Dashboard
+
+## Cấu hình Docker Registry cho CI/CD
+
+- Jenkins sử dụng credentials id `docker-registry` (username/password).
+- Thiết lập biến `REGISTRY` trong Jenkinsfile (mặc định `ghcr.io/signalops`) theo tổ chức của bạn.
+- Pipeline `main` sẽ build và push images:
+   - `signalops-api-gateway`
+   - `signalops-worker-service`
+   - `signalops-simulator`
+   - `signalops-dashboard`
 
 ## Lưu ý cho Production
 

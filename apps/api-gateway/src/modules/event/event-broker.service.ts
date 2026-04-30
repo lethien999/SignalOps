@@ -31,6 +31,7 @@ function isRedisEnabled(): boolean {
 @Injectable()
 export class EventBrokerService {
   private queue?: Queue;
+  private dlqQueue?: Queue;
   private redis?: Redis;
   private readonly redisEnabled = isRedisEnabled();
 
@@ -47,6 +48,9 @@ export class EventBrokerService {
     });
 
     this.queue = new Queue(process.env.QUEUE_EVENT_PROCESSING || 'event-processing', {
+      connection: this.redis,
+    });
+    this.dlqQueue = new Queue(`${process.env.QUEUE_EVENT_PROCESSING || 'event-processing'}-dlq`, {
       connection: this.redis,
     });
   }
@@ -150,5 +154,24 @@ export class EventBrokerService {
     } catch {
       return false;
     }
+  }
+
+  async getFailedJobs(limit = 50): Promise<Array<Record<string, unknown>>> {
+    if (!this.redisEnabled || !this.dlqQueue) {
+      throw new Error('Redis integrations are disabled in local development');
+    }
+
+    const jobs = await this.dlqQueue.getJobs(['waiting', 'active', 'delayed', 'failed'], 0, Math.max(limit - 1, 0));
+
+    return jobs.map((job) => ({
+      id: job.id,
+      name: job.name,
+      attemptsMade: job.attemptsMade,
+      failedReason: job.failedReason,
+      data: job.data,
+      timestamp: job.timestamp,
+      processedOn: job.processedOn,
+      finishedOn: job.finishedOn,
+    }));
   }
 }

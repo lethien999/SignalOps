@@ -14,6 +14,10 @@
 
 Tạo sự kiện mới. API trả về `202 Accepted` — dữ liệu được xử lý bất đồng bộ qua hàng đợi.
 
+**Header bắt buộc (khi `API_KEY` được cấu hình):**
+
+- `x-api-key: <your-api-key>`
+
 **Request body:**
 
 ```json
@@ -22,6 +26,19 @@ Tạo sự kiện mới. API trả về `202 Accepted` — dữ liệu được 
   "location": { "lat": 10.77, "lng": 106.7, "name": "HCM-Tower-1" },
   "metrics": { "latency": 240, "packetLoss": 7, "signalStrength": -95 }
 }
+```
+
+**Ví dụ cURL:**
+
+```bash
+curl -X POST http://localhost:3000/api/events \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: <your-api-key>" \
+  -d '{
+    "deviceId": "device-01",
+    "location": { "lat": 10.77, "lng": 106.7, "name": "HCM-Tower-1" },
+    "metrics": { "latency": 240, "packetLoss": 7, "signalStrength": -95 }
+  }'
 ```
 
 ### `GET /api/events`

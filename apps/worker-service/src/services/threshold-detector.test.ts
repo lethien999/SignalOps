@@ -56,4 +56,35 @@ describe('ThresholdDetector', () => {
       }),
     ).toEqual([]);
   });
+
+  it('checks metric-normal state by alert type', () => {
+    const metrics = {
+      latency: 150,
+      packetLoss: 2,
+      signalStrength: -80,
+    };
+
+    expect(ThresholdDetector.isMetricNormal('latency', metrics)).toBe(true);
+    expect(ThresholdDetector.isMetricNormal('packet_loss', metrics)).toBe(true);
+    expect(ThresholdDetector.isMetricNormal('signal', metrics)).toBe(true);
+  });
+
+  it('returns false for abnormal or missing metrics in isMetricNormal', () => {
+    expect(
+      ThresholdDetector.isMetricNormal('latency', {
+        latency: 220,
+      }),
+    ).toBe(false);
+    expect(
+      ThresholdDetector.isMetricNormal('packet_loss', {
+        packetLoss: 8,
+      }),
+    ).toBe(false);
+    expect(
+      ThresholdDetector.isMetricNormal('signal', {
+        signalStrength: -100,
+      }),
+    ).toBe(false);
+    expect(ThresholdDetector.isMetricNormal('latency', undefined)).toBe(false);
+  });
 });

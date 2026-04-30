@@ -159,4 +159,17 @@ curl http://localhost:3000/api/health
 curl -X POST http://localhost:3000/api/events \
   -H "Content-Type: application/json" \
   -d '{"deviceId":"test","location":{"lat":10.77,"lng":106.70},"metrics":{"latency":250,"packetLoss":8,"signalStrength":-95}}'
+
+# Xem failed jobs trong Dead Letter Queue
+curl http://localhost:3000/api/dlq/failed-jobs?limit=20
 ```
+
+---
+
+## 7. Quy trình xử lý DLQ
+
+1. Kiểm tra tab DLQ trong trang Cài đặt Dashboard hoặc gọi API `/api/dlq/failed-jobs`.
+2. Xác định nguyên nhân theo trường `failedReason` (payload sai schema, lỗi DB, lỗi queue).
+3. Khắc phục nguyên nhân gốc (sửa producer payload, sửa cấu hình DB/Redis, tăng tài nguyên).
+4. Requeue thủ công nếu cần sau khi nguyên nhân đã được xử lý.
+5. Theo dõi sự kiện `queue:depth` trên namespace `/status` để phát hiện DLQ tăng bất thường.

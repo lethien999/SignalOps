@@ -8,6 +8,8 @@
     <a href="docs/API.md">API</a>
     ·
     <a href="docs/DEPLOYMENT.md">Triển khai</a>
+    ·
+    <a href="docs/CONTRIBUTING.md">Đóng góp</a>
   </p>
 </p>
 
@@ -82,6 +84,26 @@ Thiết bị / Simulator
 **Dữ liệu:** MongoDB 7.0 · Redis 7.2  
 **Frontend:** Next.js · React · Tailwind CSS · Leaflet · Recharts · Zustand  
 **Hạ tầng:** Docker Compose · Jenkins · Nginx
+
+## Phạm vi bản phát hành
+
+**Trong phạm vi hiện tại:**
+- Event ingestion pipeline: API Gateway → Redis queue → Worker
+- Threshold-based alert generation và realtime dashboard
+- REST API cho events, alerts, health, stats, devices
+- Local orchestration bằng Docker Compose
+
+**Ngoài phạm vi hiện tại:**
+- IAM/multi-tenant auth production
+- ML anomaly detection
+- CI/CD hardening đầy đủ cho production rollout
+
+**Tiêu chí thành công chính:**
+- Service khởi động ổn định trong compose
+- Event được nhận và xử lý bất đồng bộ
+- Alert sinh ra đúng ngưỡng
+- API truy vấn được dữ liệu events/alerts
+- Realtime client nhận cập nhật ngay
 
 ---
 
@@ -173,6 +195,25 @@ GET    /api/stats             Thống kê tổng hợp
 
 Tham khảo đầy đủ: [docs/API.md](docs/API.md)
 
+## Tích hợp dữ liệu thực tế
+
+Thiết bị hoặc hệ thống NMS chỉ cần gửi `HTTP POST /api/events` với JSON gồm `deviceId`, `location`, `metrics`.
+
+Ví dụ tối giản:
+
+```bash
+curl -X POST http://localhost:3000/api/events \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: <your-api-key>" \
+  -d '{
+    "deviceId": "bts-hcm-01",
+    "location": { "lat": 10.77, "lng": 106.70, "name": "Trạm Q1 HCM" },
+    "metrics": { "latency": 250, "packetLoss": 8, "signalStrength": -95 }
+  }'
+```
+
+Xem chi tiết format và adapter mẫu tại [docs/API.md](docs/API.md).
+
 ---
 
 ## WebSocket (Realtime)
@@ -216,7 +257,7 @@ SignalOps/
 
 ## Quy ước Git
 
-- Quy ước chi tiết: [docs/GIT_BRANCHING_CONVENTION.md](docs/GIT_BRANCHING_CONVENTION.md)
+- Quy ước chi tiết: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - Tóm tắt: mỗi feature/fix/hotfix phải có branch riêng, branch mới tách từ nhánh ổn định, và không commit trực tiếp lên `main`
 - Commit cần rõ nghĩa theo kiểu `type(scope): summary`, tránh message chung chung
 
@@ -306,11 +347,9 @@ curl -X POST http://localhost:3000/api/events \
 |-----------|----------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Thiết kế hệ thống và luồng dữ liệu |
 | [API.md](docs/API.md) | Tham khảo REST API & WebSocket |
-| [INTEGRATION.md](docs/INTEGRATION.md) | Hướng dẫn tích hợp dữ liệu thực tế |
 | [OPERATIONS.md](docs/OPERATIONS.md) | Quy trình vận hành và xử lý cảnh báo |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Hướng dẫn triển khai & rollback |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Quy trình phát triển & quy tắc |
-| [SPECIFICATION.md](docs/SPECIFICATION.md) | Đặc tả hệ thống đầy đủ |
 
 ---
 

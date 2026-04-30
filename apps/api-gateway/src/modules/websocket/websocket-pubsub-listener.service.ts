@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { Logger } from '../../common/logger';
 import { EventsGateway } from './events.gateway';
 import { AlertsGateway } from './alerts.gateway';
+import { StatusGateway } from './status.gateway';
 
 type EventProcessedMessage = {
   id: string;
@@ -24,6 +25,12 @@ type AlertCreatedMessage = {
   deviceId?: string;
 };
 
+type DlqStatusMessage = {
+  queue: string;
+  failedJobs: number;
+  timestamp: string;
+};
+
 @Injectable()
 export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDestroy {
   private pubSubRedis?: Redis;
@@ -33,6 +40,7 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
   constructor(
     private readonly eventsGateway: EventsGateway,
     private readonly alertsGateway: AlertsGateway,
+    private readonly statusGateway: StatusGateway,
   ) {}
 
   async onModuleInit() {
@@ -58,10 +66,10 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
       });
 
       // Subscribe to channels
-      await this.pubSubRedis.subscribe('events:processed', 'alerts:created');
+      await this.pubSubRedis.subscribe('events:processed', 'alerts:created', 'dlq:status');
       this.initialized = true;
       Logger.info('WebSocket Pub/Sub listener initialized and subscribed to channels', {
-        channels: 'events:processed,alerts:created',
+        channels: 'events:processed,alerts:created,dlq:status',
       });
     } catch (error) {
       this.initialized = false;
@@ -105,6 +113,16 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
       if (channel === 'alerts:created') {
         const payload = JSON.parse(message) as AlertCreatedMessage;
         this.alertsGateway.broadcastAlertNew(payload);
+        return;
+      }
+
+      if (channel === 'dlq:status') {
+        const payload = JSON.parse(message) as DlqStatusMessage;
+        this.statusGateway.broadcastQueueDepth({
+          queue: payload.queue,
+          failedJobs: payload.failedJobs,
+          timestamp: payload.timestamp,
+        });
       }
     } catch (error) {
       Logger.error(`Error handling message from channel ${channel}`, error);

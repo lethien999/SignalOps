@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { Logger } from '../logger';
+import { ApiKeyAdminService } from '../../modules/admin/api-key-admin.service';
 
 /**
  * API Key Guard — bảo vệ endpoint ingestion.
@@ -8,11 +9,10 @@ import { Logger } from '../logger';
  */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const apiKey = process.env.API_KEY;
+  constructor(private readonly apiKeyAdminService: ApiKeyAdminService) {}
 
-    // Không cấu hình API key → cho phép tất cả (dev mode)
-    if (!apiKey) return true;
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const envApiKey = process.env.API_KEY;
 
     const request = context.switchToHttp().getRequest();
 
@@ -21,16 +21,26 @@ export class ApiKeyGuard implements CanActivate {
 
     const providedKey = request.headers['x-api-key'];
 
-    if (!providedKey || providedKey !== apiKey) {
+    const hasStoredKeys = await this.apiKeyAdminService.hasActiveKeys();
+
+    // Không cấu hình API key và chưa có key trong DB → cho phép tất cả (dev mode)
+    if (!envApiKey && !hasStoredKeys) return true;
+
+    const isValidStoredKey = await this.apiKeyAdminService.validateApiKey(providedKey);
+    const isValidEnvKey = providedKey === envApiKey;
+
+    if (!providedKey || (!isValidStoredKey && !isValidEnvKey)) {
       Logger.warn('API key không hợp lệ hoặc thiếu', {
         ip: request.ip,
         path: request.path,
       });
       throw new HttpException(
-        { statusCode: HttpStatus.UNAUTHORIZED, message: 'API key không hợp lệ hoặc thiếu. Gửi header x-api-key.' },
-        HttpStatus.UNAUTHORIZED,
+        { statusCode: HttpStatus.FORBIDDEN, message: 'API key không hợp lệ hoặc thiếu. Gửi header x-api-key.' },
+        HttpStatus.FORBIDDEN,
       );
     }
+
+    await this.apiKeyAdminService.markUsed(providedKey).catch(() => undefined);
 
     return true;
   }

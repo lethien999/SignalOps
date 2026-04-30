@@ -15,7 +15,20 @@ const DEVICES = [
   { id: 'device-10', name: 'Hai Phong-Tower-2', lat: 20.8529, lng: 106.7275 },
 ];
 
-function generateMetrics(): { latency: number; packetLoss: number; signalStrength: number } {
+type Device = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+};
+
+type Metrics = {
+  latency: number;
+  packetLoss: number;
+  signalStrength: number;
+};
+
+function generateMetrics(): Metrics {
   // Generate realistic metrics with occasional anomalies
   const useAnomaly = Math.random() < 0.2; // 20% chance of anomaly
 
@@ -28,7 +41,7 @@ function generateMetrics(): { latency: number; packetLoss: number; signalStrengt
   };
 }
 
-async function sendEvent(device: any, metrics: any) {
+async function sendEvent(device: Device, metrics: Metrics) {
   try {
     const eventData = {
       deviceId: device.id,
@@ -53,8 +66,9 @@ async function sendEvent(device: any, metrics: any) {
       eventId: response.data.id,
       metrics,
     });
-  } catch (error: any) {
-    Logger.error(`Failed to send event for ${device.name}`, error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    Logger.error(`Failed to send event for ${device.name}`, message);
   }
 }
 

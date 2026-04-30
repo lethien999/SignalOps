@@ -74,3 +74,14 @@ export interface WebSocketMessage<T = unknown> {
   data: T;
   timestamp: string;
 }
+
+export interface DlqJob {
+  id: string;
+  name?: string;
+  failedReason?: string;
+  attemptsMade?: number;
+  timestamp?: number;
+  processedOn?: number;
+  finishedOn?: number;
+  data?: Record<string, unknown>;
+}

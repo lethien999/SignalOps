@@ -194,12 +194,12 @@ export function AlertDetailModal({ alert, onClose, onActionComplete }: AlertDeta
                 </p>
               )}
             </div>
-            {(alert as any).resolutionNote && (
+            {alert.resolutionNote && (
               <div className="rounded-xl border border-green-200 bg-green-50 p-4 md:col-span-2">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-green-700">
                   <FileText className="h-3.5 w-3.5" /> Ghi chú xử lý
                 </p>
-                <p className="mt-2 text-sm text-green-900">{(alert as any).resolutionNote}</p>
+                <p className="mt-2 text-sm text-green-900">{alert.resolutionNote}</p>
               </div>
             )}
           </div>
@@ -234,6 +234,16 @@ export function AlertDetailModal({ alert, onClose, onActionComplete }: AlertDeta
                 <RotateCcw className="h-4 w-4" />
                 Đánh dấu đã xử lý
               </button>
+            )}
+            {alert.status === "resolved" && (
+              <p className="w-full text-sm text-amber-700">
+                Cảnh báo này đã ở trạng thái đã xử lý, nên không thể xác nhận lại.
+              </p>
+            )}
+            {alert.status === "acknowledged" && (
+              <p className="w-full text-sm text-blue-700">
+                Cảnh báo đã được xác nhận, bạn có thể chuyển sang trạng thái đã xử lý nếu cần.
+              </p>
             )}
           </div>
 

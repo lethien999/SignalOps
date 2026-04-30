@@ -1,11 +1,11 @@
 export class Logger {
-  static info(message: string, data?: any) {
+  static info(message: string, data?: unknown) {
     console.log(
       JSON.stringify({
         timestamp: new Date().toISOString(),
         level: 'info',
         message,
-        ...(data && { data }),
+        ...(data !== undefined && { data }),
       }),
     );
   }

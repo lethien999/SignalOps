@@ -9,6 +9,18 @@ import { errorHandlingMiddleware } from './common/middleware/error-handling.midd
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { validateEnvironment } from './common/env-validator';
 
+function resolveCorsOrigins(): string[] {
+  const raw = process.env.CORS_ORIGIN;
+  if (!raw || raw.trim().length === 0) {
+    return ['http://localhost:3001'];
+  }
+
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}
+
 async function bootstrap() {
   // E5: Kiểm tra biến môi trường trước khi khởi động
   validateEnvironment();
@@ -32,7 +44,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    origin: resolveCorsOrigins(),
   });
 
   // Express-level fallback error middleware.
@@ -43,6 +55,24 @@ async function bootstrap() {
     .setTitle('SignalOps API')
     .setDescription('SignalOps API Gateway — Hệ thống giám sát mạng viễn thông')
     .setVersion('1.0.0')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-api-key',
+        description: 'API key for protected ingestion endpoints',
+      },
+      'api-key',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-admin-api-key',
+        description: 'Admin API key for managing stored api keys',
+      },
+      'admin-api-key',
+    )
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, swaggerDocument);

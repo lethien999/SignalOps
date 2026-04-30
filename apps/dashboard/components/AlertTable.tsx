@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronRight, Clock, AlertTriangle, AlertCircle, MapPin, Layers } from "lucide-react";
 import type { Alert } from "@/types";
 
@@ -142,7 +142,11 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
                   <button
                     onClick={() => {
                       const next = new Set(expandedGroups);
-                      isExpanded ? next.delete(location) : next.add(location);
+                      if (isExpanded) {
+                        next.delete(location);
+                      } else {
+                        next.add(location);
+                      }
                       setExpandedGroups(next);
                     }}
                     className="w-full flex items-center gap-3 px-6 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"

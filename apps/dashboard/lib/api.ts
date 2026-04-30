@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Alert, Event, SystemStats } from '@/types';
+import type { Alert, DlqJob, Event, SystemStats } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -8,6 +8,41 @@ const api = axios.create({
   timeout: 10000,
 });
 
+type AlertApiResponse = Alert & {
+  _id?: string;
+};
+
+function normalizeAlert(alert: AlertApiResponse): Alert {
+  return {
+    ...alert,
+    id: alert.id || alert._id || '',
+  };
+}
+
+function extractApiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data as { message?: string } | string | undefined;
+
+    if (typeof responseData === 'string' && responseData.trim().length > 0) {
+      return responseData;
+    }
+
+    if (responseData && typeof responseData === 'object' && typeof responseData.message === 'string' && responseData.message.trim().length > 0) {
+      return responseData.message;
+    }
+
+    if (typeof error.response?.statusText === 'string' && error.response.statusText.trim().length > 0) {
+      return error.response.statusText;
+    }
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export async function fetchAlerts(params?: {
   severity?: string;
   status?: string;
@@ -15,8 +50,8 @@ export async function fetchAlerts(params?: {
   limit?: number;
 }): Promise<Alert[]> {
   try {
-    const response = await api.get<{ data: Alert[] }>('/alerts', { params });
-    return response.data.data;
+    const response = await api.get<{ data: AlertApiResponse[] }>('/alerts', { params });
+    return response.data.data.map(normalizeAlert);
   } catch (error) {
     console.error('Failed to fetch alerts:', error);
     throw error;
@@ -43,14 +78,15 @@ export async function updateAlertStatus(
   extra?: Record<string, string>,
 ): Promise<Alert> {
   try {
-    const response = await api.patch<Alert>(`/alerts/${alertId}`, {
+    const response = await api.patch<AlertApiResponse>(`/alerts/${alertId}`, {
       status,
       ...extra,
     });
-    return response.data;
+    return normalizeAlert(response.data);
   } catch (error) {
-    console.error('Không thể cập nhật cảnh báo:', error);
-    throw error;
+    const message = extractApiErrorMessage(error, 'Không thể cập nhật cảnh báo');
+    console.error('Không thể cập nhật cảnh báo:', message);
+    throw new Error(message);
   }
 }
 
@@ -88,6 +124,31 @@ export async function batchUpdateAlerts(
     return response.data;
   } catch (error) {
     console.error('Không thể cập nhật hàng loạt:', error);
+    throw error;
+  }
+}
+
+function normalizeDlqJob(job: Record<string, unknown>): DlqJob {
+  return {
+    id: String(job.id || job['name'] || job['timestamp'] || ''),
+    name: typeof job.name === 'string' ? job.name : undefined,
+    failedReason: typeof job.failedReason === 'string' ? job.failedReason : undefined,
+    attemptsMade: typeof job.attemptsMade === 'number' ? job.attemptsMade : undefined,
+    timestamp: typeof job.timestamp === 'number' ? job.timestamp : undefined,
+    processedOn: typeof job.processedOn === 'number' ? job.processedOn : undefined,
+    finishedOn: typeof job.finishedOn === 'number' ? job.finishedOn : undefined,
+    data: job.data && typeof job.data === 'object' ? (job.data as Record<string, unknown>) : undefined,
+  };
+}
+
+export async function fetchDlqFailedJobs(limit = 20): Promise<DlqJob[]> {
+  try {
+    const response = await api.get<Array<Record<string, unknown>>>('/dlq/failed-jobs', {
+      params: { limit },
+    });
+    return response.data.map(normalizeDlqJob);
+  } catch (error) {
+    console.error('Failed to fetch DLQ jobs:', error);
     throw error;
   }
 }
