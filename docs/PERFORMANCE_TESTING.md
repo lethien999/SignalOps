@@ -1,17 +1,17 @@
-# SignalOps Performance Testing Guide
+# Hướng dẫn kiểm thử hiệu năng SignalOps
 
-This document covers the ready-to-use performance testing harnesses included in SignalOps. These tools are designed to verify system performance under load and can be run locally or in staging/production environments.
+Tài liệu này mô tả các bộ kiểm thử hiệu năng có sẵn trong SignalOps. Mục tiêu là xác minh hệ thống chịu tải tốt như thế nào trong môi trường local, staging và production.
 
 ---
 
-## Quick Start
+## Bắt Đầu Nhanh
 
-### Prerequisites
-- Node.js 18+ and npm installed
-- SignalOps services running (`docker-compose up`)
-- `.env` file configured with `API_KEY` for authentication
+### Điều kiện cần
+- Đã cài Node.js 18+ và npm
+- Các dịch vụ SignalOps đang chạy (`docker-compose up`)
+- File `.env` đã được cấu hình `API_KEY` để xác thực
 
-### Run All Tests
+### Chạy toàn bộ kiểm thử
 ```bash
 # Unit + integration tests
 npm run test:integration
@@ -28,49 +28,49 @@ npm run perf:soak
 
 ---
 
-## 1. HTTP Load Testing (`npm run perf:load`)
+## 1. Kiểm thử tải HTTP (`npm run perf:load`)
 
-Tests the HTTP API under concurrent load. Measures throughput, latency (avg and P95), and error rate.
+Bộ này kiểm thử HTTP API dưới tải đồng thời. Nó đo throughput, latency (avg và P95), và error rate.
 
-### Basic Usage
+### Cách dùng cơ bản
 ```bash
 npm run perf:load
 ```
 
-Default behavior:
-- Duration: 30 seconds
-- Concurrency: 10 concurrent workers
-- Target endpoint: `http://localhost:3000/api/events`
-- Output: JSON with metrics
+Hành vi mặc định:
+- Thời lượng: 30 giây
+- Concurrency: 10 worker đồng thời
+- Endpoint mục tiêu: `http://localhost:3000/api/events`
+- Output: JSON chứa metrics
 
-### Configuration (Environment Variables)
+### Cấu hình (biến môi trường)
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `PERF_TEST_TOTAL_REQUESTS` | 0 (unlimited) | Fixed request count. If set, overrides duration-based mode |
-| `PERF_TEST_CONCURRENCY` | 10 | Number of concurrent workers |
-| `PERF_TEST_DURATION_SECONDS` | 30 | How long to run (ignored if PERF_TEST_TOTAL_REQUESTS is set) |
-| `PERF_TEST_MAX_AVG_MS` | (none) | Assertion: fail if average latency exceeds this |
-| `PERF_TEST_MAX_P95_MS` | (none) | Assertion: fail if P95 latency exceeds this |
-| `PERF_TEST_MAX_ERROR_RATE` | (none) | Assertion: fail if error rate exceeds this (0.0-1.0) |
+| Biến | Mặc định | Mục đích |
+|------|----------|----------|
+| `PERF_TEST_TOTAL_REQUESTS` | 0 (không giới hạn) | Số request cố định. Nếu đặt giá trị này, chế độ theo thời lượng sẽ bị ghi đè |
+| `PERF_TEST_CONCURRENCY` | 10 | Số worker đồng thời |
+| `PERF_TEST_DURATION_SECONDS` | 30 | Thời gian chạy (bị bỏ qua nếu `PERF_TEST_TOTAL_REQUESTS` được đặt) |
+| `PERF_TEST_MAX_AVG_MS` | (không có) | Assertion: fail nếu latency trung bình vượt ngưỡng này |
+| `PERF_TEST_MAX_P95_MS` | (không có) | Assertion: fail nếu latency P95 vượt ngưỡng này |
+| `PERF_TEST_MAX_ERROR_RATE` | (không có) | Assertion: fail nếu error rate vượt ngưỡng này (0.0-1.0) |
 
-### Examples
+### Ví dụ
 
-**Probe Test (5 requests, 2 workers)**
+**Probe test (5 request, 2 worker)**
 ```bash
 $env:PERF_TEST_TOTAL_REQUESTS='5'
 $env:PERF_TEST_CONCURRENCY='2'
 node scripts/perf-load.mjs
 ```
 
-**30-second load test with 50 concurrent workers**
+**Load test 30 giây với 50 worker đồng thời**
 ```bash
 $env:PERF_TEST_CONCURRENCY='50'
 $env:PERF_TEST_DURATION_SECONDS='30'
 npm run perf:load
 ```
 
-**1000 requests, fail if P95 > 500ms**
+**1000 request, fail nếu P95 > 500ms**
 ```bash
 $env:PERF_TEST_TOTAL_REQUESTS='1000'
 $env:PERF_TEST_CONCURRENCY='100'
@@ -78,14 +78,14 @@ $env:PERF_TEST_MAX_P95_MS='500'
 npm run perf:load
 ```
 
-**100 requests/sec for 5 minutes (duration-based, ~30,000 total)**
+**100 request/giây trong 5 phút (theo thời lượng, ~30.000 request)**
 ```bash
 $env:PERF_TEST_DURATION_SECONDS='300'
-$env:PERF_TEST_CONCURRENCY='100'  # Will throttle to hit 100 req/s
+$env:PERF_TEST_CONCURRENCY='100'  # Sẽ throttle để đạt 100 req/s
 npm run perf:load
 ```
 
-### Output Format
+### Định dạng đầu ra
 ```json
 {
   "event": "perf:load:summary",
@@ -102,110 +102,110 @@ npm run perf:load
 }
 ```
 
-### Interpreting Results
-- **throughputPerSecond**: Requests handled per second
-- **avgMs**: Average response time in milliseconds
-- **p95Ms**: 95th percentile latency (95% of requests are faster than this)
-- **errorRate**: Percentage of failed requests (e.g., 0.02 = 2%)
+### Cách đọc kết quả
+- **throughputPerSecond**: Số request được xử lý mỗi giây
+- **avgMs**: Thời gian phản hồi trung bình tính bằng mili-giây
+- **p95Ms**: Độ trễ phân vị 95% (95% request nhanh hơn giá trị này)
+- **errorRate**: Tỷ lệ request thất bại (ví dụ 0.02 = 2%)
 
-### Typical Targets
-| Metric | Target | Notes |
-|--------|--------|-------|
-| throughputPerSecond | >100 req/s | For 10 concurrent, expect ~500 req/s |
-| avgMs | <100 ms | Average response time |
-| p95Ms | <200 ms | 95% of requests complete within this time |
-| errorRate | <0.01 (1%) | Less than 1% failures |
+### Mục tiêu thường dùng
+| Chỉ số | Mục tiêu | Ghi chú |
+|--------|----------|--------|
+| throughputPerSecond | >100 req/s | Với 10 concurrent, kỳ vọng khoảng ~500 req/s |
+| avgMs | <100 ms | Thời gian phản hồi trung bình |
+| p95Ms | <200 ms | 95% request hoàn tất trong thời gian này |
+| errorRate | <0.01 (1%) | Ít hơn 1% request thất bại |
 
 ---
 
-## 2. Soak Testing (`npm run perf:soak`)
+## 2. Kiểm thử soak (`npm run perf:soak`)
 
-Long-running test to detect memory leaks or performance degradation over time. Uses the same configuration as load testing but typically runs for hours.
+Đây là bài test chạy dài để phát hiện memory leak hoặc suy giảm hiệu năng theo thời gian. Nó dùng cùng cấu hình với load testing nhưng thường chạy trong nhiều giờ.
 
-### Basic Usage
+### Cách dùng cơ bản
 ```bash
-# Run for 10 minutes
+# Chạy 10 phút
 $env:PERF_TEST_DURATION_SECONDS='600'
 npm run perf:soak
 ```
 
-### Recommended Configuration
+### Cấu hình khuyến nghị
 ```bash
-$env:PERF_TEST_CONCURRENCY='20'         # Moderate load
-$env:PERF_TEST_DURATION_SECONDS='3600'  # 1 hour
+$env:PERF_TEST_CONCURRENCY='20'         # Tải vừa phải
+$env:PERF_TEST_DURATION_SECONDS='3600'  # 1 giờ
 npm run perf:soak
 ```
 
-**24-hour soak test** (for production validation)
+**Soak test 24 giờ** (dùng để xác thực production)
 ```bash
 $env:PERF_TEST_CONCURRENCY='50'
-$env:PERF_TEST_DURATION_SECONDS='86400'  # 24 hours
+$env:PERF_TEST_DURATION_SECONDS='86400'  # 24 giờ
 npm run perf:soak
 ```
 
-### What to Monitor
-While soak test runs, observe:
-1. Memory usage: `docker stats` or `ps aux`
-2. CPU usage: Resource utilization should remain stable
-3. Logs: Check for growing error rates or warning messages
-4. Metrics: Prometheus dashboard for custom application metrics
+### Cần theo dõi gì
+Trong lúc soak test chạy, hãy quan sát:
+1. Memory usage: dùng `docker stats` hoặc `ps aux`
+2. CPU usage: mức sử dụng tài nguyên nên ổn định
+3. Logs: kiểm tra xem error rate hoặc warning có tăng dần không
+4. Metrics: xem Prometheus dashboard cho metrics tùy chỉnh của ứng dụng
 
-### Example: Monitor During Soak
+### Ví dụ: theo dõi trong lúc soak
 ```bash
-# In a separate terminal, watch Docker stats
+# Mở terminal khác để xem Docker stats
 docker stats signalops-api-gateway signalops-worker signalops-mongodb
 
-# Watch logs for errors
+# Xem log để tìm lỗi
 docker-compose logs -f api-gateway worker
 ```
 
 ---
 
-## 3. WebSocket Broadcast Testing (`npm run perf:websocket`)
+## 3. Kiểm thử broadcast WebSocket (`npm run perf:websocket`)
 
-Tests real-time WebSocket broadcasts. Connects N clients, triggers an alert event via HTTP, and measures how many clients receive the broadcast within a timeout.
+Bộ này kiểm thử real-time WebSocket broadcasts. Nó kết nối N client, kích hoạt một alert qua HTTP, rồi đo có bao nhiêu client nhận được broadcast trong thời gian chờ.
 
-### Basic Usage
+### Cách dùng cơ bản
 ```bash
 npm run perf:websocket
 ```
 
-Default behavior:
-- Number of clients: 100
-- Timeout: 20 seconds (to wait for broadcast)
-- Output: JSON with delivery metrics
+Hành vi mặc định:
+- Số client: 100
+- Timeout: 20 giây (đợi broadcast)
+- Output: JSON chứa delivery metrics
 
-### Configuration (Environment Variables)
+### Cấu hình (biến môi trường)
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `PERF_TEST_CLIENTS` | 100 | Number of WebSocket clients to connect |
-| `PERF_TEST_TIMEOUT_MS` | 20000 | How long to wait for alert:new broadcast (milliseconds) |
+| Biến | Mặc định | Mục đích |
+|------|----------|----------|
+| `PERF_TEST_CLIENTS` | 100 | Số WebSocket clients cần kết nối |
+| `PERF_TEST_TIMEOUT_MS` | 20000 | Thời gian chờ `alert:new` broadcast tính bằng mili-giây |
 
-### Examples
+### Ví dụ
 
-**Probe Test (2 clients)**
+**Probe test (2 client)**
 ```bash
 $env:PERF_TEST_CLIENTS='2'
 $env:PERF_TEST_TIMEOUT_MS='15000'
 npm run perf:websocket
 ```
 
-**100 clients, 30-second timeout**
+**100 client, timeout 30 giây**
 ```bash
 $env:PERF_TEST_CLIENTS='100'
 $env:PERF_TEST_TIMEOUT_MS='30000'
 npm run perf:websocket
 ```
 
-**Stress: 500 concurrent clients**
+**Stress: 500 client đồng thời**
 ```bash
 $env:PERF_TEST_CLIENTS='500'
-$env:PERF_TEST_TIMEOUT_MS='45000'  # Longer timeout for more clients
+$env:PERF_TEST_TIMEOUT_MS='45000'  # Timeout dài hơn khi client nhiều
 npm run perf:websocket
 ```
 
-### Output Format
+### Định dạng đầu ra
 ```json
 {
   "event": "perf:websocket:summary",
@@ -216,22 +216,22 @@ npm run perf:websocket
 }
 ```
 
-### Interpreting Results
-- **clientCount**: Number of WebSocket clients that connected
-- **delivered**: How many clients received the `alert:new` broadcast
+### Cách đọc kết quả
+- **clientCount**: Số client WebSocket đã kết nối
+- **delivered**: Bao nhiêu client nhận được broadcast `alert:new`
 - **deliveryRate**: `delivered / clientCount` (1.0 = 100% delivery)
 
-### Typical Targets
-| Metric | Target | Notes |
-|--------|--------|-------|
-| clientCount | Should match PERF_TEST_CLIENTS | Indicates connection success |
-| deliveryRate | 1.0 (100%) | All clients should receive broadcasts |
+### Mục tiêu thường dùng
+| Chỉ số | Mục tiêu | Ghi chú |
+|--------|----------|--------|
+| clientCount | Phải khớp với `PERF_TEST_CLIENTS` | Cho biết kết nối thành công |
+| deliveryRate | 1.0 (100%) | Tất cả client đều phải nhận broadcast |
 
 ---
 
-## Automation & CI/CD Integration
+## Tự động hóa & tích hợp CI/CD
 
-### Run in Jenkins Pipeline
+### Chạy trong Jenkins Pipeline
 ```groovy
 stage('Performance Test') {
   steps {
@@ -246,7 +246,7 @@ stage('Performance Test') {
 }
 ```
 
-### GitHub Actions Example
+### Ví dụ GitHub Actions
 ```yaml
 - name: Run Performance Tests
   run: |
@@ -257,60 +257,60 @@ stage('Performance Test') {
 
 ---
 
-## Troubleshooting
+## Xử lý sự cố
 
-### "Connection refused" or "ECONNREFUSED"
-**Problem**: Cannot connect to API
-**Solution**:
-- Verify services are running: `docker-compose ps`
-- Check API Gateway is healthy: `curl http://localhost:3000/api/health`
-- Ensure correct API_KEY in `.env`
+### "Connection refused" hoặc "ECONNREFUSED"
+**Vấn đề**: Không thể kết nối tới API
+**Cách xử lý**:
+- Kiểm tra service đang chạy: `docker-compose ps`
+- Kiểm tra API Gateway có khỏe không: `curl http://localhost:3000/api/health`
+- Đảm bảo `API_KEY` trong `.env` đúng
 
-### High Error Rate During Load Test
-**Possible Causes**:
-1. System overloaded → increase `PERF_TEST_CONCURRENCY` gradually
-2. API has a bug → check logs: `docker-compose logs api-gateway`
-3. Database connection lost → check MongoDB/Redis: `docker-compose ps`
+### Error rate cao khi load test
+**Nguyên nhân có thể**:
+1. Hệ thống bị quá tải → tăng `PERF_TEST_CONCURRENCY` từ từ
+2. API có bug → kiểm tra log: `docker-compose logs api-gateway`
+3. Mất kết nối database → kiểm tra MongoDB/Redis: `docker-compose ps`
 
-### WebSocket Clients Not Connecting
-**Problem**: `clientCount` much lower than `PERF_TEST_CLIENTS`
-**Solution**:
-- Check network connectivity
-- Verify API Gateway WebSocket is running: `curl http://localhost:3000/socket.io`
-- Increase timeout: `PERF_TEST_TIMEOUT_MS=60000`
+### WebSocket clients không kết nối được
+**Vấn đề**: `clientCount` thấp hơn nhiều so với `PERF_TEST_CLIENTS`
+**Cách xử lý**:
+- Kiểm tra kết nối mạng
+- Xác minh WebSocket của API Gateway đang chạy: `curl http://localhost:3000/socket.io`
+- Tăng timeout: `PERF_TEST_TIMEOUT_MS=60000`
 
-### Memory Spike During Soak Test
-**Possible Causes**:
-1. Memory leak in application → check for unclosed connections or event listeners
-2. Test tool accumulating results → normal if short-lived
+### Memory tăng đột biến trong soak test
+**Nguyên nhân có thể**:
+1. Memory leak trong ứng dụng → kiểm tra connection hoặc event listener chưa được đóng
+2. Tool test tự tích lũy kết quả → bình thường nếu test ngắn
 
-**Solution**:
-- Monitor with `docker stats` and `docker logs`
-- Check application logs for warnings/errors
-- If leak confirmed, file bug with timestamp and metrics
-
----
-
-## Best Practices
-
-1. **Start Small**: Begin with probe tests (5 requests, 2 clients) to ensure basic connectivity
-2. **Gradual Ramp**: Increase load/client count incrementally rather than jumping to max
-3. **Monitor**: Watch CPU, memory, and logs while tests run
-4. **Record Baseline**: Run tests in clean environment to establish performance baseline
-5. **Compare**: After code changes, re-run with same configuration to detect regressions
-6. **Automate**: Integrate into CI/CD pipeline with consistent environment
-7. **Document Results**: Keep records of performance metrics over time
+**Cách xử lý**:
+- Theo dõi bằng `docker stats` và `docker logs`
+- Kiểm tra log ứng dụng xem có warning/error không
+- Nếu xác nhận leak, tạo bug report kèm timestamp và metrics
 
 ---
 
-## Related Documentation
+## Thực hành tốt nhất
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) — Production deployment guide
-- [OPERATIONS.md](./OPERATIONS.md) — Operational procedures
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — System design
-- [docs/internal/IMPLEMENTATION_CHECKLIST.md](./internal/IMPLEMENTATION_CHECKLIST.md) — Complete feature checklist
+1. **Bắt đầu nhỏ**: Dùng probe test (5 request, 2 client) để kiểm tra kết nối cơ bản
+2. **Tăng tải dần**: Tăng load/client count từng bước thay vì nhảy thẳng lên mức tối đa
+3. **Giám sát**: Theo dõi CPU, memory và logs trong lúc test
+4. **Ghi baseline**: Chạy test trong môi trường sạch để làm mốc hiệu năng
+5. **So sánh**: Sau khi đổi code, chạy lại cùng cấu hình để phát hiện regression
+6. **Tự động hóa**: Tích hợp vào CI/CD với môi trường nhất quán
+7. **Lưu kết quả**: Giữ lịch sử metrics hiệu năng theo thời gian
 
 ---
 
-**Last Updated**: 04/05/2026  
-**Status**: ✅ Ready for use (local + staging/production)
+## Tài liệu liên quan
+
+- [DEPLOYMENT.md](./DEPLOYMENT.md) — Hướng dẫn triển khai production
+- [OPERATIONS.md](./OPERATIONS.md) — Quy trình vận hành
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Thiết kế hệ thống
+- [docs/internal/IMPLEMENTATION_CHECKLIST.md](./internal/IMPLEMENTATION_CHECKLIST.md) — Danh sách tính năng đầy đủ
+
+---
+
+**Cập nhật cuối**: 04/05/2026  
+**Trạng thái**: ✅ Sẵn sàng sử dụng (local + staging/production)

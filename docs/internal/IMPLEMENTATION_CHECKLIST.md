@@ -2,18 +2,18 @@
 
 ---
 
-## Milestone 1: Project Setup & Infrastructure
+## Milestone 1: Thiết lập dự án & hạ tầng
 
-### Environment Setup
-- [x] Node.js v18+ installed
-- [x] npm/yarn configured
-- [x] Git repository initialized
-- [x] .gitignore configured
+### Thiết lập môi trường
+- [x] Đã cài Node.js v18+
+- [x] Đã cấu hình npm/yarn
+- [x] Đã khởi tạo Git repository
+- [x] Đã cấu hình .gitignore
 
-### Project Initialization
-- [x] Root `package.json` created (monorepo)
-- [x] NestJS CLI installed globally
-- [x] Workspace structure created:
+### Khởi tạo dự án
+- [x] Đã tạo `package.json` ở root (monorepo)
+- [x] Đã cài NestJS CLI toàn cục
+- [x] Đã tạo cấu trúc workspace:
   - [x] `apps/api-gateway`
   - [x] `apps/event-broker`
   - [x] `apps/worker-service`
@@ -23,346 +23,345 @@
   - [x] `libs/models`
   - [x] `infrastructure/`
 
-### Docker Setup
-- [x] Docker installed & running
+### Thiết lập Docker
+- [x] Docker đã cài và đang chạy
 - [x] `docker-compose.yml` created with:
   - [x] MongoDB service
   - [x] Redis service
   - [x] Nginx reverse proxy (optional)
-- [x] Test: `docker-compose up -d` succeeds
-- [x] Verify: mongo and redis accessible
+- [x] Kiểm thử: `docker-compose up -d` chạy thành công
+- [x] Xác minh: có thể truy cập mongo và redis
 
-### Database Setup
-- [x] MongoDB connection string configured
-- [x] Database created: `signalops-db`
-- [x] Initial collections:
+### Thiết lập cơ sở dữ liệu
+- [x] Đã cấu hình chuỗi kết nối MongoDB
+- [x] Đã tạo database: `signalops-db`
+- [x] Các collection khởi tạo:
   - [x] `events`
   - [x] `alerts`
   - [x] `devices`
-- [x] Indexes created for performance
+- [x] Đã tạo index để tối ưu hiệu năng
 
-### Development Tools
-- [x] ESLint configured
-- [x] Prettier configured
-- [x] TypeScript strict mode enabled
-- [x] `.env.example` created
+### Công cụ phát triển
+- [x] Đã cấu hình ESLint
+- [x] Đã cấu hình Prettier
+- [x] Đã bật TypeScript strict mode
+- [x] Đã tạo `.env.example`
 
 ---
 
-## Milestone 2: Event Flow & Queue System
+## Milestone 2: Luồng sự kiện & hệ thống hàng đợi
 
-### API Gateway Service
-- [x] NestJS app scaffold created
-- [x] HTTP server listening on port 3000
-- [x] Request/Response interceptors
-- [x] Error handling middleware
-- [x] Logging setup (Winston/Pino)
+### Dịch vụ API Gateway
+- [x] Đã tạo scaffold ứng dụng NestJS
+- [x] HTTP server lắng nghe cổng 3000
+- [x] Interceptor cho Request/Response
+- [x] Middleware xử lý lỗi
+- [x] Đã thiết lập logging (Winston/Pino)
 
-### Event Ingestion Endpoint
-- [x] `POST /api/events` endpoint created
-- [x] Input validation (class-validator)
-- [x] Event DTO created:
+### Endpoint tiếp nhận sự kiện
+- [x] Đã tạo endpoint `POST /api/events`
+- [x] Validation input (class-validator)
+- [x] Đã tạo Event DTO:
   ```
   - deviceId: string
   - location: { lat, lng }
   - metrics: { latency, packetLoss, signalStrength }
   ```
-- [x] 202 Accepted response returned
-- [x] Request logged for debugging
+- [x] Trả về phản hồi 202 Accepted
+- [x] Đã ghi log request để debug
 
-### Event Broker Service
-- [x] Separate NestJS module or service
-- [x] Receives event from API Gateway
-- [x] Validates event schema
-- [x] Enriches with metadata (timestamp, etc)
-- [x] Serializes to queue job format
+### Dịch vụ Event Broker
+- [x] Module/service NestJS tách riêng
+- [x] Nhận event từ API Gateway
+- [x] Validation schema event
+- [x] Bổ sung metadata (timestamp, ...)
+- [x] Serialize sang định dạng queue job
 
-### Redis Queue Integration
-- [x] BullMQ installed: `npm install bull`
-- [x] Redis connection configured
-- [x] Event queue created: `event-processing`
-- [x] Job producer implemented
-- [x] Job added to queue with unique ID
-- [x] Error handling for failed queuing
+### Tích hợp Redis Queue
+- [x] Đã cài BullMQ: `npm install bull`
+- [x] Đã cấu hình kết nối Redis
+- [x] Đã tạo queue `event-processing`
+- [x] Đã triển khai job producer
+- [x] Job được thêm vào queue với ID duy nhất
+- [x] Có xử lý lỗi khi enqueue thất bại
 
-### Verification Tests
-- [x] Manual: `curl -X POST /api/events` with test data
-- [x] Verify: Events appear in Redis queue
-- [x] Test: Queue persists across service restart
-- [x] Monitor: Redis memory usage is reasonable
+### Kiểm thử xác minh
+- [x] Thủ công: `curl -X POST /api/events` với dữ liệu test
+- [x] Xác minh: Event xuất hiện trong Redis queue
+- [x] Kiểm thử: Queue giữ dữ liệu qua lần restart service
+- [x] Giám sát: mức dùng bộ nhớ Redis hợp lý
 
 ---
 
-## Milestone 3: Worker & Detection Logic
+## Milestone 3: Worker & logic phát hiện
 
-### Worker Service Setup
-- [x] Separate NestJS app or worker process
-- [x] Connects to Redis queue
-- [x] Starts polling for jobs
-- [x] Graceful shutdown handling
+### Thiết lập Worker Service
+- [x] Ứng dụng NestJS hoặc process worker tách riêng
+- [x] Kết nối tới Redis queue
+- [x] Bắt đầu polling job
+- [x] Xử lý graceful shutdown
 
 ### Queue Consumer
-- [x] Worker listens to `event-processing` queue
-- [x] Dequeues jobs
-- [x] Implements error handling + retries
-- [x] Dead Letter Queue (DLQ) for failed jobs
+- [x] Worker lắng nghe queue `event-processing`
+- [x] Dequeue jobs
+- [x] Có xử lý lỗi + retry
+- [x] Có Dead Letter Queue (DLQ) cho job thất bại
 
-### Threshold Detection Logic
-- [x] Service created: `ThresholdDetector`
-- [x] Implements logic:
+### Logic phát hiện ngưỡng
+- [x] Đã tạo service `ThresholdDetector`
+- [x] Triển khai logic:
   ```
   if latency > 200ms → type: 'latency', severity: 'high'
   if packetLoss > 5% → type: 'packet_loss', severity: high'
   if signalStrength < -90 dBm → type: 'signal', severity: 'medium'
   ```
-- [x] Unit tests pass for each threshold
-- [x] Edge cases handled (null, undefined)
+- [x] Unit test đạt cho từng ngưỡng
+- [x] Đã xử lý edge case (null, undefined)
 
-### Alert Model Created
-- [x] Alert schema defined
-- [x] Fields: alertId, type, severity, location, message, status
-- [x] Fields mở rộng: resolvedBy, resolutionNote, acknowledgedBy
-- [x] Timestamp fields: createdAt, updatedAt, acknowledgedAt, resolvedAt
-- [x] Status transitions defined
+### Đã tạo Alert Model
+- [x] Định nghĩa Alert schema
+- [x] Trường dữ liệu: alertId, type, severity, location, message, status
+- [x] Trường mở rộng: resolvedBy, resolutionNote, acknowledgedBy
+- [x] Trường thời gian: createdAt, updatedAt, acknowledgedAt, resolvedAt
+- [x] Định nghĩa luồng chuyển trạng thái
 
-### Alert Generation
-- [x] When alert should be created (threshold exceeded)
-- [x] Alert saved to MongoDB
-- [x] Duplicate check (optional but recommended)
-- [x] Event linked to alert
+### Tạo cảnh báo
+- [x] Xác định điều kiện tạo alert (vượt ngưỡng)
+- [x] Lưu alert vào MongoDB
+- [x] Kiểm tra trùng lặp (tùy chọn nhưng khuyến nghị)
+- [x] Liên kết event với alert
 
-### Verification
-- [x] Send event to API that exceeds threshold
-- [x] Worker triggers threshold detection
-- [x] Alert created in MongoDB
-- [x] Log shows alert creation
-- [x] DLQ handles problematic events
+### Xác minh
+- [x] Gửi event vượt ngưỡng vào API
+- [x] Worker kích hoạt threshold detection
+- [x] Alert được tạo trong MongoDB
+- [x] Log hiển thị việc tạo alert
+- [x] DLQ xử lý event lỗi
 
 ---
 
-## Milestone 4: Persistence & API
+## Milestone 4: Lưu trữ & API
 
-### MongoDB Repository Pattern
+### Mẫu Repository MongoDB
 - [x] `EventRepository` service created
-  - [x] save event
+  - [x] lưu event
   - [x] findById
-  - [x] find (with pagination)
+  - [x] find (có phân trang)
   - [x] findByDeviceId
   - [x] findRecent (E1)
 - [x] `AlertRepository` service created
-  - [x] save alert
+  - [x] lưu alert
   - [x] findById
-  - [x] find (with filtering)
+  - [x] find (có bộ lọc)
   - [x] updateStatus
-  - [x] alertHistory — aggregate theo ngày (E3)
+  - [x] alertHistory — tổng hợp theo ngày (E3)
   - [x] countActiveAlerts
 
-### REST API Endpoints
+### Các REST API Endpoint
 
 #### Events API
-- [x] `POST /api/events` - Create event (already from Event Flow & Queue System)
-- [x] `GET /api/events` - List events
-  - [x] Pagination support
-  - [x] Filter by deviceId (optional)
-  - [x] Filter by date range (optional)
-- [x] `GET /api/events/:id` - Get event detail
+- [x] `POST /api/events` - Tạo event (đã có từ luồng Event & Queue)
+- [x] `GET /api/events` - Danh sách events
+  - [x] Hỗ trợ phân trang
+  - [x] Lọc theo deviceId (tùy chọn)
+  - [x] Lọc theo khoảng thời gian (tùy chọn)
+- [x] `GET /api/events/:id` - Lấy chi tiết event
 
 #### Alerts API
-- [x] `GET /api/alerts` - List alerts
-  - [x] Filter by severity
-  - [x] Filter by status
-  - [x] Pagination
-- [x] `GET /api/alerts/:id` - Get alert detail
+- [x] `GET /api/alerts` - Danh sách alerts
+  - [x] Lọc theo severity
+  - [x] Lọc theo status
+  - [x] Phân trang
+- [x] `GET /api/alerts/:id` - Lấy chi tiết alert
 - [x] `GET /api/alerts/history` - Lịch sử cảnh báo theo ngày (E3)
-- [x] `PATCH /api/alerts/:id` - Update alert
-  - [x] Update status (open → acknowledged → resolved)
-  - [x] Record who acknowledged + when
-  - [x] Record resolvedBy + resolutionNote (A2)
-- [x] `POST /api/alerts/batch` - Batch acknowledge/resolve (A3)
+- [x] `PATCH /api/alerts/:id` - Cập nhật alert
+  - [x] Cập nhật trạng thái (open → acknowledged → resolved)
+  - [x] Ghi nhận người xác nhận + thời điểm
+  - [x] Ghi resolvedBy + resolutionNote (A2)
+- [x] `POST /api/alerts/batch` - Xác nhận/đóng hàng loạt (A3)
 
 #### System API
-- [x] `GET /api/health` - Health check
-  - [x] MongoDB connection status
-  - [x] Redis connection status
-  - [x] Response includes uptime
+- [x] `GET /api/health` - Kiểm tra sức khỏe
+  - [x] Trạng thái kết nối MongoDB
+  - [x] Trạng thái kết nối Redis
+  - [x] Response gồm uptime
   - [x] Version, environment, Node.js version (F3)
   - [x] Memory usage (RSS, heap) (F3)
-- [x] `GET /api/stats` - System statistics
-  - [x] Total events count
-  - [x] Active alerts count
-  - [x] Events per minute
+- [x] `GET /api/stats` - Thống kê hệ thống
+  - [x] Tổng số events
+  - [x] Số alert đang mở
+  - [x] Events mỗi phút
 
 #### Devices API (E1)
 - [x] `GET /api/devices` - Danh sách thiết bị (derive từ events)
   - [x] DeviceController + EventService.getDevices()
 
-### Database Optimization
-- [x] Indexes created:
+### Tối ưu cơ sở dữ liệu
+- [x] Đã tạo index:
   - [x] events: deviceId, timestamp
   - [x] alerts: status, severity, createdAt
-- [x] Query performance tested (should be <100ms)
-- [x] Document validation enabled
+- [x] Đã test hiệu năng truy vấn (mục tiêu <100ms)
+- [x] Đã bật document validation
 
-### API Documentation
-- [x] Swagger/OpenAPI setup
-- [x] Endpoints documented in Swagger UI
-- [x] Response schemas defined
-- [x] Error responses documented
+### Tài liệu API
+- [x] Đã setup Swagger/OpenAPI
+- [x] Đã tài liệu hóa endpoint trên Swagger UI
+- [x] Đã định nghĩa response schema
+- [x] Đã tài liệu hóa lỗi response
 
-### Verification
-- [x] All endpoints return 200 OK with correct data
-- [x] Pagination works correctly
-- [x] Filters work as expected
-- [x] Database queries complete in time
-- [x] Swagger UI loads at GET /api/docs
+### Xác minh
+- [x] Tất cả endpoint trả 200 OK với dữ liệu đúng
+- [x] Phân trang hoạt động đúng
+- [x] Bộ lọc hoạt động đúng kỳ vọng
+- [x] Truy vấn DB hoàn thành đúng thời gian
+- [x] Swagger UI mở được tại GET /api/docs
 
 ---
 
-## Milestone 5: Real-time Communication
+## Milestone 5: Giao tiếp thời gian thực
 
-### WebSocket Server Setup
-- [x] Socket.io installed: `npm install socket.io`
-- [x] WebSocket server running on same port as API
-- [x] CORS configured for WebSocket
+### Thiết lập máy chủ WebSocket
+- [x] Đã cài Socket.io: `npm install socket.io`
+- [x] WebSocket server chạy cùng cổng với API
+- [x] Đã cấu hình CORS cho WebSocket
 
 ### WebSocket Namespaces
-- [x] `/events` namespace for event notifications
-- [x] `/alerts` namespace for alert notifications
-- [x] `/status` namespace for status updates
+- [x] `/events` namespace cho thông báo sự kiện
+- [x] `/alerts` namespace cho thông báo cảnh báo
+- [x] `/status` namespace cho cập nhật trạng thái
 
-### Event Emissions
+### Phát sự kiện
 
-#### Alert Notifications
-- [x] When alert created → emit `alert:new`
+#### Thông báo cảnh báo
+- [x] Khi alert được tạo → emit `alert:new`
   ```
   payload: { id, type, severity, location, message, timestamp }
   ```
-- [x] When alert acknowledged → emit `alert:acknowledged`
-- [x] When alert resolved → emit `alert:resolved`
+- [x] Khi alert được xác nhận → emit `alert:acknowledged`
+- [x] Khi alert được xử lý xong → emit `alert:resolved`
 
-#### Event Notifications
-- [x] When event processed → emit `event:processed`
-- [x] Device status changes → emit `device:status:changed`
+#### Thông báo sự kiện
+- [x] Khi event được xử lý xong → emit `event:processed`
+- [x] Khi trạng thái thiết bị thay đổi → emit `device:status:changed`
 
-#### System Notifications
-- [x] Emit queue depth periodically (for monitoring)
-- [x] Emit worker stats (optional)
+#### Thông báo hệ thống
+- [x] Emit queue depth theo chu kỳ (phục vụ giám sát)
+- [x] Emit worker stats (tùy chọn)
 
-### Client Connection Handling
-- [x] Track connected clients
-- [x] Handle disconnect cleanup
-- [x] Implement connection authentication (token/Bearer optional)
-- [x] Rate limit emissions per client (configurable interval)
+### Xử lý kết nối client
+- [x] Theo dõi client đang kết nối
+- [x] Dọn dẹp khi client ngắt kết nối
+- [x] Triển khai xác thực kết nối (token/Bearer tùy chọn)
+- [x] Giới hạn tần suất emit theo từng client (cấu hình được)
 
-### Error Handling
-- [x] Catch emit errors and log
-- [x] Monitor unhandled socket exceptions
-- [x] Reconnection logic for failed emits (exponential backoff retry service implemented)
+### Xử lý lỗi
+- [x] Bắt lỗi khi emit và ghi log
+- [x] Theo dõi unhandled socket exceptions
+- [x] Logic kết nối lại cho emit thất bại (đã có retry service với exponential backoff)
 
-### Verification
-- [x] WebSocket test client connects successfully
-- [x] Emit alert message is received (alert:new, alert:acknowledged, alert:resolved)
-- [x] Multiple clients receive the same emission (tested with 2 event clients)
-- [x] Subscriptions work (optional: room-based filtering)
+### Xác minh
+- [x] WebSocket test client kết nối thành công
+- [x] Nhận được thông điệp emit alert (alert:new, alert:acknowledged, alert:resolved)
+- [x] Nhiều client nhận cùng một emission (đã test với 2 event client)
+- [x] Subscription hoạt động (tùy chọn: lọc theo room)
 
 ---
 
 ## Milestone 6: Frontend Dashboard
 
-### React/Next.js Setup
-- [x] Next.js app created in `apps/dashboard`
-- [x] TypeScript configured
-- [x] Tailwind CSS installed (or styling solution)
+### Thiết lập React/Next.js
+- [x] Đã tạo app Next.js trong `apps/dashboard`
+- [x] Đã cấu hình TypeScript
+- [x] Đã cài Tailwind CSS (hoặc giải pháp styling tương đương)
 
-### State Management
-- [x] Redux/Zustand/Context setup (whichever chosen)
+### Quản lý trạng thái
+- [x] Đã setup Redux/Zustand/Context (theo lựa chọn)
 - [x] Alert state slice
 - [x] Event state slice
 - [x] System state slice
 - [x] Device state slice
 
-### WebSocket Client Setup
-- [x] Socket.io-client installed
+### Thiết lập WebSocket Client
+- [x] Đã cài socket.io-client
 - [x] Wrapper hook: `useSocket()`
-- [x] Connection to backend WebSocket
-- [x] Event listeners setup
-- [x] Proper cleanup on unmount
+- [x] Kết nối tới backend WebSocket
+- [x] Đã setup event listeners
+- [x] Cleanup đúng khi unmount
 
-### Components
+### Thành phần giao diện
 
-#### Dashboard Main View
-- [x] Layout component with navigation
-- [x] Responsive design (mobile-friendly)
+#### Màn hình dashboard chính
+- [x] Layout component có navigation
+- [x] Responsive design (thân thiện mobile)
 
-#### Map Component
-- [x] Leaflet or Mapbox integrated
-- [x] Device markers on map
-  - [x] Green marker = normal status
-  - [x] Red marker = alert/error
-  - [x] Click marker = show device details
-- [x] Zoom/pan functionality
-- [x] Legend showing marker meanings
+#### Thành phần bản đồ
+- [x] Đã tích hợp Leaflet hoặc Mapbox
+- [x] Có marker thiết bị trên bản đồ
+  - [x] Marker xanh = trạng thái bình thường
+  - [x] Marker đỏ = alert/lỗi
+  - [x] Bấm marker = hiện chi tiết thiết bị
+- [x] Có chức năng zoom/pan
+- [x] Có chú giải ý nghĩa marker
 
-#### Alert Table Component
-- [x] Table displays alerts in grid format
-- [x] Columns: severity, type, location, message, status, time
-- [x] Sorting by any column
-- [x] Filter by severity dropdown
-- [x] Filter by status radio buttons
-- [x] Pagination
+#### Thành phần bảng cảnh báo
+- [x] Bảng hiển thị alerts dạng lưới
+- [x] Cột: severity, type, location, message, status, time
+- [x] Sắp xếp theo mọi cột
+- [x] Lọc theo severity bằng dropdown
+- [x] Lọc theo status bằng radio button
+- [x] Phân trang
 - [x] Nhóm cảnh báo theo vị trí — toggle view (A4)
 
-#### Metrics Dashboard Component
-- [x] Total events card
-- [x] Active alerts card
-- [x] Chart: latency over time (Chart.js/Recharts)
-- [x] Chart: packet loss over time
-- [x] Refresh rate visualization
+#### Thành phần dashboard chỉ số
+- [x] Card tổng số events
+- [x] Card số alert đang mở
+- [x] Biểu đồ latency theo thời gian (Chart.js/Recharts)
+- [x] Biểu đồ packet loss theo thời gian
+- [x] Hiển thị tốc độ cập nhật dữ liệu
 
-#### Alert Detail Modal/Page
-- [x] Show full alert information
-- [x] Acknowledge button (if status=open)
-- [x] Resolve button (if status=acknowledged)
-- [x] Show who acknowledged and when
+- [x] Hiển thị đầy đủ thông tin alert
+- [x] Nút xác nhận (khi status=open)
+- [x] Nút xử lý xong (khi status=acknowledged)
+- [x] Hiển thị ai đã xác nhận và thời điểm
 - [x] Nhập tên người thực hiện khi xác nhận/xử lý (A1)
 - [x] Nhập ghi chú xử lý khi resolve (A2)
-- [x] Back button
+- [x] Nút quay lại
 
-### Data Fetching
-- [x] Fetch initial data on mount:
-  - [x] `GET /api/alerts` → populate alerts list
-  - [x] `GET /api/events?limit=100` → recent events for chart
-- [x] Real-time updates via WebSocket
-- [x] Error handling for failed fetches
+### Lấy dữ liệu
+- [x] Fetch dữ liệu ban đầu khi mount:
+  - [x] `GET /api/alerts` → nạp danh sách alerts
+  - [x] `GET /api/events?limit=100` → nạp event gần đây cho chart
+- [x] Cập nhật real-time qua WebSocket
+- [x] Có xử lý lỗi khi fetch thất bại
 
-### UI Polish
-- [x] Empty states (no alerts, no events)
-- [x] Loading states (skeleton screens)
-- [x] Error messages user-friendly
-- [x] Toast notifications for actions
-- [x] Confirmation dialogs for critical actions
+### Hoàn thiện UI
+- [x] Empty state (không có alerts/events)
+- [x] Loading state (skeleton screens)
+- [x] Thông báo lỗi thân thiện người dùng
+- [x] Toast notifications cho thao tác
+- [x] Hộp thoại xác nhận cho thao tác quan trọng
 - [x] Dark Mode toggle + CSS (C5)
 - [x] Tiếng Việt toàn diện (B1, B2)
 
-### Verification
-- [x] Dashboard loads without errors
-- [x] Map renders with markers
-- [x] Alerts table displays alerts
-- [x] Metrics show reasonable numbers
-- [x] Real-time alerts appear without refresh
-- [x] Responsive on mobile devices
+### Xác minh
+- [x] Dashboard tải không lỗi
+- [x] Map render được marker
+- [x] Bảng alerts hiển thị đúng
+- [x] Metrics hiển thị hợp lý
+- [x] Alert real-time xuất hiện không cần refresh
+- [x] Responsive trên thiết bị mobile
 
 ---
 
-## Milestone 7: CI/CD & DevOps Polish
+## Milestone 7: Hoàn thiện CI/CD & DevOps
 
-### Docker Configuration
+### Cấu hình Docker
 
 #### Dockerfiles
 - [x] API Gateway Dockerfile
 - [x] Event Broker Dockerfile
 - [x] Worker Service Dockerfile
-- [x] Simulator Dockerfile (optional)
+- [x] Simulator Dockerfile (tùy chọn)
 - [x] Dashboard Dockerfile (multi-stage build)
 - [x] All Dockerfiles use node:18-alpine base
 
@@ -382,44 +381,44 @@
 - [x] Health checks defined
 - [x] Dependencies order correct (db → services)
 
-### Local Testing
-- [x] `docker-compose up -d` starts all services
-- [x] All services become healthy within 30 seconds
-- [x] API Gateway accessible at localhost:3000
-- [x] Dashboard accessible at localhost:3001
-- [x] `docker-compose logs -f` shows expected logs
-- [x] `docker-compose down` cleans up properly
+### Kiểm thử local
+- [x] `docker-compose up -d` khởi động toàn bộ services
+- [x] Tất cả services healthy trong vòng 30 giây
+- [x] API Gateway truy cập được ở localhost:3000
+- [x] Dashboard truy cập được ở localhost:3001
+- [x] `docker-compose logs -f` hiển thị log đúng kỳ vọng
+- [x] `docker-compose down` dọn dẹp đúng cách
 
 ### Logging
-- [x] Structured logging (JSON format) in all services
-- [x] Log levels: debug, info, warn, error
-- [x] Logger outputs to stdout (for container logs)
-- [x] Request logging middleware (API Gateway)
-- [x] Queue processing logs (Worker)
-- [x] WebSocket connection/disconnection logs
+- [x] Structured logging (JSON format) ở tất cả services
+- [x] Mức log: debug, info, warn, error
+- [x] Logger xuất ra stdout (cho container logs)
+- [x] Middleware log request (API Gateway)
+- [x] Log xử lý queue (Worker)
+- [x] Log kết nối/ngắt kết nối WebSocket
 
-### Environment Configuration
-- [x] `.env.example` contains all required variables
-- [x] Each service reads from environment
-- [x] Defaults for development provided
-- [x] Production environment specified (optional)
-- [x] Secrets never committed to repo
+### Cấu hình môi trường
+- [x] `.env.example` chứa đầy đủ biến cần thiết
+- [x] Mỗi service đọc cấu hình từ environment
+- [x] Có giá trị mặc định cho development
+- [x] Có cấu hình cho production (tùy chọn)
+- [x] Secrets không commit vào repo
 
-### Testing
+### Kiểm thử
 
-#### Unit Tests
-- [x] Threshold detection tests
-- [x] Alert generation tests
-- [x] Repository methods tested
-- [x] Utilities tested
-- [x] Test command: `npm test`
-- [x] Code coverage: >70%
+#### Unit tests
+- [x] Test threshold detection
+- [x] Test tạo alert
+- [x] Test các method của repository
+- [x] Test utilities
+- [x] Lệnh test: `npm test`
+- [x] Độ phủ code: >70%
 
-#### Integration Tests
-- [x] Event flow: API → Queue → Worker → DB → WebSocket
-- [x] Alert creation and updates
-- [x] Database persistence verified
-- [x] Redis queue reliability
+#### Integration tests
+- [x] Luồng event: API → Queue → Worker → DB → WebSocket
+- [x] Tạo và cập nhật alert
+- [x] Xác minh lưu trữ database
+- [x] Độ tin cậy Redis queue
 
 #### Load/Performance Tests (Cần hạ tầng thật)
 - [x] Load test harness sẵn sàng: `npm run perf:load`
@@ -430,106 +429,106 @@
 - [ ] API response time <200ms *(verify trên staging/prod)*
 - [ ] WebSocket broadcasts to 100+ clients *(verify trên staging/prod)*
 
-### CI/CD Pipeline (Jenkins)
+### Pipeline CI/CD (Jenkins)
 
-#### Jenkins Setup
+#### Thiết lập Jenkins
 - [ ] Jenkins server running (cần hạ tầng)
 - [ ] GitHub/GitLab webhook configured (cần hạ tầng)
 - [x] Jenkins pipeline file: `Jenkinsfile`
 
-#### Pipeline Stages
-- [x] **Checkout**: Pull latest code
+#### Các stage trong pipeline
+- [x] **Checkout**: Lấy code mới nhất
 - [x] **Build**:
-  - [x] `npm install` all packages
-  - [x] Build all NestJS services
+  - [x] `npm install` tất cả package
+  - [x] Build toàn bộ NestJS services
   - [x] Build React dashboard
 - [x] **Test**:
-  - [x] Run unit tests
-  - [x] Run integration tests (`npm run test:integration` = `verify:api` + `verify:websocket`)
-  - [x] Generate coverage report
-  - [x] Fail if tests don't pass or coverage <70%
+  - [x] Chạy unit tests
+  - [x] Chạy integration tests (`npm run test:integration` = `verify:api` + `verify:websocket`)
+  - [x] Tạo coverage report
+  - [x] Fail nếu test không đạt hoặc coverage <70%
 - [x] **Docker Build**:
-  - [x] Build images for all services
-  - [x] Tag with commit hash
-  - [x] Tag with 'latest' for main branch
+  - [x] Build image cho tất cả services
+  - [x] Tag theo commit hash
+  - [x] Tag `latest` cho nhánh main
   - [ ] Push to container registry (cần registry)
 - [ ] **Deploy** (cần staging server):
-  - [ ] Pull latest images
-  - [ ] Run `docker-compose up -d`
-  - [ ] Wait for health checks
-  - [ ] Rollback on failure
+  - [ ] Pull image mới nhất
+  - [ ] Chạy `docker-compose up -d`
+  - [ ] Chờ health checks
+  - [ ] Rollback khi thất bại
 - [x] **Verify**:
-  - [x] Health check passes
-  - [x] Smoke tests pass
-  - [x] No critical errors in logs
+  - [x] Health check đạt
+  - [x] Smoke test đạt
+  - [x] Không có lỗi critical trong logs
 
-### Monitoring Setup
+### Thiết lập monitoring
 - [x] Prometheus scrape config (`infrastructure/monitoring/prometheus.yml`)
 - [x] Metrics exposed at `/api/metrics` (`MetricsController` + `prom-client`)
 - [x] Grafana dashboard created (`infrastructure/monitoring/grafana-dashboard.json`)
 - [x] Docker Compose monitoring stack (`docker-compose.monitoring.yml`)
 - [ ] Grafana alert rules configured (cần tuỳ chỉnh theo nhu cầu)
 
-### Documentation
-- [x] README.md at root with quick start
-- [x] DEPLOYMENT.md with production checklist
-- [x] API.md with endpoint documentation
-- [x] ARCHITECTURE.md with system design
-- [x] CONTRIBUTING.md with development guide
+### Tài liệu
+- [x] README.md ở root với phần khởi động nhanh
+- [x] DEPLOYMENT.md với checklist production
+- [x] API.md với tài liệu endpoint
+- [x] ARCHITECTURE.md với thiết kế hệ thống
+- [x] CONTRIBUTING.md với hướng dẫn phát triển
 
-### Production Readiness
-- [x] Error handling toàn diện
-- [x] Graceful shutdown implemented
+### Sẵn sàng production
+- [x] Xử lý lỗi toàn diện
+- [x] Đã triển khai graceful shutdown
 - [x] Environment validated on startup (`env-validator.ts`) (E5)
 - [x] Database migrations manageable (`db:migrate`, `db:rollback`, `db:seed`, `status` scripts)
 - [x] API Key authentication (`api-key.guard.ts`) (F1)
 - [x] Backup strategy for MongoDB (`scripts/backup-mongodb.sh`) (F2)
 - [x] Rate limiting configured (`rate-limit.guard.ts`) (E4)
 - [x] Correlation ID middleware (`correlation-id.middleware.ts`) (F4)
-- [x] CORS properly configured
+- [x] CORS đã cấu hình đúng
 - [ ] HTTPS support (cần SSL certificate)
 - [x] Auto-resolve cảnh báo khi metric bình thường (E2)
 
-### Final Verification
-- [x] Full system up via `docker-compose up` ✅ (28/04/2026)
-- [x] Create event via simulator or manual request
-- [x] Event appears in alerts (if exceeds threshold)
-- [x] Alert appears in dashboard map and table in <2 seconds
-- [x] Acknowledge alert and status updates real-time
+### Xác minh cuối
+- [x] Toàn hệ thống chạy bằng `docker-compose up` ✅ (28/04/2026)
+- [x] Tạo event qua simulator hoặc request thủ công
+- [x] Event xuất hiện trong alerts (nếu vượt ngưỡng)
+- [x] Alert xuất hiện trên map và table trong <2 giây
+- [x] Xác nhận alert và cập nhật trạng thái theo thời gian thực
 - [ ] Jenkins pipeline runs successfully on commit (cần Jenkins server)
 - [ ] No warnings in logs (minor deprecation warnings chấp nhận được)
 
 ---
 
-## Sign-Off Criteria
+## Tiêu chí nghiệm thu
 
 - [x] Tất cả mục cốt lõi đã hoàn thành
-- [ ] Code review passed
+- [ ] Code review đạt
 - [x] Lint passing (✅ 0 warnings across all workspaces — 29/04/2026)
 - [x] Tests passing (unit tests ✅, integration tests có)
-- [ ] System runs stable for 24 hours
+- [ ] Hệ thống chạy ổn định 24 giờ
 - [x] Documentation complete (API, Architecture, Deployment, Contributing, Operations — tiếng Việt)
-- [ ] Team trained on architecture & deployment
-- [ ] Production deployment plan approved
+- [ ] Team được đào tạo về kiến trúc & triển khai
+- [ ] Kế hoạch triển khai production được phê duyệt
 
 ## Việc Còn Lại Theo Phạm Vi
 
 ### Có thể làm ngay trên local/demo
-- Code review passed
-- System runs stable for 24 hours
-- No warnings in logs (nếu muốn chặt hơn, hiện minor deprecation warnings vẫn được chấp nhận)
+- Code review đạt
+- Hệ thống chạy ổn định 24 giờ
+- Không còn cảnh báo trong logs (nếu cần tiêu chuẩn chặt; hiện minor deprecation warnings vẫn chấp nhận)
 
 ### Chỉ còn cho hạ tầng thật / production rollout
-- Jenkins server runs và webhook được cấu hình
-- Jenkins pipeline runs successfully on commit
-- Test: Jenkins pipeline successfully pushes images
+- Jenkins server chạy và webhook được cấu hình
+- Jenkins pipeline chạy thành công theo commit
+- Kiểm thử: Jenkins pipeline push image thành công
 - Deploy stage chạy trên staging server
-- Verify Prometheus can reach `http://api-gateway:3000/metrics`
-- Configure Grafana scrape jobs / alert rules
+- Xác minh Prometheus truy cập được `http://api-gateway:3000/metrics`
+- Cấu hình Grafana scrape jobs / alert rules
 - HTTPS support (cần SSL certificate)
 - Load/performance tests trên hạ tầng thật
-- Team trained on architecture & deployment
-- Production deployment plan approved
+- Team được đào tạo về kiến trúc & triển khai
+- Kế hoạch triển khai production được phê duyệt
 
 ---
 
@@ -557,13 +556,13 @@
 
 **Cập nhật lần cuối**: 29/04/2026  
 **Trạng thái**: ~95% hoàn thành (Milestone 8 phần local: xanh; còn lại cần hạ tầng thật: Jenkins server, registry, SSL, load testing)  
-**Effort**: Est. 500-800 person-hours  
-**Team Size**: 2-3 developers recommended  
-**Lint Status**: ✅ Green (0 warnings, all workspaces pass)
+**Effort**: Ước tính 500-800 person-hours  
+**Quy mô team**: Khuyến nghị 2-3 developers  
+**Trạng thái lint**: ✅ Xanh (0 warnings, toàn bộ workspace đều pass)
 
 ---
 
-## Milestone 8: Bug Fixes & Refinement
+## Milestone 8: Sửa lỗi & tinh chỉnh
 
 *Dựa trên Analysis Report (28/04/2026) — 18 vấn đề phát hiện*
 
@@ -843,9 +842,9 @@
 
 ---
 
-## Milestone 9: Repo Audit 2026-05-04 — Pending Approval
+## Milestone 9: Repo Audit 2026-05-04 — Chờ phê duyệt
 
-*Nguồn: docs/SignalOps_Repo_Audit.md (audit ngày 04/05/2026).*
+*Nguồn: docs/SignalOps_Repo_Audit.md (kiểm toán ngày 04/05/2026).*
 
 **Nguyên tắc thực hiện:**
 - [x] Tất cả thay đổi mới phải được đưa vào checklist trước khi code
@@ -853,7 +852,7 @@
 
 ### 9.1. P0 — Trước Production (ưu tiên cao nhất)
 
-#### Reliability & Correctness
+#### Độ tin cậy & tính đúng đắn
 - [ ] Thêm `restart: unless-stopped` cho `worker-service` trong compose
 - [ ] Đồng bộ logic ngưỡng tại `EventService.getDevices()` bằng `ThresholdDetector.detectAnomalies()` (xóa hardcode)
 - [ ] Tối ưu `EventService.getDevices()` bằng MongoDB aggregation (`$sort` + `$group`) để tránh xử lý in-memory khi scale
@@ -864,18 +863,18 @@
   - [ ] Cấu hình timeout/retry phù hợp cho Redis client
 - [ ] Thiết kế cơ chế idempotency nâng cao cho case `DB save thành công nhưng enqueue thất bại` (outbox/retry compensation)
 
-#### CI/CD & Runtime Security
+#### CI/CD & bảo mật runtime
 - [ ] Chuyển các Dockerfile backend sang multi-stage build
 - [ ] Chạy container với non-root user (`USER` không phải root)
 - [ ] Tối ưu layer cache Dockerfile (copy lockfile/package trước source)
 
 ### 9.2. P1 — Sprint Kế Tiếp
 
-#### Reliability Hardening
+#### Gia cố độ tin cậy
 - [ ] Thêm jitter cho BullMQ backoff để giảm thundering herd
 - [ ] Áp dụng circuit breaker cho thao tác MongoDB/Redis (opossum hoặc tương đương)
 
-#### Observability
+#### Khả năng quan sát
 - [ ] Propagate `correlationId` xuyên suốt bằng `AsyncLocalStorage`
 - [ ] Tích hợp `correlationId` vào logger của API Gateway và Worker
 - [ ] Bổ sung business metrics cho Prometheus:
@@ -891,15 +890,15 @@
 
 ### 9.3. P2 — Trung Hạn
 
-#### Tracing & Ops
+#### Tracing & vận hành
 - [ ] Triển khai OpenTelemetry tracing (API Gateway -> Redis -> Worker -> MongoDB)
 - [ ] Hoàn thiện SSL termination cho Nginx (không chỉ tài liệu)
 
-#### Data Platform
+#### Nền tảng dữ liệu
 - [ ] Đánh giá ngưỡng scale dữ liệu (`>10M events/tháng`) để cân nhắc TimescaleDB/VictoriaMetrics
 - [ ] Định nghĩa strategy archive trước khi xóa dữ liệu theo TTL
 
-#### Delivery & Governance
+#### Delivery & quản trị
 - [ ] Bổ sung workflow GitHub Actions song song Jenkins (CI fallback)
 - [ ] Thiết kế rollback strategy tự động cho deployment (blue/green hoặc canary + health-based rollback)
 - [ ] Publish coverage report/artifacts trong CI để theo dõi quality gate theo từng build
@@ -918,12 +917,12 @@
   - [ ] Alert creation latency sau khi ingest event
   - [ ] Uptime mục tiêu theo tháng/quý
 
-#### Security & Access Control
+#### Bảo mật & kiểm soát truy cập
 - [ ] Thiết kế RBAC cơ bản (viewer/operator/admin)
 - [ ] Bắt buộc auth cho WebSocket khi deploy production
 - [ ] Thêm audit log cho thay đổi API key/cấu hình nhạy cảm
 
-#### ATS Domain Evolution
+#### Phát triển miền ATS
 - [ ] Chuẩn hóa dashboard NOC theo use-case vận hành (alert triage timeline, ownership, escalation)
 - [ ] Định nghĩa quy trình failover tự động và kiểm thử định kỳ
 
