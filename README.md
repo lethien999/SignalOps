@@ -24,13 +24,20 @@
 
 ## 🎯 Giới thiệu
 
-**SignalOps** giám sát chất lượng mạng viễn thông thời gian thực: thu thập telemetry từ thiết bị (latency, packet loss, signal strength) → phát hiện bất thường tự động → cảnh báo realtime → hiển thị trên dashboard interaktif.
+**SignalOps** giám sát chất lượng mạng viễn thông **thời gian thực** (trong vài mili giây):
+1. Thu thập **telemetry** (dữ liệu đo đạc) từ thiết bị:
+   - **Latency** = thời gian phản hồi (ms) — nếu > 200ms thì **chậm**
+   - **Packet Loss** = % gói dữ liệu bị mất — nếu > 5% thì **có lỗi truyền**
+   - **Signal Strength** = độ mạnh tín hiệu (dBm) — nếu < −90 dBm thì **tín hiệu yếu**
+2. **Phát hiện bất thường** tự động (so sánh với ngưỡng)
+3. **Cảnh báo realtime** (gửi ngay tức thì, không chờ)
+4. Hiển thị trên **dashboard interaktif** (bản đồ, bảng, biểu đồ)
 
 **Vấn đề giải quyết**: 
-- 📡 Biết ngay trạm nào **phản hồi chậm** / **mất gói** / **tín hiệu yếu**
-- 🗺️ Visualize vị trí sự cố trên **bản đồ tương tác**
-- 👥 Xác định **rõ người xử lý** & ghi chú **cách khắc phục**
-- 📊 Track **lịch sử cảnh báo** & tạo **báo cáo hàng ngày**
+- 📡 Biết **ngay** trạm nào có sự cố (không phải chờ report thủ công hay gọi điện)
+- 🗺️ **Nhìn trực quan** trên bản đồ — vị trí sự cố ở đâu, mức độ thế nào
+- 👥 **Ghi rõ** ai xác nhận, ai xử lý, ghi chú cách khắc phục — tránh lỗi quên
+- 📊 **Lưu lịch sử** tất cả cảnh báo — giúp phân tích xu hướng & xuất báo cáo
 
 ---
 
@@ -41,18 +48,19 @@
 git clone <your-repo> && cd signalops
 cp .env.example .env
 
-# 2. Cài đặt & build
+# 2. Cài đặt & build (npm = package manager cho JavaScript)
 npm install && npm run build
 
-# 3. Khởi động stack (Docker required)
+# 3. Khởi động stack (Docker = container — gói ứng dụng + môi trường, chạy cô lập)
 docker compose --env-file .env -f infrastructure/docker-compose.yml up -d
+# docker compose = công cụ khởi động nhiều container cùng lúc (API, DB, Cache, etc.)
 
 # 4. Mở browser
-# API: http://localhost:3000/api/health
-# Dashboard: http://localhost:3001
-# Swagger: http://localhost:3000/api/docs
-# Prometheus: http://localhost:9090
-# Grafana: http://localhost:3000/grafana (admin:admin123)
+# API: http://localhost:3000/api/health (kiểm tra hệ thống hoạt động bình thường không)
+# Dashboard: http://localhost:3001 (giao diện chính — xem cảnh báo, bản đồ, quản lý)
+# Swagger: http://localhost:3000/api/docs (tài liệu API + test endpoint)
+# Prometheus: http://localhost:9090 (lưu trữ metrics — CPU, memory, request count, etc.)
+# Grafana: http://localhost:3000/grafana (vẽ biểu đồ đẹp từ Prometheus metrics + cấu hình alert)
 
 # 5. Kiểm thử
 npm run test:integration           # Unit + integration tests
@@ -82,30 +90,36 @@ docker compose --env-file .env -f infrastructure/docker-compose.yml down
 ## 🏗️ Kiến Trúc Nhanh
 
 ```
-Event Source (thiết bị/simulator)
+Thiết bị / Simulator (gửi dữ liệu)
          ↓
-   API Gateway (port 3000)
-   - Validate x-api-key
-   - Enqueue → Redis queue
-   - Return 202 Accepted
+   API Gateway (port 3000) — Cổng tiếp nhận
+   ├─ Validate x-api-key (xác thực ai gửi)
+   ├─ Enqueue → Redis queue (đẩy vào hàng chờ)
+   └─ Return 202 Accepted (trả lời "nhận được, xử lý sau")
          ↓
-   Worker Service (BullMQ consumer)
-   - Fetch từ queue
-   - Detect anomaly → Create Alert
-   - Save → MongoDB
-   - Emit → WebSocket
+   Worker Service (BullMQ consumer) — Công nhân xử lý
+   ├─ Fetch từ queue (lấy công việc từ hàng chờ)
+   ├─ Detect anomaly → Create Alert (so sánh với ngưỡng, phát hiện lỗi)
+   ├─ Save → MongoDB (lưu vào database)
+   └─ Emit → WebSocket (gửi realtime tới dashboard)
          ↓
-   Dashboard (Next.js, port 3001)
-   - Map visualization
-   - Alert table + metrics
-   - Real-time update via WebSocket
+   Dashboard (Next.js, port 3001) — Giao diện người dùng
+   ├─ Map visualization (bản đồ Leaflet)
+   ├─ Alert table + metrics (bảng cảnh báo + biểu đồ)
+   └─ Real-time update via WebSocket (cập nhật tức thì, không cần F5)
          ↓
-   Monitoring (Prometheus + Grafana)
-   - Metrics collection
-   - Health & performance dashboard
+   Monitoring (Prometheus + Grafana) — Giám sát hệ thống
+   ├─ Metrics collection (lưu CPU, memory, request count, etc.)
+   └─ Health & performance dashboard (vẽ biểu đồ + cấu hình alert)
 ```
 
-**Công nghệ stack**: NestJS 10 | Express | Next.js 14 | React | MongoDB 5 | Redis 5 | BullMQ 4 | Socket.io 4 | TypeScript 5
+**Công nghệ stack**:
+- **Backend**: NestJS 10 (framework), Express (HTTP server) — viết bằng TypeScript (safer than JavaScript)
+- **Frontend**: Next.js 14 (web framework), React (UI library) — xây dựng giao diện
+- **Database**: MongoDB 5 (lưu events, alerts) — NoSQL database (linh hoạt hơn SQL)
+- **Cache/Queue**: Redis 5 (lưu bộ nhớ) + BullMQ 4 (quản lý hàng chờ) — xử lý bất đồng bộ
+- **Realtime**: Socket.io 4 (WebSocket server) — gửi dữ liệu ngay tức thì tới client
+- **Language**: TypeScript 5 — JavaScript có type checking (bắt lỗi sớm)
 
 ---
 
@@ -223,15 +237,17 @@ GRAFANA_ADMIN_PASSWORD=admin12345
 
 ## Các dịch vụ
 
-| Dịch vụ | Vai trò | Cổng |
-|---------|---------|------|
-| **API Gateway** | Cổng tiếp nhận REST API, Swagger docs, WebSocket server | `:3000` |
-| **Worker Service** | Xử lý nền, phát hiện bất thường, tạo cảnh báo | — |
-| **Simulator** | Tạo dữ liệu telemetry mô phỏng từ thiết bị ảo | — |
-| **Dashboard** | Giao diện Next.js: bản đồ, cảnh báo, biểu đồ | `:3001` |
-| **MongoDB** | Lưu trữ events và alerts | `:27017` |
-| **Redis** | Hàng đợi BullMQ + cache | `:6379` |
-| **Nginx** | Reverse proxy (tùy chọn) | `:8080` |
+| Dịch vụ | Vai trò | Cổng | Giải thích chi tiết |
+|---------|---------|------|------------------|
+| **API Gateway** | Cổng tiếp nhận REST API, Swagger docs, WebSocket server | `:3000` | **Cửa chính** hệ thống — thiết bị gửi dữ liệu vào đây, Swagger docs để test API, WebSocket để gửi realtime |
+| **Worker Service** | Xử lý nền, phát hiện bất thường, tạo cảnh báo | — | **Công nhân nền** — lấy công việc từ queue, so sánh dữ liệu với ngưỡng, phát hiện lỗi, tạo cảnh báo |
+| **Simulator** | Tạo dữ liệu telemetry mô phỏng từ thiết bị ảo | — | **Thiết bị giả lập** — khi không có thiết bị thực, dùng cái này để test hệ thống |
+| **Dashboard** | Giao diện Next.js: bản đồ, cảnh báo, biểu đồ | `:3001` | **Giao diện chính** — bạn dùng cái này để xem cảnh báo, quản lý, xác nhận, xử lý |
+| **MongoDB** | Lưu trữ events và alerts | `:27017` | **Kho lưu trữ** — database lưu tất cả dữ liệu vĩnh viễn (events, alerts, users, etc.) |
+| **Redis** | Hàng đợi BullMQ + cache | `:6379` | **Bộ nhớ nhanh** — lưu hàng chờ công việc + cache dữ liệu hay dùng (để truy cập nhanh hơn) |
+| **Nginx** | Reverse proxy (tùy chọn) | `:8080` | **Lối vào thứ 2** (production) — người ngoài truy cập vào cổng 8080, Nginx chuyển tiếp tới API/Dashboard |
+| **Prometheus** | Lưu trữ metrics (CPU, memory, requests) | `:9090` | **Kho dữ liệu hiệu năng** — ghi lại CPU, memory, số request, queue depth theo thời gian |
+| **Grafana** | Vẽ biểu đồ đẹp từ Prometheus metrics | `:3003` | **Bảng điều khiển hiệu năng** — xem biểu đồ CPU, memory, alert trends, cấu hình alert rules |
 
 ---
 
@@ -321,11 +337,11 @@ Dashboard gồm 5 trang chính:
 
 ## Ngưỡng cảnh báo
 
-| Chỉ số | Điều kiện | Mức độ | Ý nghĩa |
-|--------|-----------|--------|---------|
-| Latency | > 200ms | 🔴 HIGH | Phản hồi chậm, ảnh hưởng trải nghiệm |
-| Packet Loss | > 5% | 🔴 HIGH | Mất dữ liệu, cuộc gọi bị đứt |
-| Signal Strength | < −90 dBm | 🟡 MEDIUM | Tín hiệu yếu, vùng phủ sóng kém |
+| Chỉ số | Ngưỡng cảnh báo | Mức độ | Ý nghĩa (người không tech) |
+|--------|-----------|--------|----------|
+| **Latency** (ms) | > 200ms | 🔴 HIGH | **Phản hồi > 0.2 giây** — cảm nhận bằng cách nhấn nút rồi chờ kết quả chậm, hoặc cuộc gọi VoIP bị hư |
+| **Packet Loss** (%) | > 5% | 🔴 HIGH | **Mất > 5% gói dữ liệu** — 1 trong 20 gói không tới được → cuộc gọi bị đứt, video bị lag |
+| **Signal Strength** (dBm) | < −90 dBm | 🟡 MEDIUM | **Tín hiệu yếu** — di chuyển quá xa trạm, hoặc bị tòa nhà che chắn → mất signal hoặc mạng 2G |
 
 Tất cả ngưỡng có thể cấu hình qua biến môi trường trong `.env`.
 
@@ -356,16 +372,24 @@ Tham khảo đầy đủ: [docs/API.md](docs/API.md)
 
 Thiết bị hoặc hệ thống NMS chỉ cần gửi `HTTP POST /api/events` với JSON gồm `deviceId`, `location`, `metrics`.
 
-Ví dụ tối giản:
+Ví dụ tối giản (giải thích từng dòng):
 
 ```bash
-curl -X POST http://localhost:3000/api/events \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: <your-api-key>" \
-  -d '{
-    "deviceId": "bts-hcm-01",
-    "location": { "lat": 10.77, "lng": 106.70, "name": "Trạm Q1 HCM" },
-    "metrics": { "latency": 250, "packetLoss": 8, "signalStrength": -95 }
+curl -X POST http://localhost:3000/api/events \    # Gửi dữ liệu mới (POST) tới cổng 3000
+  -H "Content-Type: application/json" \             # Định dạng dữ liệu = JSON
+  -H "x-api-key: <your-api-key>" \                 # Xác thực (như mật khẩu) — hệ thống biết bạn là ai
+  -d '{                                              # Dữ liệu gửi đi
+    "deviceId": "bts-hcm-01",                       # Tên thiết bị (trạm base station)
+    "location": {                                    # Vị trí địa lý
+      "lat": 10.77,                                 # Latitude (vĩ độ)
+      "lng": 106.70,                                # Longitude (kinh độ)
+      "name": "Trạm Q1 HCM"                         # Tên địa điểm (để người xem dễ nhận diện)
+    },
+    "metrics": {                                     # Các chỉ số đo đạc
+      "latency": 250,                               # Thời gian phản hồi = 250 mili giây (cảnh báo vì > 200ms)
+      "packetLoss": 8,                              # Mất 8% gói dữ liệu (cảnh báo vì > 5%)
+      "signalStrength": -95                         # Tín hiệu = -95 dBm (cảnh báo vì < -90 dBm)
+    }
   }'
 ```
 
@@ -373,99 +397,141 @@ Xem chi tiết format và adapter mẫu tại [docs/API.md](docs/API.md).
 
 ---
 
-## WebSocket (Realtime)
+## WebSocket (Realtime — cập nhật tức thì)
+
+**WebSocket** = kết nối hai chiều giữa client (browser) và server, dữ liệu đẩy ngay mà không cần client hỏi lại (khác với HTTP thông thường)
 
 Kết nối tới `ws://localhost:3000` bằng Socket.io client.
 
-| Event | Mô tả |
-|-------|-------|
-| `alert:new` | Cảnh báo mới được tạo |
-| `alert:acknowledged` | Cảnh báo đã được xác nhận |
-| `alert:resolved` | Cảnh báo đã được xử lý |
-| `event:processed` | Sự kiện xử lý xong |
-| `device:status:changed` | Thiết bị thay đổi trạng thái |
-| `queue:depth` | Độ sâu hàng đợi (định kỳ) |
-| `worker:stats` | Thống kê hiệu suất Worker |
+**Các sự kiện realtime** (tức thì, <= 500ms):
+
+| Sự kiện | Ý nghĩa | Ví dụ |
+|--------|--------|-------|
+| `alert:new` | **Cảnh báo mới** được phát hiện | Trạm BTS HCM-01 latency 250ms → cảnh báo mới, dashboard tự cập nhật |
+| `alert:acknowledged` | Operator **xác nhận** sẽ xử lý | Anh Minh nhấn "Đã nhận" → lập tức thông báo cho team khác |
+| `alert:resolved` | Cảnh báo **đã sửa xong** | Anh Minh sửa xong, nhấn "Resolve" → dashboard tự gỡ cảnh báo |
+| `event:processed` | Sự kiện đã **xử lý xong** | Worker hoàn tất xử lý event từ simulator |
+| `device:status:changed` | Trạm **thay đổi trạng thái** | Từ "online" → "offline" (mất signal) |
+| `queue:depth` | **Số công việc** đang đợi (định kỳ) | Queue có 150 job đang chờ → cảnh báo nếu quá lâu |
+| `worker:stats` | **Hiệu suất Worker** (định kỳ) | Xử lý 1000 event/phút, CPU 45%, memory 512MB |
 
 ---
 
-## Cấu trúc dự án
+## CẤU TRÚC DỰ ÁN
 
 ```
 SignalOps/
-├── apps/
-│   ├── api-gateway/         # Cổng HTTP + WebSocket
-│   ├── worker-service/      # Xử lý nền + phát hiện bất thường
-│   ├── simulator/           # Tạo dữ liệu telemetry mô phỏng
-│   └── dashboard/           # Giao diện Next.js
-├── libs/
-│   ├── common/              # Tiện ích dùng chung, logger, constants
-│   └── models/              # Schemas, DTOs, interfaces
-├── infrastructure/
-│   ├── docker-compose.yml   # Cấu hình production
-│   ├── docker-compose.dev.yml # Cấu hình dev (hot reload)
-│   ├── Dockerfile.*         # Dockerfile cho từng service
-│   ├── nginx/               # Cấu hình reverse proxy
-│   └── monitoring/          # Prometheus + Grafana config
-├── scripts/                 # Backup, công cụ dev, xác minh API/WebSocket
-├── Jenkinsfile              # CI/CD pipeline
-└── docs/                    # Tài liệu kiến trúc, API, triển khai
+├── apps/                           # Tùa ứng dụng (mỗi cái độc lập)
+│   ├── api-gateway/                # API Gateway — cổng tiếp nhận event
+│   ├── worker-service/             # Worker — xử lý bất thường, tạo alert
+│   ├── simulator/                  # Simulator — tạo telemetry giả (test)
+│   └── dashboard/                  # Dashboard — giao diện Web (Next.js)
+├── libs/                           # Thư viện chung (dùng lại nhiều chỗ)
+│   ├── common/                     # Utilities: logger, constants, etc.
+│   └── models/                     # Schemas & interfaces (cấu trúc dữ liệu)
+├── infrastructure/                 # Cấu hình chạy (Docker, Nginx, monitoring)
+│   ├── docker-compose.yml          # Cấu hình production (chạy bao nhiêu container)
+│   ├── docker-compose.dev.yml      # Cấu hình dev (chế độ hot reload)
+│   ├── Dockerfile.*                # Dockerfile của từng dịch vụ (cách đóng gói)
+│   ├── nginx/                      # Cấu hình reverse proxy (lối vào thứ 2)
+│   └── monitoring/                 # Prometheus + Grafana config (giám sát hiệu năng)
+├── scripts/                        # Công cụ helper (backup, kiểm tra)
+│   ├── backup-mongodb.sh           # Sao lưu MongoDB
+│   ├── verify-api.mjs              # Kiểm tra API hoạt động
+│   └── verify-websocket.mjs        # Kiểm tra WebSocket hoạt động
+├── Jenkinsfile                     # Pipeline tự động (build, test, deploy)
+└── docs/                           # Tài liệu (kiến trúc, API, triển khai)
 ```
 
-## Quy ước Git
+**Ý nghĩa cấu trúc**:
+- **apps/**: Mỗi folder là một dịch vụ độc lập — có thể build, test, deploy riêng
+- **libs/**: Code dùng chung — vì không muốn copy-paste, nên tách ra file chung
+- **infrastructure/**: Cấu hình môi trường — "cách chạy" hệ thống
+- **scripts/**: Các công cụ hỗ trợ — backup, kiểm tra, etc.
 
-- Quy ước chi tiết: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
-- Tóm tắt: mỗi feature/fix/hotfix phải có branch riêng, branch mới tách từ nhánh ổn định, và không commit trực tiếp lên `main`
-- Commit cần rõ nghĩa theo kiểu `type(scope): summary`, tránh message chung chung
+## QUY ƯỚC GIT
+
+**Chi tiết chi tiết**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
+**Tóm tắt chi tiết**: 
+- Mỗi feature/fix/hotfix phải có **branch riêng** (không commit trực tiếp lên `main`)
+  - Ví dụ: `git checkout -b feature/new-alert-type` (tạo branch mới)
+- **Commit message rõ** theo kiểu `type(scope): summary` (để những người khác hiểu bạn chỗ làm gì)
+  - 👍 Ví dụ tốt: `fix(alert): add validation for packet loss > 100%`
+  - ❌ Tệ: `fix`, `updated`, `oops`
+- **Review**: Mỗi PR cần có thành viên khác review ưu tiên (để bắt lỗi sớm)
 
 ---
 
-## Lệnh Docker
+## LỆNH DOCKER
 
 ```bash
-# Production (cần build lại khi sửa code)
-npm run docker:build     # Build tất cả images
-npm run docker:up        # Khởi động hệ thống
-npm run docker:logs      # Xem logs
-npm run docker:down      # Dừng hệ thống
+# Production (đòi cần build lại khi sửa code — Docker image = gói công nhân đóng sẵn để chạy)
+npm run docker:build     # Build tất cả Docker images từ code tương ứng
+npm run docker:up        # Khởi động từng container (API, DB, cache, etc.) đồng thời
+npm run docker:logs      # Xem logs của từng container (để debug lỗi)
+npm run docker:down      # Dừng tất cả hệ thống (xóa container nhưng giữ dữ liệu)
 ```
 
----
-
-## CI/CD (Jenkins)
-
-[`Jenkinsfile`](Jenkinsfile) định nghĩa pipeline đầy đủ:
-
-**Checkout → Install → Build → Lint → Test → Xác minh API → Kiểm tra logs → Docker Build & Tag**
-
-- Chạy unit tests với yêu cầu coverage
-- Khởi động hệ thống và xác minh API endpoints qua smoke tests
-- Quét logs container tìm lỗi nghiêm trọng (FATAL, OOM, unhandled rejections)
-- Tag Docker images với commit SHA trên nhánh `main`
+**Giải thích**: Docker giống như máy ảo nhỏ — mở cái này bản mã, cái này SQL, etc. để chạy cùng lúc mà không ảnh hưởng đến máy
 
 ---
 
-## Giám sát (Monitoring)
+## CI/CD (JENKINS — Tự Động Hóa Quy Trình)
+
+[`Jenkinsfile`](Jenkinsfile) định nghĩa pipeline tự động (**CI/CD** = Continuous Integration/Deployment = tự động build, test, deploy khi có code mới):
+
+```
+Checkout code (lấy code mới từ GitHub)
+         ↓
+Install dependencies (cài đặt thư viện)
+         ↓
+Build (dịch TypeScript → JavaScript)
+         ↓
+Lint (đối ngặt code, tập chí code style)
+         ↓
+Unit Tests (Đối chắc không có bug từ code thay đổi)
+         ↓
+API Verification (kiểm tra API có chạy được không)
+         ↓
+Log Scanning (tìm ERROR trong logs)
+         ↓
+Docker Build & Tag (đóng gói code đã build thành Docker image)
+         ↓
+Docker Push (đẩy lên registry để deploy)
+```
+
+**Giải thích**: Jenkins là **máy đọ** — khi bạn push code lên GitHub, nó tự động build, test, và đẩy lên production, không cần người chạy lệnh bằng tay
+
+---
+
+## GIÁM SÁT (MONITORING) — Xuất Bảng Điều Khiển
 
 ```bash
 # Khởi động Prometheus + Grafana + Node Exporter
+# (Nài là cấu hình giám sát — theo dõi CPU, memory, requests)
 docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
 ```
 
-| Dịch vụ | URL |
-|---------|-----|
-| Prometheus | `http://localhost:9090` |
-| Grafana | `http://localhost:3003` (admin/signalops2026) |
-| Node Exporter | `http://localhost:9100` |
+**Có ba thằng:**
+1. **Prometheus** (`http://localhost:9090`): Lưu trữ dữ liệu metric thời gian thực (CPU %, memory MB, request count, queue depth, etc.)
+2. **Node Exporter** (`http://localhost:9100`): Đội giám sát — lấy metric với CPU, memory từ hệ thống
+3. **Grafana** (`http://localhost:3003` / admin/signalops2026): Vẽ biểu đồ đẹp từ Prometheus data + cấu hình alert rules (đẩy cảnh báo khi CPU vượt 80%)
+
+| Dịch vụ | URL | Dùng để gì |
+|---------|-----|------------|
+| **Prometheus** | `http://localhost:9090` | Lưu/truy vấn raw metrics (dữ liệu thô) |
+| **Grafana** | `http://localhost:3003` | Vẽ biểu đồ đẹp + alert rules (dashboard đẹp) |
+| **Node Exporter** | `http://localhost:9100` | Thu thập metrics từ máy (CPU, memory, disk) |
 
 ---
 
 ## Bảo mật
 
-- **API Key**: Đặt biến `API_KEY` trong `.env` → mọi request POST cần header `x-api-key`
-- **Rate Limiting**: Giới hạn 100 req/phút/IP (cấu hình qua `RATE_LIMIT_MAX`)
-- **Correlation ID**: Mỗi request được gán UUID duy nhất trong header `x-correlation-id`
-- **Env Validation**: Kiểm tra biến môi trường bắt buộc khi khởi động
+- **API Key**: Đặt biến `API_KEY` trong `.env` → mọi request POST cần header `x-api-key` (giống như mật khẩu để xác thực "ai gửi dữ liệu")
+- **Rate Limiting**: Giới hạn 100 request/phút/IP (để tránh tấn công brute-force — gửi quá nhiều request cùng lúc)
+- **Correlation ID**: Mỗi request được gán UUID duy nhất trong header `x-correlation-id` (để debug và theo dõi request khi gửi qua nhiều service)
+- **Env Validation**: Kiểm tra biến môi trường bắt buộc khi khởi động (VD: không có API_KEY thì hệ thống không chạy)
 
 ---
 
