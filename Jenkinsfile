@@ -112,6 +112,7 @@ pipeline {
                     sh 'docker compose --env-file .env -f infrastructure/docker-compose.yml up -d'
                     sleep(time: 15, unit: 'SECONDS')
                     sh 'curl -sf http://localhost:3000/api/health || exit 1'
+                    sh 'npm run test:integration'
                     sh 'docker compose --env-file .env -f infrastructure/docker-compose.yml down'
                 }
             }

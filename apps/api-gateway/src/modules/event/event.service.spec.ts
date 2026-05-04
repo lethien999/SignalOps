@@ -36,11 +36,44 @@ describe('EventService', () => {
 
     expect(eventRepository.save).toHaveBeenCalledTimes(1);
     expect(eventBrokerService.queueEvent).toHaveBeenCalledTimes(1);
+    expect(eventBrokerService.queueEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: 'event-1',
+        deviceId: 'device-1',
+      }),
+    );
     expect(result).toEqual({
       id: 'event-1',
       status: 'queued',
       jobId: 'job-1',
     });
+  });
+
+  it('createEvent propagates repository validation errors and does not queue job', async () => {
+    const eventRepository = {
+      save: jest.fn().mockRejectedValue(new BadRequestException('invalid payload')),
+      find: jest.fn(),
+      findById: jest.fn(),
+      countAll: jest.fn(),
+      countEventsWithinPeriod: jest.fn(),
+      findRecent: jest.fn(),
+    };
+
+    const eventBrokerService = {
+      queueEvent: jest.fn(),
+    };
+
+    const service = new EventService(eventRepository as never, eventBrokerService as never);
+
+    await expect(
+      service.createEvent({
+        deviceId: 'device-1',
+        location: { lat: 10.7, lng: 106.6 },
+        metrics: { latency: Number.NaN, packetLoss: 1, signalStrength: -70 },
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(eventBrokerService.queueEvent).not.toHaveBeenCalled();
   });
 
   it('parseEventFilters normalizes values and parses dates', () => {

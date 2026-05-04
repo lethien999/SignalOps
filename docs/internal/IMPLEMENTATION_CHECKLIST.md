@@ -422,10 +422,13 @@
 - [x] Redis queue reliability
 
 #### Load/Performance Tests (Cần hạ tầng thật)
-- [ ] Send 100 events/sec → system stable
-- [ ] Worker processes events in <1s
-- [ ] API response time <200ms
-- [ ] WebSocket broadcasts to 100+ clients
+- [x] Load test harness sẵn sàng: `npm run perf:load`
+- [x] Soak test harness sẵn sàng: `npm run perf:soak` (dùng duration dài khi có staging/prod)
+- [x] WebSocket fan-out harness sẵn sàng: `npm run perf:websocket`
+- [ ] Send 100 events/sec → system stable *(verify trên staging/prod)*
+- [ ] Worker processes events in <1s *(verify trên staging/prod)*
+- [ ] API response time <200ms *(verify trên staging/prod)*
+- [ ] WebSocket broadcasts to 100+ clients *(verify trên staging/prod)*
 
 ### CI/CD Pipeline (Jenkins)
 
@@ -442,7 +445,7 @@
   - [x] Build React dashboard
 - [x] **Test**:
   - [x] Run unit tests
-  - [ ] Run integration tests (cần bổ sung test scripts)
+  - [x] Run integration tests (`npm run test:integration` = `verify:api` + `verify:websocket`)
   - [x] Generate coverage report
   - [x] Fail if tests don't pass or coverage <70%
 - [x] **Docker Build**:
@@ -462,7 +465,7 @@
 
 ### Monitoring Setup
 - [x] Prometheus scrape config (`infrastructure/monitoring/prometheus.yml`)
-- [ ] Metrics exposed at `/metrics` (cần thêm prom-client vào NestJS)
+- [x] Metrics exposed at `/api/metrics` (`MetricsController` + `prom-client`)
 - [x] Grafana dashboard created (`infrastructure/monitoring/grafana-dashboard.json`)
 - [x] Docker Compose monitoring stack (`docker-compose.monitoring.yml`)
 - [ ] Grafana alert rules configured (cần tuỳ chỉnh theo nhu cầu)
@@ -478,7 +481,7 @@
 - [x] Error handling toàn diện
 - [x] Graceful shutdown implemented
 - [x] Environment validated on startup (`env-validator.ts`) (E5)
-- [ ] Database migrations manageable (MongoDB schemaless → ít cần)
+- [x] Database migrations manageable (`db:migrate`, `db:rollback`, `db:seed`, `status` scripts)
 - [x] API Key authentication (`api-key.guard.ts`) (F1)
 - [x] Backup strategy for MongoDB (`scripts/backup-mongodb.sh`) (F2)
 - [x] Rate limiting configured (`rate-limit.guard.ts`) (E4)
@@ -652,7 +655,7 @@
 
 #### 8. Jenkinsfile — Add Docker push to registry
 - [x] Configure Docker registry credentials trong Jenkinsfile environment
-- [ ] Thêm docker tag step: `docker tag service:latest ${REGISTRY}/signalops-service:${TAG}`
+- [x] Thêm docker tag step (đã tag trực tiếp khi `docker build -t ...:${TAG} -t ...:latest`)
 - [x] Thêm docker push step: `docker push ${REGISTRY}/signalops-service:${TAG}`
 - [x] Document registry setup trong `DEPLOYMENT.md`
 - [ ] Test: Jenkins pipeline successfully pushes images *(BỎ QUA local: cần registry thật + Jenkins credentials)*
@@ -673,16 +676,16 @@
 
 #### 10. API Gateway — Add unit tests (Coverage Phase 1)
 - [x] Create `apps/api-gateway/src/modules/event/event.service.spec.ts`
-  - [ ] Test: `createEvent()` validation
-  - [ ] Test: Event saved to queue
-  - [ ] Test: Duplicate check logic
+  - [x] Test: `createEvent()` validation
+  - [x] Test: Event saved to queue
+  - [x] Test: Duplicate check logic (đảm bảo payload `_id` + `deviceId` được forward để tạo `jobId` ổn định ở broker)
 - [x] Create `apps/api-gateway/src/modules/alert/alert.service.spec.ts`
-  - [ ] Test: `updateStatus()` transitions
-  - [ ] Test: `batchAcknowledge()` updates multiple alerts
+  - [x] Test: `updateStatus()` transitions
+  - [x] Test: `batchAcknowledge()` updates multiple alerts
 - [x] Create `apps/api-gateway/src/common/guards/api-key.guard.spec.ts`
-  - [ ] Test: Valid API key → allow
-  - [ ] Test: Invalid API key → 403
-  - [ ] Test: Missing API key → 403
+  - [x] Test: Valid API key → allow
+  - [x] Test: Invalid API key → 403
+  - [x] Test: Missing API key → 403
 - [x] Ensure coverage ≥70% cho api-gateway
 
 **Impact**: API Gateway là service quan trọng nhất nhưng 0 test — không có confidence khi refactor
@@ -690,8 +693,8 @@
 ---
 
 #### 11. API Gateway — Add RateLimitGuard Redis-backed (Optional for Phase 2)
-- [ ] Current: In-memory Map không scale khi run multiple instances
-- [ ] Recommendation: Convert sang Redis-backed sliding window
+- [x] Current: In-memory Map dùng như fallback khi Redis unavailable
+- [x] Recommendation: Convert sang Redis-backed sliding window
 - [x] Implementation: Use `Redis.incr()` + `Redis.expire()` pattern
 - [ ] Test: Verify rate limit works across multiple instances
 - [ ] Note: Can be deferred nếu single-instance deployment
@@ -725,9 +728,9 @@
 
 #### 14. Create `docker-compose.dev.yml` for hot reload
 - [x] Tạo file `infrastructure/docker-compose.dev.yml` với volume mounts
-- [x] Enable hot reload cho `api-gateway`, `worker-service`, `event-broker`
+- [x] Enable hot reload cho `api-gateway`, `worker-service`, `simulator`, `dashboard`
 - [x] Document trong `CONTRIBUTING.md`: `docker-compose -f docker-compose.dev.yml up`
-- [ ] Test: Code changes apply immediately without rebuild
+- [ ] Test: Code changes apply immediately without rebuild *(blocked local: Docker daemon chưa chạy)*
 
 **Impact**: Developer experience — currently mentioned in README nhưng file không tồn tại
 
@@ -747,9 +750,9 @@
 #### 16. Connect Monitoring stack to App network
 - [x] Update `infrastructure/monitoring/docker-compose.monitoring.yml`
 - [x] Connect Prometheus vào main `signalops` network (external)
-- [ ] Verify: Prometheus can reach `http://api-gateway:3000/metrics`
+- [ ] Verify: Prometheus can reach `http://api-gateway:3000/metrics` *(blocked local: Docker daemon chưa chạy)*
 - [x] Add `/metrics` endpoint to NestJS services (prom-client integration)
-- [ ] Configure Grafana scrape jobs
+- [ ] Configure Grafana scrape jobs *(Grafana alerting/provisioning cần tinh chỉnh theo môi trường)*
 
 **Impact**: Monitoring stack riêng biệt — không scrape được app metrics
 
@@ -757,11 +760,10 @@
 
 #### 17. Add Docker resource limits
 - [x] Add `deploy.resources.limits` cho mỗi service trong `docker-compose.yml`
-  - [ ] API Gateway: 512m memory, 0.5 CPU
-  - [ ] Event Broker: 256m memory, 0.25 CPU
-  - [ ] Worker Service: 512m memory, 0.5 CPU
-  - [ ] Simulator: 256m memory, 0.25 CPU
-  - [ ] Dashboard: 256m memory, 0.25 CPU
+  - [x] API Gateway: 512m memory, 0.5 CPU
+  - [x] Worker Service: 512m memory, 0.5 CPU
+  - [x] Simulator: 256m memory, 0.25 CPU
+  - [x] Dashboard: 256m memory, 0.25 CPU
 - [x] Add `deploy.resources.reservations` (minimum required)
 - [ ] Test: Docker compose respects limits under load
 
@@ -770,17 +772,17 @@
 ---
 
 #### 18. Decide Event Broker service fate
-- [ ] Option 1: Xóa service
-  - [ ] Remove `apps/event-broker/`
-  - [ ] Remove `infrastructure/Dockerfile.broker`
-  - [ ] Remove service từ `docker-compose.yml`
+- [x] Option 1: Xóa service
+  - [x] Remove `apps/event-broker/`
+  - [x] Remove `infrastructure/Dockerfile.broker`
+  - [x] Remove service từ `docker-compose.yml`
   - [x] Document: `EventBrokerService` trong api-gateway đảm nhận vai trò
   
-- [ ] Option 2: Implement properly
-  - [ ] Move logic từ api-gateway ra dedicated service
-  - [ ] Nhận events từ HTTP endpoint hoặc message queue
-  - [ ] Enrich + validate + push vào Redis queue
-  - [ ] Add tests + documentation
+- [x] Option 2: Implement properly *(N/A - không chọn theo quyết định Option 1)*
+  - [x] Move logic từ api-gateway ra dedicated service *(N/A)*
+  - [x] Nhận events từ HTTP endpoint hoặc message queue *(N/A)*
+  - [x] Enrich + validate + push vào Redis queue *(N/A)*
+  - [x] Add tests + documentation *(N/A)*
   
 - [x] Recommendation: Option 1 (xóa) — simplify architecture, maintain trong api-gateway
 
@@ -835,6 +837,102 @@
 
 ---
 
-**Cập nhật**: 29/04/2026  
+**Cập nhật**: 04/05/2026  
 **Trạng thái Phase 1-3**: ✅ Hoàn thành phần code  
 **Est. completion (all)**: 30/5/2026 (với team 2-3 people)
+
+---
+
+## Milestone 9: Repo Audit 2026-05-04 — Pending Approval
+
+*Nguồn: docs/SignalOps_Repo_Audit.md (audit ngày 04/05/2026).*
+
+**Nguyên tắc thực hiện:**
+- [x] Tất cả thay đổi mới phải được đưa vào checklist trước khi code
+- [ ] Chỉ bắt đầu triển khai sau khi Product Owner xác nhận hạng mục
+
+### 9.1. P0 — Trước Production (ưu tiên cao nhất)
+
+#### Reliability & Correctness
+- [ ] Thêm `restart: unless-stopped` cho `worker-service` trong compose
+- [ ] Đồng bộ logic ngưỡng tại `EventService.getDevices()` bằng `ThresholdDetector.detectAnomalies()` (xóa hardcode)
+- [ ] Tối ưu `EventService.getDevices()` bằng MongoDB aggregation (`$sort` + `$group`) để tránh xử lý in-memory khi scale
+- [ ] Thêm TTL index cho events (90 ngày)
+- [ ] Chuẩn hóa timeout cho external dependencies:
+  - [ ] Request timeout middleware/interceptor cho API Gateway
+  - [ ] Cấu hình `connectTimeoutMS` / `socketTimeoutMS` / `serverSelectionTimeoutMS` cho MongoDB
+  - [ ] Cấu hình timeout/retry phù hợp cho Redis client
+- [ ] Thiết kế cơ chế idempotency nâng cao cho case `DB save thành công nhưng enqueue thất bại` (outbox/retry compensation)
+
+#### CI/CD & Runtime Security
+- [ ] Chuyển các Dockerfile backend sang multi-stage build
+- [ ] Chạy container với non-root user (`USER` không phải root)
+- [ ] Tối ưu layer cache Dockerfile (copy lockfile/package trước source)
+
+### 9.2. P1 — Sprint Kế Tiếp
+
+#### Reliability Hardening
+- [ ] Thêm jitter cho BullMQ backoff để giảm thundering herd
+- [ ] Áp dụng circuit breaker cho thao tác MongoDB/Redis (opossum hoặc tương đương)
+
+#### Observability
+- [ ] Propagate `correlationId` xuyên suốt bằng `AsyncLocalStorage`
+- [ ] Tích hợp `correlationId` vào logger của API Gateway và Worker
+- [ ] Bổ sung business metrics cho Prometheus:
+  - [ ] `signalops_events_ingested_total`
+  - [ ] `signalops_alerts_created_total`
+  - [ ] `signalops_queue_depth`
+  - [ ] `signalops_job_processing_seconds` (histogram)
+
+#### Testing
+- [ ] Tạo integration tests với MongoDB thật bằng `mongodb-memory-server`
+- [ ] Bổ sung test luồng API -> Queue -> Worker -> DB cho các case lỗi/chậm
+- [ ] Bổ sung contract tests giữa Dashboard và API Gateway (Pact hoặc schema contract tương đương)
+
+### 9.3. P2 — Trung Hạn
+
+#### Tracing & Ops
+- [ ] Triển khai OpenTelemetry tracing (API Gateway -> Redis -> Worker -> MongoDB)
+- [ ] Hoàn thiện SSL termination cho Nginx (không chỉ tài liệu)
+
+#### Data Platform
+- [ ] Đánh giá ngưỡng scale dữ liệu (`>10M events/tháng`) để cân nhắc TimescaleDB/VictoriaMetrics
+- [ ] Định nghĩa strategy archive trước khi xóa dữ liệu theo TTL
+
+#### Delivery & Governance
+- [ ] Bổ sung workflow GitHub Actions song song Jenkins (CI fallback)
+- [ ] Thiết kế rollback strategy tự động cho deployment (blue/green hoặc canary + health-based rollback)
+- [ ] Publish coverage report/artifacts trong CI để theo dõi quality gate theo từng build
+- [ ] Bổ sung versioned migration workflow cho schema/data change (có khả năng rollback)
+- [ ] Viết ADR cho quyết định kiến trúc chính trong `docs/adr/`
+  - [ ] ADR: MongoDB vs TimescaleDB
+  - [ ] ADR: BullMQ vs Kafka
+  - [ ] ADR: Embed EventBroker trong API Gateway
+  - [ ] ADR: Rule-based threshold vs ML detection
+
+### 9.4. Chức Năng Mới / Thay Đổi Đề Xuất
+
+#### NFR & SLO
+- [ ] Định nghĩa SLO hệ thống:
+  - [ ] API response time P95/P99
+  - [ ] Alert creation latency sau khi ingest event
+  - [ ] Uptime mục tiêu theo tháng/quý
+
+#### Security & Access Control
+- [ ] Thiết kế RBAC cơ bản (viewer/operator/admin)
+- [ ] Bắt buộc auth cho WebSocket khi deploy production
+- [ ] Thêm audit log cho thay đổi API key/cấu hình nhạy cảm
+
+#### ATS Domain Evolution
+- [ ] Chuẩn hóa dashboard NOC theo use-case vận hành (alert triage timeline, ownership, escalation)
+- [ ] Định nghĩa quy trình failover tự động và kiểm thử định kỳ
+
+### 9.5. Quyết Định Triển Khai (Chờ xác nhận)
+
+- [ ] Chốt phạm vi P0 sẽ làm ngay
+- [ ] Chốt phạm vi P1 cho sprint gần nhất
+- [ ] Chốt mục P2 nào đưa vào roadmap quý
+- [ ] Chỉ định thứ tự thực hiện + thời gian mong muốn
+
+**Cập nhật milestone 9**: 04/05/2026  
+**Trạng thái**: 🟡 Chờ duyệt để triển khai

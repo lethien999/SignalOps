@@ -1,102 +1,169 @@
-# MongoDB Schema for SignalOps
+# Cấu hình Schema MongoDB cho SignalOps
 
-This file documents the collections, sample document shapes, and recommended indexes for local and production deployments.
+Tài liệu này mô tả các collection, cấu trúc tài liệu mẫu và các index được khuyến nghị cho triển khai local và production.
 
-Collections
------------
-- `events` — raw incoming events (short retention, can TTL/archived)
-- `alerts` — generated alerts derived from events (longer retention)
-- `failed_events` — DLQ / failed processing for manual replay
-- `api_keys` — api keys for ingestion and audit (local-demo seeded)
+---
 
-Sample documents
-----------------
+## Các Collection
 
-Events
+| Collection | Mục đích | Ghi chú |
+|-----------|---------|---------|
+| `events` | Sự kiện telemetry thô | Lưu trữ ngắn hạn, có thể TTL/archive |
+| `alerts` | Cảnh báo được tạo từ events | Lưu trữ lâu dài |
+| `failed_events` | DLQ / xử lý thất bại | Cho phép replay thủ công |
+| `api_keys` | Khóa API cho ingestion | Seed demo local |
+
+---
+
+## Tài liệu Mẫu
+
+### Events (Sự kiện)
+
+```javascript
 {
   _id: ObjectId,
-  deviceId: String,
-  location: { lat: Number, lng: Number, name?: String },
-  metrics: { latency: Number, packetLoss: Number, signalStrength: Number },
-  timestamp: ISODate,
-  processedAt?: ISODate,
-  alertId?: String,
-  createdAt: ISODate,
+  deviceId: String,              // ID thiết bị
+  location: {                    // Vị trí địa lý
+    lat: Number,
+    lng: Number,
+    name?: String               // Tên vị trí (tuỳ chọn)
+  },
+  metrics: {                     // Chỉ số hiệu suất
+    latency: Number,            // Độ trễ (ms)
+    packetLoss: Number,         // Mất gói (%)
+    signalStrength: Number      // Độ mạnh tín hiệu (dBm)
+  },
+  timestamp: ISODate,           // Thời gian sự kiện
+  processedAt?: ISODate,        // Thời gian xử lý
+  alertId?: String,             // Liên kết cảnh báo
+  createdAt: ISODate,           // Khi tạo trong hệ thống
   updatedAt: ISODate
 }
+```
 
-Alerts
+### Alerts (Cảnh báo)
+
+```javascript
 {
   _id: ObjectId,
-  alertId: String,
-  deviceId: String,
-  type: String,
-  severity: String,
-  location: { lat: Number, lng: Number, name?: String },
-  message: String,
-  status: String,
-  acknowledgedBy?: String,
-  acknowledgedAt?: ISODate,
-  resolvedAt?: ISODate,
-  resolvedBy?: String,
-  resolutionNote?: String,
-  eventId?: String,
-  createdAt: ISODate,
+  alertId: String,              // ID cảnh báo duy nhất
+  deviceId: String,             // ID thiết bị
+  type: String,                 // Loại: 'latency', 'packet_loss', 'signal'
+  severity: String,             // Mức độ: 'high', 'medium', 'low'
+  location: {                   // Vị trí địa lý
+    lat: Number,
+    lng: Number,
+    name?: String
+  },
+  message: String,              // Mô tả cảnh báo
+  status: String,               // Trạng thái: 'open', 'acknowledged', 'resolved'
+  acknowledgedBy?: String,      // Tên người xác nhận
+  acknowledgedAt?: ISODate,     // Khi xác nhận
+  resolvedAt?: ISODate,         // Khi xử lý xong
+  resolvedBy?: String,          // Tên người xử lý
+  resolutionNote?: String,      // Ghi chú xử lý
+  eventId?: String,             // Liên kết event gốc
+  createdAt: ISODate,           // Khi tạo cảnh báo
   updatedAt: ISODate
 }
+```
 
-Failed events (DLQ)
+### Failed Events (DLQ - Hàng chờ thư tả)
+
+```javascript
 {
   _id: ObjectId,
-  event: Object,
-  errorMessage: String,
-  retryCount: Number,
-  nextRetryAt: ISODate,
-  firstFailedAt: ISODate
+  event: Object,                // Sự kiện gốc
+  errorMessage: String,         // Thông báo lỗi
+  retryCount: Number,           // Số lần thử lại
+  nextRetryAt: ISODate,         // Lần thử tiếp theo
+  firstFailedAt: ISODate        // Lần thất bại đầu tiên
 }
+```
 
-API keys
+### API Keys (Khóa API)
+
+```javascript
 {
   _id: ObjectId,
-  key: String,
-  name: String,
-  description?: String,
-  scopes?: [String],
-  createdAt: ISODate,
+  key: String,                  // Khóa bí mật
+  name: String,                 // Tên khóa (mô tả)
+  description?: String,         // Chi tiết
+  scopes?: [String],            // Phạm vi quyền hạn
+  createdAt: ISODate,           // Khi tạo
   updatedAt?: ISODate,
-  lastUsedAt?: ISODate,
-  active: Boolean
+  lastUsedAt?: ISODate,         // Lần dùng gần nhất
+  active: Boolean               // Trạng thái hoạt động
 }
+```
 
-Indexes (mongo shell)
----------------------
+---
 
-# Events
-> db.events.createIndex({ deviceId: 1, timestamp: -1 })
-> db.events.createIndex({ timestamp: -1 })
-# TTL: 30 days
-> db.events.createIndex({ timestamp: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 })
+## Các Index (Lệnh MongoDB shell)
 
-# Alerts
-> db.alerts.createIndex({ status: 1, deviceId: 1, createdAt: -1 })
-> db.alerts.createIndex({ resolvedAt: 1 })
-> db.alerts.createIndex({ message: 'text' })
+### Events
 
-# DLQ
-> db.failed_events.createIndex({ retryCount: 1 })
-> db.failed_events.createIndex({ nextRetryAt: 1 })
+```javascript
+// Index cho query thiết bị theo thời gian
+db.events.createIndex({ deviceId: 1, timestamp: -1 })
 
-# API keys
-> db.api_keys.createIndex({ key: 1 }, { unique: true })
+// Index cho query mọi event theo thời gian (ví dụ dashboard)
+db.events.createIndex({ timestamp: -1 })
 
-Scaling notes
--------------
-- Consider sharding `events` by hashed `deviceId` or time-range for high write throughput.
-- Use TTL + archiver job to move older raw events to cold storage.
-- Pre-aggregate into `aggregates` collection for dashboard read efficiency.
+// TTL index: tự xóa events sau 30 ngày
+db.events.createIndex(
+  { timestamp: 1 },
+  { expireAfterSeconds: 60 * 60 * 24 * 30 }
+)
+```
 
-Operational
------------
-- Backup nightly and test restores regularly.
-- Monitor `events` collection size and index usage.  
-- Seed API keys for local demo using `apps/api-gateway/scripts/init-db.mjs`.
+### Alerts
+
+```javascript
+// Index chính: query theo trạng thái, thiết bị, thời gian
+db.alerts.createIndex({ status: 1, deviceId: 1, createdAt: -1 })
+
+// Index cho query alerts đã xử lý
+db.alerts.createIndex({ resolvedAt: 1 })
+
+// Full-text search trên thông báo
+db.alerts.createIndex({ message: 'text' })
+```
+
+### Failed Events (DLQ)
+
+```javascript
+// Index cho retry queue
+db.failed_events.createIndex({ retryCount: 1 })
+
+// Index cho scheduled retry
+db.failed_events.createIndex({ nextRetryAt: 1 })
+```
+
+### API Keys
+
+```javascript
+// Unique index trên khóa
+db.api_keys.createIndex({ key: 1 }, { unique: true })
+```
+
+---
+
+## Ghi Chú Mở Rộng (Scaling)
+
+- **Sharding**: Khi dữ liệu lớn, xem xét sharding collection `events` theo hashed `deviceId` hoặc time-range để tăng throughput ghi.
+- **TTL + Archive**: Sử dụng TTL index + công việc archiver để di chuyển events cũ sang lưu trữ lạnh.
+- **Aggregation**: Pre-aggregate dữ liệu vào collection `aggregates` để tăng hiệu suất đọc dashboard.
+
+---
+
+## Vận Hành
+
+- **Backup**: Backup hàng đêm và kiểm tra restore thường xuyên.
+- **Giám sát**: Theo dõi kích thước collection `events` và sử dụng index.
+- **Seed dữ liệu**: Seed khóa API cho demo local sử dụng `apps/api-gateway/scripts/init-db.mjs`.
+- **Performance**: Monitor query performance khi data > 50M documents.
+
+---
+
+**Cập nhật**: 04/05/2026
