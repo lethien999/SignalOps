@@ -1,4 +1,12 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(scriptDir, '../.env') });
+
 const baseUrl = process.env.SIGNALOPS_API_BASE_URL || 'http://localhost:3000';
+const apiKey = process.env.SIGNALOPS_API_KEY || process.env.API_KEY;
 
 function assert(condition, message) {
   if (!condition) {
@@ -14,6 +22,7 @@ async function requestJson(path, init = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(apiKey ? { 'x-api-key': apiKey } : {}),
       ...(init.headers || {}),
     },
     ...init,

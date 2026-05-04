@@ -1,4 +1,10 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { io } from 'socket.io-client';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(scriptDir, '../.env') });
 
 const baseUrl = process.env.SIGNALOPS_API_BASE_URL || 'http://localhost:3000';
 const timeoutMs = 12000;

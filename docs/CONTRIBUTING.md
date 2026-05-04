@@ -33,6 +33,29 @@
 - Chạy test ở cấp package nếu có
 - Thêm test cạnh logic mà test đó kiểm tra
 
+### Performance Testing (tùy chọn, khi có staging/prod)
+
+Khi muốn kiểm thử hiệu năng hệ thống:
+
+```bash
+# Load test HTTP API (mặc định 30s, 10 concurrent workers)
+npm run perf:load
+
+# Tùy chỉnh load test:
+PERF_TEST_TOTAL_REQUESTS=1000 PERF_TEST_CONCURRENCY=50 npm run perf:load
+
+# Soak test (chạy dài, kiểm tra memory leak):
+PERF_TEST_DURATION_SECONDS=600 PERF_TEST_CONCURRENCY=20 npm run perf:soak
+
+# WebSocket fan-out test (broadcast stress):
+PERF_TEST_CLIENTS=100 npm run perf:websocket
+
+# Với assertions (fail nếu vượt ngưỡng):
+PERF_TEST_TOTAL_REQUESTS=500 PERF_TEST_MAX_AVG_MS=100 PERF_TEST_MAX_P95_MS=200 npm run perf:load
+```
+
+**Đầu ra JSON**: `success`, `throughputPerSecond`, `avgMs`, `p95Ms`, `errorRate` — dùng để track regression.
+
 ## Bảo mật
 
 - Không bao giờ commit credentials thật
