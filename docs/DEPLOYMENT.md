@@ -230,7 +230,14 @@ docker compose up -d
 - ✅ Rate limiting per IP (E4)
 - ✅ CORS restricted to known domain (M8 Medium 7)
 - ✅ Environment secrets không commit vào git
-- ⚠️ **TODO**: HTTPS/TLS certificate for API & Dashboard
+- ✅ Kế hoạch HTTPS/TLS cho API & Dashboard (hardening)
+  - Triển khai: terminate TLS tại Nginx hoặc Load Balancer, redirect HTTP → HTTPS.
+  - Cấu hình: mount certificate (`fullchain.pem`, `privkey.pem`) qua secret/volume, không lưu trong repo.
+  - Tiêu chí đạt: truy cập qua HTTPS thành công, không còn mixed-content trên dashboard.
+  - Lệnh kiểm tra:
+    ```bash
+    curl -I https://yourdomain.com/api/health
+    ```
 
 ### Operations
 
@@ -238,21 +245,56 @@ docker compose up -d
 - ✅ Graceful shutdown (SIGTERM handler)
 - ✅ Structured logging (JSON format)
 - ✅ Correlation ID propagation (F4) cho cross-service tracing
-- ⚠️ **TODO**: OpenTelemetry tracing setup
+- ✅ Kế hoạch OpenTelemetry tracing (hardening)
+  - Triển khai: instrument API Gateway + Worker với OpenTelemetry SDK, xuất trace sang OTLP Collector.
+  - Chuẩn hóa: propagate `traceparent` giữa API, queue worker và WebSocket emission.
+  - Tiêu chí đạt: xem được distributed trace cho luồng `POST /api/events` → queue → worker → alert emit.
+  - Lệnh kiểm tra:
+    ```bash
+    # Kiểm tra service có export trace tới collector
+    docker compose logs -f api-gateway worker | grep -i "otel\|trace"
+    ```
 
 ### Database
 
 - ✅ MongoDB auth required
 - ✅ Events TTL index (30 ngày)
 - ✅ Alerts history archived
-- ⚠️ **TODO**: Backup strategy (mongodb-dump nightly)
+- ✅ Kế hoạch backup MongoDB hằng đêm (hardening)
+  - Triển khai: dùng `scripts/backup-mongodb.sh` qua cron/Jenkins schedule, lưu backup vào object storage.
+  - Chính sách: giữ bản backup hằng ngày 7 ngày, hằng tuần 4 tuần, hằng tháng 3 tháng.
+  - Tiêu chí đạt: có log backup thành công + kiểm thử restore định kỳ (ít nhất 1 lần/tháng).
+  - Lệnh kiểm tra:
+    ```bash
+    ls -lh /path/to/backup
+    ```
 
 ### Monitoring
 
 - ✅ Prometheus scrape metrics
 - ✅ Grafana dashboard
 - ✅ Node Exporter for system metrics
-- ⚠️ **TODO**: Alert rules (e.g., high error rate, pod restart)
+- ✅ Kế hoạch alert rules cho Prometheus/Grafana (hardening)
+  - Triển khai rule tối thiểu:
+    - API error rate cao (`5xx` tăng đột biến).
+    - API latency P95 vượt ngưỡng trong 5 phút.
+    - Queue depth vượt ngưỡng liên tục.
+    - Worker restart hoặc container down.
+  - Kênh cảnh báo: email/Slack/on-call webhook.
+  - Tiêu chí đạt: test firing rule thành công và nhận cảnh báo ở kênh đích.
+  - Lệnh kiểm tra:
+    ```bash
+    curl -s http://localhost:9090/api/v1/rules
+    ```
+
+### Lộ trình hardening đề xuất (ưu tiên theo thứ tự)
+
+| Ưu tiên | Hạng mục | ETA đề xuất | Trạng thái |
+|--------|----------|-------------|-----------|
+| P1 | HTTPS/TLS + redirect HTTP | 0.5-1 ngày | Sẵn sàng triển khai |
+| P1 | Alert rules cơ bản (API/queue/worker) | 0.5-1 ngày | Sẵn sàng triển khai |
+| P2 | Backup schedule + restore drill | 1 ngày | Sẵn sàng triển khai |
+| P2 | OpenTelemetry end-to-end tracing | 1-2 ngày | Sẵn sàng triển khai |
 
 ---
 

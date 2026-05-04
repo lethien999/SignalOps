@@ -33,7 +33,7 @@
 - Chạy test ở cấp package nếu có
 - Thêm test cạnh logic mà test đó kiểm tra
 
-### Performance Testing (tùy chọn, khi có staging/prod)
+### Kiểm thử hiệu năng (tùy chọn, khi có staging/prod)
 
 Khi muốn kiểm thử hiệu năng hệ thống:
 
