@@ -133,7 +133,6 @@ Thiết bị / Simulator (gửi dữ liệu)
 - ✅ **Monitoring Stack** — Prometheus + Grafana + Node Exporter
 - ✅ **Performance Test** — Load, soak, WebSocket broadcast harness sẵn dùng
 - ✅ **Production-Ready** — Health checks, graceful shutdown, structured logging, correlation ID tracing
-- ✅ **100% Tiếng Việt** — UI & docs toàn bộ tiếng Việt
 
 ---
 
