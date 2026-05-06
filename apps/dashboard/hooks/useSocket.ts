@@ -18,6 +18,36 @@ type WorkerStatsPayload = {
   failed: number;
 };
 
+const ALERT_SOUND_STORAGE_KEY = 'signalops-alert-sound';
+
+function playAlertSound(severity: Alert['severity']) {
+  try {
+    const audioContext = new window.AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    const frequency = severity === 'high' ? 880 : severity === 'medium' ? 660 : 523;
+
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    gainNode.gain.value = 0.0001;
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.22);
+
+    oscillator.stop(audioContext.currentTime + 0.24);
+    oscillator.onended = () => {
+      audioContext.close().catch(() => undefined);
+    };
+  } catch (error) {
+    console.warn('Failed to play alert sound:', error);
+  }
+}
+
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
   const addAlert = useAlertStore((state) => state.addAlert);
@@ -54,6 +84,10 @@ export function useSocket() {
       socketRef.current.on('alert:new', (data: Alert) => {
         console.log('Received alert:new', data);
         addAlert(data);
+
+        if (typeof window !== 'undefined' && window.localStorage.getItem(ALERT_SOUND_STORAGE_KEY) !== 'off') {
+          playAlertSound(data.severity);
+        }
       });
 
       socketRef.current.on('alert:acknowledged', (data: Alert) => {

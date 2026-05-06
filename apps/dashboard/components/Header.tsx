@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Bell, Settings, X, AlertTriangle } from 'lucide-react';
+import { Menu, Bell, Settings, X, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useUIStore, useAlertStore } from '@/stores';
 import { DarkModeToggle } from './DarkModeToggle';
@@ -10,21 +10,33 @@ interface HeaderProps {
   unreadAlerts?: number;
 }
 
+const ALERT_SOUND_STORAGE_KEY = 'signalops-alert-sound';
+
 export function Header({ unreadAlerts = 0 }: HeaderProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const alerts = useAlertStore((s) => s.alerts);
   const [showNotif, setShowNotif] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const recentAlerts = alerts.filter((a) => a.status === 'open').slice(0, 5);
 
   useEffect(() => {
+    const saved = localStorage.getItem(ALERT_SOUND_STORAGE_KEY);
+    setSoundEnabled(saved !== 'off');
+
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem(ALERT_SOUND_STORAGE_KEY, next ? 'on' : 'off');
+  };
 
   const severityColor = (s: string) => {
     switch (s) {
@@ -119,6 +131,15 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
           </div>
 
           <DarkModeToggle />
+
+          <button
+            onClick={toggleSound}
+            className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
+            aria-label={soundEnabled ? 'Tắt âm cảnh báo' : 'Bật âm cảnh báo'}
+            title={soundEnabled ? 'Âm cảnh báo đang bật' : 'Âm cảnh báo đang tắt'}
+          >
+            {soundEnabled ? <Volume2 className="w-5 h-5 text-gray-600" /> : <VolumeX className="w-5 h-5 text-gray-400" />}
+          </button>
 
           <Link href="/settings" className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors" aria-label="Cài đặt">
             <Settings className="w-5 h-5 text-gray-600" />

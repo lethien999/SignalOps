@@ -7,7 +7,8 @@
 
 ## Ưu tiên P0 - Làm trước
 
-- [ ] Export CSV Alert History
+- [x] Export CSV Alert History
+  - [x] Export CSV Alert History
   - [ ] Xuất lịch sử alert theo bộ lọc hiện tại
   - [ ] Hỗ trợ khoảng thời gian và severity
   - [ ] Trả file CSV để tải xuống
@@ -64,7 +65,7 @@
 **Trạng thái**
 - **Tasks Defined**: 9
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 0
+- **Tasks Completed**: 1
 - **Last Updated**: 06/05/2026
 
 ---
