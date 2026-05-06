@@ -6,6 +6,7 @@ import { buildAlertDocument } from './services/alert-factory';
 import { ThresholdDetector } from './services/threshold-detector';
 import { AlertRepository } from './repositories/alert.repository';
 import { EventRepository } from './repositories/event.repository';
+import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
   _id: string;
@@ -47,11 +48,8 @@ function resolveQueueName(): string {
 
 function createRedisConnection(): Redis {
   // BullMQ expects maxRetriesPerRequest to be null for worker connections.
-  return new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    maxRetriesPerRequest: null,
-  });
+  // Use shared config from common lib
+  return new Redis(getRedisQueueConfig());
 }
 
 function createQueuePair(redis: Redis): { queue: Queue; dlq: Queue } {
@@ -154,57 +152,62 @@ function createWorker(
   return new Worker(
     resolveQueueName(),
     async (job) => {
-      Logger.info(`Processing job ${job.id}`, job.data);
+      // Use event ID or job ID as correlation ID for tracing
+      const correlationId = job.data?._id || job.id || 'unknown';
 
-      try {
+      return CorrelationContextManager.runAsync(correlationId, async () => {
+        Logger.info(`Processing job ${job.id}`, job.data);
+
+        try {
           const eventData = (job.data?.eventData || job.data) as WorkerJobPayload;
 
-        if (!eventData._id) {
-          throw new Error('Event job payload missing _id');
+          if (!eventData._id) {
+            throw new Error('Event job payload missing _id');
+          }
+
+          const eventId = eventData._id;
+
+          await eventRepository.updateProcessedTime(eventId);
+
+          const detectedAlerts = ThresholdDetector.detectAnomalies(eventData);
+          const createdCount = await handleAlertCreation(
+            eventId,
+            eventData,
+            detectedAlerts,
+            alertRepository,
+            eventRepository,
+            pubSubRedis,
+          );
+
+          // E2: Auto-resolve if metrics are back to normal
+          const autoResolvedCount = await handleAutoResolve(
+            eventData,
+            detectedAlerts,
+            alertRepository,
+            pubSubRedis,
+          );
+          if (autoResolvedCount > 0) {
+            Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
+          }
+
+          // Publish event:processed to Redis Pub/Sub for API Gateway to broadcast via WebSocket
+          const eventProcessedPayload = JSON.stringify({
+            id: eventData._id,
+            deviceId: eventData.deviceId,
+            location: eventData.location,
+            metrics: eventData.metrics,
+            timestamp: new Date().toISOString(),
+            alertsCreated: createdCount,
+          });
+          await pubSubRedis.publish('events:processed', eventProcessedPayload);
+
+          return { success: true, alertsCreated: createdCount };
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          Logger.error(`Job processing failed: ${errorMessage}`, error);
+          throw error;
         }
-
-        const eventId = eventData._id;
-
-        await eventRepository.updateProcessedTime(eventId);
-
-        const detectedAlerts = ThresholdDetector.detectAnomalies(eventData);
-        const createdCount = await handleAlertCreation(
-          eventId,
-          eventData,
-          detectedAlerts,
-          alertRepository,
-          eventRepository,
-          pubSubRedis,
-        );
-
-        // E2: Auto-resolve if metrics are back to normal
-        const autoResolvedCount = await handleAutoResolve(
-          eventData,
-          detectedAlerts,
-          alertRepository,
-          pubSubRedis,
-        );
-        if (autoResolvedCount > 0) {
-          Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
-        }
-
-        // Publish event:processed to Redis Pub/Sub for API Gateway to broadcast via WebSocket
-        const eventProcessedPayload = JSON.stringify({
-          id: eventData._id,
-          deviceId: eventData.deviceId,
-          location: eventData.location,
-          metrics: eventData.metrics,
-          timestamp: new Date().toISOString(),
-          alertsCreated: createdCount,
-        });
-        await pubSubRedis.publish('events:processed', eventProcessedPayload);
-
-        return { success: true, alertsCreated: createdCount };
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        Logger.error(`Job processing failed: ${errorMessage}`, error);
-        throw error;
-      }
+      });
     },
     {
       connection: redis,
@@ -287,6 +290,9 @@ function registerShutdown(worker: Worker, queue: Queue, dlq: Queue, redis: Redis
 }
 
 async function bootstrap() {
+  // Initialize OpenTelemetry tracing first
+  initializeTracing();
+
   let context: WorkerContext | null = null;
 
   try {
@@ -299,7 +305,7 @@ async function bootstrap() {
     Logger.info('Connected to MongoDB');
 
     const redis = createRedisConnection();
-    const pubSubRedis = createRedisConnection(); // Separate connection for Pub/Sub
+    const pubSubRedis = createRedisPubSubClient(); // Separate connection for Pub/Sub
     const { queue, dlq } = createQueuePair(redis);
     const alertRepository = new AlertRepository();
     const eventRepository = new EventRepository();

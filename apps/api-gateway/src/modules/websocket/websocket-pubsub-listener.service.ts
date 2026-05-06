@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Logger } from '../../common/logger';
+import { createRedisPubSubClient } from '../../common/redis.config';
 import { EventsGateway } from './events.gateway';
 import { AlertsGateway } from './alerts.gateway';
 import { StatusGateway } from './status.gateway';
@@ -51,11 +52,7 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
 
     try {
       // Create a separate Redis connection for Pub/Sub (cannot reuse regular connections)
-      this.pubSubRedis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        lazyConnect: true,
-      });
+      this.pubSubRedis = createRedisPubSubClient();
 
       this.pubSubRedis.on('message', (channel: string, message: string) => {
         this.handleMessage(channel, message);

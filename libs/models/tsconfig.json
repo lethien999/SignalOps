@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/libs/models",
+    "outDir": "./dist",
     "rootDir": "./src"
   },
   "include": ["src/**/*"],

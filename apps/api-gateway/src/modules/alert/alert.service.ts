@@ -4,6 +4,7 @@ import { Logger } from '../../common/logger';
 import { randomUUID } from 'crypto';
 import { AlertFindFilters, AlertRepository, AlertStatusUpdate } from './repositories/alert.repository';
 import { AlertsGateway, AlertEmissionPayload } from '../websocket/alerts.gateway';
+import { BusinessMetrics } from '../health/business-metrics';
 
 export type CreateAlertInput = {
   alertId?: string;
@@ -52,6 +53,10 @@ export class AlertService {
         ...alertData,
       };
       const savedAlert = await this.alertRepository.save(alert);
+      
+      // Record metrics
+      BusinessMetrics.recordAlertCreated(savedAlert.type, savedAlert.severity);
+      
       Logger.info(`Alert created: ${savedAlert._id}`);
 
       // Emit alert:new to WebSocket clients

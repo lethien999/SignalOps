@@ -92,6 +92,32 @@ export class EventRepository {
       .exec() as unknown as Event[];
   }
 
+  /**
+   * Optimized: Get latest event per device using MongoDB aggregation
+   * Avoids in-memory processing of 500+ events
+   */
+  async findLatestEventPerDevice(limit: number = 500): Promise<Event[]> {
+    const result = await this.eventModel.aggregate([
+      // Sort by createdAt descending to get latest events first
+      { $sort: { createdAt: -1 } },
+      // Group by deviceId, keeping first (latest) event per device
+      {
+        $group: {
+          _id: '$deviceId',
+          event: { $first: '$$ROOT' },
+        },
+      },
+      // Limit to specified number of devices
+      { $limit: limit },
+      // Replace root with the event document
+      { $replaceRoot: { newRoot: '$event' } },
+      // Sort final results by createdAt descending
+      { $sort: { createdAt: -1 } },
+    ]).exec();
+
+    return result as unknown as Event[];
+  }
+
   private buildQuery(filters: EventFindFilters): FilterQuery<Event> {
     const query: FilterQuery<Event> = {};
 

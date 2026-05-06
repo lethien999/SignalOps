@@ -2,28 +2,38 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# Copy lock file first for layer caching
+COPY package-lock.json .
+COPY package.json .
+
+# Copy source files (needed for npm workspaces to be recognized)
+COPY tsconfig.json .
 COPY apps/dashboard ./apps/dashboard
 COPY libs ./libs
-COPY tsconfig.json ./
 
-RUN npm install
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
 WORKDIR /app/apps/dashboard
-RUN npm run build
+RUN npm run -w @signalops/common build && npm run -w dashboard build
 
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /app/apps/dashboard
 
-COPY package.json package-lock.json ./
-COPY apps/dashboard/package.json ./apps/dashboard/
-RUN npm install --omit=dev --workspace apps/dashboard --include-workspace-root
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-COPY --from=builder /app/apps/dashboard/.next ./apps/dashboard/.next
-COPY --from=builder /app/apps/dashboard/public ./apps/dashboard/public
-COPY --from=builder /app/apps/dashboard/package.json ./apps/dashboard/
+# Install production dependencies from dashboard package only
+COPY --from=builder /app/apps/dashboard/package.json ./package.json
+RUN npm install --production --no-audit --omit=dev && npm cache clean --force
+
+COPY --from=builder --chown=nodejs:nodejs /app/apps/dashboard/.next ./.next
+COPY --from=builder --chown=nodejs:nodejs /app/apps/dashboard/public ./public
+
+# Switch to non-root user
+USER nodejs
 
 EXPOSE 3001
 
-CMD ["npm", "start", "-w", "apps/dashboard"]
+CMD ["npm", "start"]

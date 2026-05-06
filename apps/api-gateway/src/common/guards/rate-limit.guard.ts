@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Logger } from '../logger';
+import { createRedisClient } from '../redis.config';
 
 /**
  * Rate limiter đơn giản dựa trên IP.
@@ -21,11 +22,7 @@ export class RateLimitGuard implements CanActivate {
     this.useRedis = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
     if (this.useRedis) {
-      this.redisClient = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        lazyConnect: true,
-      });
+      this.redisClient = createRedisClient();
     }
   }
 

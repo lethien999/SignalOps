@@ -1,0 +1,20 @@
+# Production Docker Compose with SSL/TLS Support
+# Usage: docker-compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml -f infrastructure/docker-compose-ssl.yml up -d
+
+services:
+  nginx:
+    volumes:
+      # Replace default.conf with SSL-enabled config
+      - ./nginx/default-ssl.conf:/etc/nginx/conf.d/default.conf:ro
+      # Mount certificate volume (must contain cert.pem and key.pem)
+      # Generate self-signed for testing:
+      #   mkdir -p infrastructure/certs
+      #   openssl req -x509 -newkey rsa:4096 -nodes -out infrastructure/certs/cert.pem -keyout infrastructure/certs/key.pem -days 365 -subj "/CN=localhost"
+      # For production: use Let's Encrypt + Certbot or AWS ACM
+      - ./certs:/etc/nginx/certs:ro
+    ports:
+      - "80:80"    # HTTP redirect to HTTPS
+      - "443:443"  # HTTPS listener
+    environment:
+      # Optional: Enable additional logging
+      - NGINX_DEBUG=notice

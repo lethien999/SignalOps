@@ -1,2 +1,9 @@
 export * from './validation.util';
 export * from './date.util';
+export * from './threshold.util';
+export * from './redis.config';
+export * from './circuit-breaker';
+export * from './backoff.util';
+export { default as CorrelationContextManager } from './correlation-context';
+export type { CorrelationContext } from './correlation-context';
+export { initializeTracing } from './tracing.config';
