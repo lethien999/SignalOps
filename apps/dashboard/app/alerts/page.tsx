@@ -1,18 +1,35 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Clock, ShieldAlert, RefreshCw } from "lucide-react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Clock, ShieldAlert, RefreshCw, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { AlertTable } from "@/components/AlertTable";
 import { AlertDetailModal } from "@/components/AlertDetailModal";
 import { ToastStack, type ToastItem, type ToastType } from "@/components/ToastStack";
 import { useAlertStore } from "@/stores";
-import { fetchAlerts } from "@/lib/api";
+import { fetchAlertsPage } from "@/lib/api";
+
+type AlertSummary = {
+  open: number;
+  acknowledged: number;
+  resolved: number;
+  highOpen: number;
+};
+
+const PAGE_SIZE = 20;
 
 export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [severity, setSeverity] = useState<"all" | "low" | "medium" | "high">("all");
+  const [status, setStatus] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
+  const [deviceId, setDeviceId] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<AlertSummary>({ open: 0, acknowledged: 0, resolved: 0, highOpen: 0 });
 
   const alerts = useAlertStore((s) => s.alerts);
   const selectedAlert = useAlertStore((s) => s.selectedAlert);
@@ -23,8 +40,19 @@ export default function AlertsPage() {
     try {
       if (showSpinner) setLoading(true);
       setRefreshing(true);
-      const data = await fetchAlerts({ limit: 500 });
-      setAlerts(data);
+      const response = await fetchAlertsPage({
+        severity: severity === "all" ? undefined : severity,
+        status: status === "all" ? undefined : status,
+        deviceId: deviceId.trim() || undefined,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+        skip: (page - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      });
+
+      setAlerts(response.data);
+      setTotal(response.pagination.total);
+      setSummary(response.summary);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải cảnh báo");
@@ -32,14 +60,16 @@ export default function AlertsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [setAlerts]);
+  }, [deviceId, fromDate, page, severity, setAlerts, status, toDate]);
 
   useEffect(() => { void loadAlerts(); }, [loadAlerts]);
 
-  const openAlerts = alerts.filter((a) => a.status === "open").length;
-  const ackAlerts = alerts.filter((a) => a.status === "acknowledged").length;
-  const resolvedAlerts = alerts.filter((a) => a.status === "resolved").length;
-  const highAlerts = alerts.filter((a) => a.severity === "high" && a.status === "open").length;
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
+
+  const openAlerts = summary.open;
+  const ackAlerts = summary.acknowledged;
+  const resolvedAlerts = summary.resolved;
+  const highAlerts = summary.highOpen;
 
   const pushToast = (msg: string, type: ToastType = "info") => {
     const id = Date.now();
@@ -69,6 +99,87 @@ export default function AlertsPage() {
         </button>
       </div>
 
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+          <Filter className="w-4 h-4" />
+          Bộ lọc phía server
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Mức độ
+            <select
+              value={severity}
+              onChange={(event) => {
+                setSeverity(event.target.value as typeof severity);
+                setPage(1);
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="all">Tất cả</option>
+              <option value="high">Nghiêm trọng</option>
+              <option value="medium">Trung bình</option>
+              <option value="low">Thấp</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Trạng thái
+            <select
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as typeof status);
+                setPage(1);
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="all">Tất cả</option>
+              <option value="open">Đang mở</option>
+              <option value="acknowledged">Đã xác nhận</option>
+              <option value="resolved">Đã xử lý</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Device ID
+            <input
+              value={deviceId}
+              onChange={(event) => {
+                setDeviceId(event.target.value);
+                setPage(1);
+              }}
+              placeholder="device-001"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Từ ngày
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setFromDate(event.target.value);
+                setPage(1);
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Đến ngày
+            <input
+              type="date"
+              value={toDate}
+              onChange={(event) => {
+                setToDate(event.target.value);
+                setPage(1);
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="metric-card">
           <div className="flex items-center justify-between">
@@ -80,6 +191,7 @@ export default function AlertsPage() {
               <AlertCircle className="w-6 h-6 text-blue-600" />
             </div>
           </div>
+          <p className="mt-2 text-xs text-gray-500">Tổng bản ghi theo bộ lọc hiện tại: {total}</p>
         </div>
         <div className="metric-card !border-red-200">
           <div className="flex items-center justify-between">
@@ -130,8 +242,34 @@ export default function AlertsPage() {
             <p className="text-sm text-gray-500">Đang tải cảnh báo...</p>
           </div>
         ) : (
-          <AlertTable alerts={alerts} onSelectAlert={selectAlert} />
+          <AlertTable alerts={alerts} onSelectAlert={selectAlert} serverSide />
         )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+        <p className="text-sm text-gray-600">
+          Trang {page} / {totalPages}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page === 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Trước
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            disabled={page === totalPages}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Sau
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <AlertDetailModal

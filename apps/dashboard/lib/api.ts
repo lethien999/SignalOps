@@ -46,6 +46,9 @@ function extractApiErrorMessage(error: unknown, fallback: string): string {
 export async function fetchAlerts(params?: {
   severity?: string;
   status?: string;
+  deviceId?: string;
+  from?: string;
+  to?: string;
   skip?: number;
   limit?: number;
 }): Promise<Alert[]> {
@@ -54,6 +57,37 @@ export async function fetchAlerts(params?: {
     return response.data.data.map(normalizeAlert);
   } catch (error) {
     console.error('Failed to fetch alerts:', error);
+    throw error;
+  }
+}
+
+export async function fetchAlertsPage(params?: {
+  severity?: string;
+  status?: string;
+  deviceId?: string;
+  from?: string;
+  to?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<{
+  data: Alert[];
+  pagination: { skip: number; limit: number; total: number };
+  summary: { open: number; acknowledged: number; resolved: number; highOpen: number };
+}> {
+  try {
+    const response = await api.get<{
+      data: AlertApiResponse[];
+      pagination: { skip: number; limit: number; total: number };
+      summary: { open: number; acknowledged: number; resolved: number; highOpen: number };
+    }>('/alerts', { params });
+
+    return {
+      data: response.data.data.map(normalizeAlert),
+      pagination: response.data.pagination,
+      summary: response.data.summary,
+    };
+  } catch (error) {
+    console.error('Failed to fetch paged alerts:', error);
     throw error;
   }
 }

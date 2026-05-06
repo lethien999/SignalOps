@@ -33,6 +33,13 @@ export type UpdateAlertInput = {
   resolutionNote?: string;
 };
 
+export type AlertSummary = {
+  open: number;
+  acknowledged: number;
+  resolved: number;
+  highOpen: number;
+};
+
 export type BatchUpdateResult = {
   success: number;
   failed: number;
@@ -84,6 +91,7 @@ export class AlertService {
   async listAlerts(filters: AlertFindFilters): Promise<{
     data: Alert[];
     pagination: { skip: number; limit: number; total: number };
+    summary: AlertSummary;
   }> {
     try {
       const normalizedFilters: AlertFindFilters = {
@@ -92,7 +100,7 @@ export class AlertService {
         limit: Math.min(Math.max(filters.limit, 1), 200),
       };
 
-      const { data, total } = await this.alertRepository.find(normalizedFilters);
+      const { data, total, summary } = await this.alertRepository.find(normalizedFilters);
 
       return {
         data,
@@ -101,6 +109,7 @@ export class AlertService {
           limit: normalizedFilters.limit,
           total,
         },
+        summary,
       };
     } catch (error) {
       Logger.error('Failed to list alerts', error);
