@@ -104,4 +104,30 @@ export class AlertRepository {
 
     return Array.from(dayMap.entries()).map(([date, counts]) => ({ date, ...counts }));
   }
+
+  buildAlertHistoryCsv(rows: { date: string; open: number; acknowledged: number; resolved: number; total: number }[]): string {
+    const header = ['date', 'open', 'acknowledged', 'resolved', 'total'];
+    const escapeCsvValue = (value: string | number): string => {
+      const text = String(value);
+      if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+
+      return text;
+    };
+
+    const lines = [header.join(',')];
+
+    for (const row of rows) {
+      lines.push([
+        escapeCsvValue(row.date),
+        escapeCsvValue(row.open),
+        escapeCsvValue(row.acknowledged),
+        escapeCsvValue(row.resolved),
+        escapeCsvValue(row.total),
+      ].join(','));
+    }
+
+    return lines.join('\n');
+  }
 }
