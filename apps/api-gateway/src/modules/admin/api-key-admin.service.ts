@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { randomBytes } from 'crypto';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
 import { UpdateApiKeyDto } from './dto/update-api-key.dto';
+import { hashApiKey, verifyApiKey, generateRandomApiKey } from '../../common/api-key.utils';
 
 export type ApiKeyDocument = {
   _id: ObjectId;
@@ -53,11 +53,12 @@ export class ApiKeyAdminService {
 
   async create(input: CreateApiKeyDto): Promise<ApiKeyView & { key: string }> {
     const now = new Date();
-    const key = input.key?.trim() || this.generateKey();
+    const key = input.key?.trim() || generateRandomApiKey();
+    const hashedKey = await hashApiKey(key);
 
     const document: ApiKeyDocument = {
       _id: new ObjectId(),
-      key,
+      key: hashedKey,
       name: input.name.trim(),
       description: input.description?.trim(),
       scopes: input.scopes || ['events:write'],
@@ -94,7 +95,8 @@ export class ApiKeyAdminService {
 
   async rotate(id: string): Promise<ApiKeyView & { key: string }> {
     this.assertObjectId(id);
-    const key = this.generateKey();
+    const key = generateRandomApiKey();
+    const hashedKey = await hashApiKey(key);
     const now = new Date();
     const existing = await this.collection().findOne({ _id: new ObjectId(id) });
 
@@ -106,14 +108,14 @@ export class ApiKeyAdminService {
       { _id: existing._id },
       {
         $set: {
-          key,
+          key: hashedKey,
           updatedAt: now,
           lastUsedAt: undefined,
         },
       },
     );
 
-    return { ...this.toView({ ...existing, key, updatedAt: now, lastUsedAt: undefined }), key };
+    return { ...this.toView({ ...existing, key: hashedKey, updatedAt: now, lastUsedAt: undefined }), key };
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
@@ -127,8 +129,20 @@ export class ApiKeyAdminService {
       return false;
     }
 
-    const storedKey = await this.collection().findOne({ key: providedKey, active: { $ne: false } });
-    return Boolean(storedKey);
+    // Fetch all active keys (only hashes are stored in DB)
+    const activeKeys = await this.collection()
+      .find({ active: { $ne: false } })
+      .project({ key: 1 })
+      .toArray();
+
+    // Compare provided key against each hashed key
+    for (const storedDoc of activeKeys) {
+      if (await verifyApiKey(providedKey, storedDoc.key)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   async hasActiveKeys(): Promise<boolean> {
@@ -141,21 +155,35 @@ export class ApiKeyAdminService {
       return;
     }
 
-    await this.collection().updateOne(
-      { key: providedKey, active: { $ne: false } },
-      { $set: { lastUsedAt: new Date() } },
-    );
+    // Find the key by comparing against all active keys
+    const activeKeys = await this.collection()
+      .find({ active: { $ne: false } })
+      .project({ _id: 1, key: 1 })
+      .toArray();
+
+    for (const storedDoc of activeKeys) {
+      if (await verifyApiKey(providedKey, storedDoc.key)) {
+        await this.collection().updateOne(
+          { _id: storedDoc._id },
+          { $set: { lastUsedAt: new Date() } },
+        );
+        break;
+      }
+    }
   }
 
   async ensureSeedKey(key: string, name: string): Promise<void> {
-    const existing = await this.collection().findOne({ key });
+    // Check if any key exists with this name (can't do plaintext comparison anymore)
+    const existing = await this.collection().findOne({ name });
     if (existing) {
       return;
     }
 
+    const hashedKey = await hashApiKey(key);
+
     await this.collection().insertOne({
       _id: new ObjectId(),
-      key,
+      key: hashedKey,
       name,
       description: 'Seeded local access key',
       scopes: ['events:write'],
@@ -185,10 +213,6 @@ export class ApiKeyAdminService {
     }
 
     return `${key.slice(0, 4)}…${key.slice(-4)}`;
-  }
-
-  private generateKey(): string {
-    return randomBytes(24).toString('base64url');
   }
 
   private assertObjectId(value: string): void {

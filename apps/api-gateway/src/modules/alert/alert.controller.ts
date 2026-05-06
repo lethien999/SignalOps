@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Header,
   Param,
   ParseIntPipe,
   Patch,
@@ -86,6 +87,18 @@ export class AlertController {
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
   ) {
     return this.alertService.getAlertHistory(days);
+  }
+
+  @ApiOperation({ summary: 'Export alert history as CSV' })
+  @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
+  @ApiOkResponse({ description: 'CSV file with alert history summary' })
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="alert-history.csv"')
+  @Get('history/csv')
+  async exportAlertHistoryCsv(
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+  ) {
+    return this.alertService.exportAlertHistoryCsv(days);
   }
 
   @ApiOperation({ summary: 'Get alert by id' })

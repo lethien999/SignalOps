@@ -209,6 +209,11 @@ export class AlertService {
     return this.alertRepository.alertHistory(days);
   }
 
+  async exportAlertHistoryCsv(days: number = 7): Promise<string> {
+    const rows = await this.alertRepository.alertHistory(days);
+    return this.alertRepository.buildAlertHistoryCsv(rows);
+  }
+
   async batchAcknowledge(ids: string[], acknowledgedBy?: string): Promise<BatchUpdateResult> {
     return this.batchUpdate(ids, {
       status: 'acknowledged',
