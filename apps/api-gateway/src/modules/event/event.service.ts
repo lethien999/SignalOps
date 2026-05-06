@@ -4,6 +4,9 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { EventBrokerService, TelemetryEventPayload } from './event-broker.service';
 import { Logger } from '../../common/logger';
 import { EventCreateInput, EventFindFilters, EventRepository } from './repositories/event.repository';
+import { OutboxRepository, CreateOutboxEventInput } from './repositories/outbox.repository';
+import { getDeviceStatus } from '@signalops/common';
+import { BusinessMetrics } from '../health/business-metrics';
 
 type EventListResult = {
   data: Event[];
@@ -16,9 +19,12 @@ type EventListResult = {
 
 @Injectable()
 export class EventService {
+  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly eventBrokerService: EventBrokerService,
+    private readonly outboxRepository?: OutboxRepository,
   ) {}
 
   async createEvent(
@@ -27,15 +33,35 @@ export class EventService {
     try {
       const savedEvent = await this.eventRepository.save(createEventDto as EventCreateInput);
 
-      // Queue for async processing
+      // Record metrics
+      BusinessMetrics.recordEventIngested('api');
+      if (createEventDto.metrics?.latency) {
+        BusinessMetrics.recordEventMetric('latency', createEventDto.metrics.latency);
+      }
+
+      // Idempotency: save to outbox and let outbox publisher handle queue publication
+      // This ensures: if DB succeeds but queue fails, we don't lose the event
       const queuedEvent: TelemetryEventPayload = {
         ...(savedEvent.toObject() as Omit<TelemetryEventPayload, '_id'>),
         _id: savedEvent._id.toString(),
       };
 
-      const jobId = await this.eventBrokerService.queueEvent(queuedEvent);
+      let jobId = '';
 
-      Logger.info(`Event created and queued: ${savedEvent._id}`);
+      if (this.redisEnabled && this.outboxRepository) {
+        // Use outbox pattern for reliability
+        const outboxEntry = await this.outboxRepository.create({
+          eventType: 'event',
+          payload: queuedEvent,
+        });
+        jobId = outboxEntry._id.toString();
+        Logger.info(`Event created and saved to outbox: ${savedEvent._id}`);
+      } else {
+        // Direct queue for development/testing
+        jobId = await this.eventBrokerService.queueEvent(queuedEvent);
+        Logger.info(`Event created and queued: ${savedEvent._id}`);
+      }
+
       return {
         id: savedEvent._id.toString(),
         status: 'queued',
@@ -125,41 +151,24 @@ export class EventService {
 
   /**
    * E1: Derive device list from recent events (group by deviceId, take latest)
+   * Uses shared threshold detection logic from libs/common
+   * Optimized: MongoDB aggregation groups events per device (vs in-memory processing)
    */
   async getDevices() {
-    const recentEvents = await this.eventRepository.findRecent(500);
+    // Use optimized aggregation to get latest event per device
+    const latestEvents = await this.eventRepository.findLatestEventPerDevice(500);
 
-    const deviceMap = new Map<string, {
-      id: string;
-      name: string;
-      location: { lat: number; lng: number; name?: string };
-      status: string;
-      lastSeen: string;
-      metrics: Record<string, number>;
-    }>();
-
-    for (const ev of recentEvents) {
-      const existing = deviceMap.get(ev.deviceId);
-      const evTime = ev.createdAt ? new Date(ev.createdAt).getTime() : 0;
-      const existingTime = existing ? new Date(existing.lastSeen).getTime() : 0;
-
-      if (!existing || evTime > existingTime) {
-        const isAlert = (ev.metrics?.latency > 200) || (ev.metrics?.packetLoss > 5) || (ev.metrics?.signalStrength < -90);
-        deviceMap.set(ev.deviceId, {
-          id: ev.deviceId,
-          name: ev.location?.name || ev.deviceId,
-          location: ev.location || { lat: 0, lng: 0 },
-          status: isAlert ? 'alert' : 'active',
-          lastSeen: ev.createdAt?.toISOString() || new Date().toISOString(),
-          metrics: {
-            latency: ev.metrics?.latency || 0,
-            packetLoss: ev.metrics?.packetLoss || 0,
-            signalStrength: ev.metrics?.signalStrength || 0,
-          },
-        });
-      }
-    }
-
-    return Array.from(deviceMap.values());
+    return latestEvents.map((ev) => ({
+      id: ev.deviceId,
+      name: ev.location?.name || ev.deviceId,
+      location: ev.location || { lat: 0, lng: 0 },
+      status: getDeviceStatus(ev.metrics),
+      lastSeen: ev.createdAt?.toISOString() || new Date().toISOString(),
+      metrics: {
+        latency: ev.metrics?.latency || 0,
+        packetLoss: ev.metrics?.packetLoss || 0,
+        signalStrength: ev.metrics?.signalStrength || 0,
+      },
+    }));
   }
 }

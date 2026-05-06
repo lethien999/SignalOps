@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import { Logger } from '../../common/logger';
+import { getRedisConfig } from '../../common/redis.config';
 import { StatusGateway } from './status.gateway';
 
 type QueueCounts = {
@@ -29,12 +30,7 @@ export class WebSocketStatusMonitorService implements OnModuleInit, OnModuleDest
       return;
     }
 
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      maxRetriesPerRequest: null,
-      lazyConnect: true,
-    });
+    this.redis = new Redis(getRedisConfig());
 
     this.redis.on('error', (error: unknown) => {
       Logger.error('WebSocket status monitor Redis error', error);

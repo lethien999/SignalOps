@@ -173,3 +173,94 @@ curl http://localhost:3000/api/dlq/failed-jobs?limit=20
 3. Khắc phục nguyên nhân gốc (sửa producer payload, sửa cấu hình DB/Redis, tăng tài nguyên).
 4. Requeue thủ công nếu cần sau khi nguyên nhân đã được xử lý.
 5. Theo dõi sự kiện `queue:depth` trên namespace `/status` để phát hiện DLQ tăng bất thường.
+
+---
+
+## 8. SSL/TLS Termination Setup
+
+### Mô tả
+Nginx reverse proxy hỗ trợ SSL termination, tự động chuyển hướng HTTP → HTTPS và cấu hình bảo mật TLS.
+
+### Chuẩn bị chứng chỉ
+
+#### Development (Self-signed)
+```bash
+mkdir -p infrastructure/certs
+openssl req -x509 -newkey rsa:4096 -nodes \
+  -out infrastructure/certs/cert.pem \
+  -keyout infrastructure/certs/key.pem \
+  -days 365 \
+  -subj "/CN=localhost"
+```
+
+#### Production (Let's Encrypt)
+```bash
+# Sử dụng Certbot với DNS validation
+certbot certonly --dns-route53 \
+  -d signalops.example.com \
+  -d *.signalops.example.com
+
+# Copy certificates to infrastructure/certs/
+sudo cp /etc/letsencrypt/live/signalops.example.com/fullchain.pem infrastructure/certs/cert.pem
+sudo cp /etc/letsencrypt/live/signalops.example.com/privkey.pem infrastructure/certs/key.pem
+sudo chmod 644 infrastructure/certs/*.pem
+```
+
+### Khởi chạy với SSL
+
+```bash
+# Compose stack với SSL support
+docker compose -f infrastructure/docker-compose.yml \
+  -f infrastructure/docker-compose.prod.yml \
+  -f infrastructure/docker-compose-ssl.yml \
+  up -d
+
+# Hoặc chỉ update Nginx config
+docker exec signalops-nginx nginx -s reload
+```
+
+### Kiểm tra SSL
+
+```bash
+# Verify HTTPS listening
+curl -k https://localhost/nginx-health
+
+# Test certificate validity
+openssl s_client -connect localhost:443 -servername localhost
+
+# Check SSL configuration
+openssl s_client -connect localhost:443 -tls1_2 -tls1_3
+```
+
+### Giám sát Nginx SSL
+
+```bash
+# View Nginx error log for SSL issues
+docker logs signalops-nginx | grep ssl
+
+# Reload config (no downtime)
+docker exec signalops-nginx nginx -s reload
+
+# Check config syntax
+docker exec signalops-nginx nginx -t
+```
+
+### Security Headers
+
+Khi sử dụng SSL, Nginx tự động thêm các header bảo mật:
+
+| Header | Ý nghĩa |
+|--------|---------|
+| `Strict-Transport-Security` | Bắt buộc HTTPS (1 năm) |
+| `X-Frame-Options` | Ngăn clickjacking |
+| `X-Content-Type-Options` | Ngăn MIME-sniffing |
+| `X-XSS-Protection` | Bảo vệ XSS |
+
+### Troubleshooting
+
+| Lỗi | Nguyên nhân | Giải pháp |
+|-----|-----------|----------|
+| `SSL_ERROR_BAD_CERT_DOMAIN` | Certificate domain không khớp | Kiểm tra Subject Name (CN) của cert |
+| `connection timed out` | Port 443 không mở | Kiểm tra firewall, docker port mapping |
+| `certificate verify failed` | Client không tin cert | Sử dụng ca-bundle hoặc disable verify (dev only) |
+| `nginx: [emerg] no key file` | Missing key.pem | Kiểm tra infrastructure/certs/key.pem |

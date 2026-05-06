@@ -1,15 +1,47 @@
-# Dockerfile for Simulator service
+# Multi-stage Dockerfile for Simulator Service
+# Stage 1: Builder
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy lock file first for better layer caching
+COPY package-lock.json .
+COPY package.json .
+
+# Copy source files (needed for npm workspaces to be recognized)
+COPY tsconfig.json .
+COPY apps/simulator ./apps/simulator
+COPY libs ./libs
+
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
+
+# Build: compile common lib first, then simulator
+RUN npm run -w @signalops/models build && npm run -w @signalops/common build && npm run -w simulator build
+
+# Stage 2: Runtime
 FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package.json ./
-COPY tsconfig.json ./
-COPY apps/simulator ./apps/simulator
-COPY libs ./libs
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-RUN npm install
+# Copy simulator package manifest and install runtime deps
+COPY --from=builder /app/apps/simulator/package.json ./package.json
+RUN npm install --production --no-audit --omit=dev && npm cache clean --force
 
-RUN npm run build -w simulator
+# Provide internal workspace libs in runtime image for Node module resolution
+RUN mkdir -p /app/node_modules/@signalops/common /app/node_modules/@signalops/models
+COPY --from=builder /app/libs/common/package.json /app/node_modules/@signalops/common/package.json
+COPY --from=builder /app/libs/common/dist /app/node_modules/@signalops/common/dist
+COPY --from=builder /app/libs/models/package.json /app/node_modules/@signalops/models/package.json
+COPY --from=builder /app/libs/models/dist /app/node_modules/@signalops/models/dist
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+
+# Switch to non-root user
+USER nodejs
 
 CMD ["node", "dist/apps/simulator/main.js"]

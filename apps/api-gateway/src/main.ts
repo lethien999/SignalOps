@@ -8,6 +8,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { errorHandlingMiddleware } from './common/middleware/error-handling.middleware';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { validateEnvironment } from './common/env-validator';
+import { initializeTracing } from '@signalops/common';
 
 function resolveCorsOrigins(): string[] {
   const raw = process.env.CORS_ORIGIN;
@@ -22,6 +23,9 @@ function resolveCorsOrigins(): string[] {
 }
 
 async function bootstrap() {
+  // Initialize OpenTelemetry tracing first
+  initializeTracing();
+
   // E5: Kiểm tra biến môi trường trước khi khởi động
   validateEnvironment();
 

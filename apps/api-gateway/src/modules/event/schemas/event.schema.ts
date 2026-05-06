@@ -50,3 +50,6 @@ export class Event extends Document {
 export const EventSchema = SchemaFactory.createForClass(Event);
 EventSchema.index({ deviceId: 1, timestamp: -1 });
 EventSchema.index({ timestamp: -1 });
+// TTL index: automatically delete events after 90 days
+// 90 days = 7776000 seconds
+EventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 });

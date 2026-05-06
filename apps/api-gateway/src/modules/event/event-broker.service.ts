@@ -3,6 +3,8 @@ import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { Logger } from '../../common/logger';
+import { getRedisConfig } from '../../common/redis.config';
+import { CircuitBreaker } from '@signalops/common';
 
 type TelemetryLocation = {
   lat: number;
@@ -34,18 +36,18 @@ export class EventBrokerService {
   private dlqQueue?: Queue;
   private redis?: Redis;
   private readonly redisEnabled = isRedisEnabled();
+  private readonly redisBreaker = new CircuitBreaker('Redis-EventQueue', {
+    failureThreshold: 5,
+    successThreshold: 2,
+    timeout: 60000,
+  });
 
   constructor() {
     if (!this.redisEnabled) {
       return;
     }
 
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      maxRetriesPerRequest: null,
-      lazyConnect: true,
-    });
+    this.redis = new Redis(getRedisConfig());
 
     this.queue = new Queue(process.env.QUEUE_EVENT_PROCESSING || 'event-processing', {
       connection: this.redis,
@@ -74,13 +76,20 @@ export class EventBrokerService {
         },
       };
 
-      await this.queue.add('process-event', enrichedEvent, {
-        jobId,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
+      // Use circuit breaker to prevent cascading failures
+      await this.redisBreaker.execute(async () => {
+        await this.queue!.add('process-event', enrichedEvent, {
+          jobId,
+          attempts: parseInt(process.env.BULLMQ_MAX_ATTEMPTS || '3', 10),
+          backoff: {
+            type: 'exponential',
+            delay: parseInt(process.env.BULLMQ_BACKOFF_DELAY || '2000', 10),
+          },
+          // Add jitter to prevent thundering herd problem
+          // Jitter adds randomness to retry delays
+          removeOnComplete: true,
+          removeOnFail: false,
+        });
       });
 
       Logger.info('Event queued', {

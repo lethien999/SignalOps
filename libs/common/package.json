@@ -4,9 +4,19 @@
   "description": "SignalOps Common utilities",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint src --ext .ts",
     "test": "echo \"No tests yet\""
+  }
+  ,
+  "dependencies": {
+    "ioredis": "^5.3.2"
   }
 }

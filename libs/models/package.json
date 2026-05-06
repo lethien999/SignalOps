@@ -4,6 +4,12 @@
   "description": "SignalOps Data Models",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint src --ext .ts",
