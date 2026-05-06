@@ -1,39 +1,25 @@
-# 🔐 Milestone 12: Auth and SaaS Foundation
+# 🔐 Milestone 12: Auth và SaaS Foundation
 
-**Status**: ⚪ Draft
-**Purpose**: Hold authentication, authorization, tenant isolation, and SaaS-enabling work.
-
----
-
-## Intended Scope
-
-> Paste the scale-critical foundation items here.
-
-### Suggested Buckets
-
-- [ ] Authentication and identity
-- [ ] Authorization and role model
-- [ ] Multi-tenant data isolation
-- [ ] Billing or plan enforcement
-- [ ] Tenant-aware settings and limits
+**Trạng thái**: ⚪ Draft  
+**Mục tiêu**: Nền tảng xác thực, phân quyền và tách tenant để SignalOps có thể đi theo hướng SaaS.
 
 ---
 
-## Priority Bands
+## Ưu tiên P0 - Bắt buộc cho SaaS
 
-### P0 - Critical for SaaS
+- [ ] User Authentication & RBAC
+	- [ ] Đăng nhập người dùng
+	- [ ] RBAC theo vai trò
+	- [ ] Bảo vệ API, dashboard và webhook cấu hình
 
-- [ ] Item 1
-- [ ] Item 2
-
-### P1 - High
-
-- [ ] Item 3
-- [ ] Item 4
+- [ ] Multi-tenant Architecture
+	- [ ] Tách dữ liệu theo tenant
+	- [ ] Tenant-aware settings và giới hạn
+	- [ ] Đảm bảo không rò dữ liệu giữa các tenant
 
 ---
 
-## Notes
+## Ghi chú
 
-- Do not start multi-tenant work before auth and tenant boundaries are clearly defined.
-- Keep these items separate from feature growth items so the roadmap stays readable.
+- Chỉ làm các hạng mục này khi phạm vi auth và tenant đã rõ ràng.
+- Đây là nền tảng cho scale theo hướng SaaS, nên không nên trộn với feature vận hành hoặc feature client.

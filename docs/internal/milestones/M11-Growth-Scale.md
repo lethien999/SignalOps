@@ -1,42 +1,25 @@
-# 📈 Milestone 11: Growth, Ops, and Scale
+# 📈 Milestone 11: Growth, Ops và Scale
 
-**Status**: ⚪ Draft
-**Purpose**: Hold features that improve growth, operations, observability, and capacity without blocking production-first release items.
-
----
-
-## Intended Scope
-
-> Paste the medium-priority items here after M10 is finalized.
-
-### Suggested Buckets
-
-- [ ] Growth / analytics features
-- [ ] Operator tooling
-- [ ] Queue and throughput improvements
-- [ ] Monitoring and alerting expansion
-- [ ] Performance and scale hardening
+**Trạng thái**: ⚪ Draft  
+**Mục tiêu**: Các hạng mục tăng trưởng, vận hành, quan sát hệ thống và mở rộng năng lực.
 
 ---
 
-## Priority Bands
+## Ưu tiên P1 - Quan trọng
 
-### P1 - High
+- [ ] SLA Dashboard — MTTR, Uptime, Alert Rate
+	- [ ] Hiển thị MTTR theo khoảng thời gian
+	- [ ] Theo dõi uptime và alert rate
+	- [ ] Có bộ lọc theo service/tenant (nếu có)
 
-- [ ] Item 1
-- [ ] Item 2
-- [ ] Item 3
-
-### P2 - Medium
-
-- [ ] Item 4
-- [ ] Item 5
-- [ ] Item 6
+- [ ] S3 Archive Pipeline
+	- [ ] Đẩy dữ liệu cũ sang S3
+	- [ ] Có chính sách retention rõ ràng
+	- [ ] Cho phép truy hồi dữ liệu khi cần
 
 ---
 
-## Notes
+## Ghi chú
 
-- Use this file for the features that are important but not required for the first production cut.
-- Keep each feature small enough to estimate and approve independently.
-- Move finished items back into the completed archive only when done.
+- Dùng file này cho các hạng mục cần cho scale và vận hành nhưng không phải điều kiện để ra bản production đầu tiên.
+- Nếu sau này có thêm các hạng mục quan sát, báo cáo, tối ưu dung lượng, hãy tiếp tục đưa vào đây trước khi mở milestone mới.

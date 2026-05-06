@@ -1,70 +1,78 @@
-# 🚀 Milestone 10: New Features (Planning)
+# 🚀 Milestone 10: Tính năng vận hành lõi
 
-**Start Date**: TBD  
-**Target Completion**: TBD  
-**Owner/Priority**: TBD  
-**Status**: 🟡 PLANNING
+**Trạng thái**: 🟡 Planning  
+**Mục tiêu**: Các tính năng cần làm sớm để SignalOps trở thành hệ thống vận hành thực sự, không chỉ là dashboard quan sát.
 
 ---
 
-## Features to Develop
+## Ưu tiên P0 - Làm trước
 
-> ⬇️ **Ghi danh sách tính năng mới vào đây** (copy từ BACKLOG.md khi ready)
+- [ ] Export CSV Alert History
+  - [ ] Xuất lịch sử alert theo bộ lọc hiện tại
+  - [ ] Hỗ trợ khoảng thời gian và severity
+  - [ ] Trả file CSV để tải xuống
 
-### Priority: P0 (Critical - Before Next Release)
+- [ ] Marker Clustering trên bản đồ
+  - [ ] Gom cụm marker khi zoom out
+  - [ ] Tách cụm khi zoom in
+  - [ ] Giữ tương thích với tooltip/chi tiết thiết bị
 
-- [ ] **Feature 1**: [Description]
-  - [ ] Task 1.1
-  - [ ] Task 1.2
-  - [ ] Acceptance criteria
+- [ ] Alert Sound Notification
+  - [ ] Phát âm báo khi có alert mới
+  - [ ] Cho phép bật/tắt trong UI
+  - [ ] Tùy biến âm báo theo mức độ nghiêm trọng
 
-- [ ] **Feature 2**: [Description]
-  - [ ] Task 2.1
-  - [ ] Task 2.2
-  - [ ] Acceptance criteria
+- [ ] Server-side Pagination & Filter
+  - [ ] Chuyển phân trang sang server-side
+  - [ ] Lọc theo severity, status, deviceId, thời gian
+  - [ ] Giảm tải cho UI khi dữ liệu lớn
 
-### Priority: P1 (High - Should Have)
+- [ ] Maintenance Mode / Alert Suppression
+  - [ ] Cho phép bật chế độ bảo trì theo thiết bị/vùng
+  - [ ] Chặn alert spam trong thời gian bảo trì
+  - [ ] Hiển thị rõ trạng thái suppression trên dashboard
 
-- [ ] **Feature 3**: [Description]
+- [ ] Notification Engine — Webhook (Slack/Telegram)
+  - [ ] Gửi alert ra Slack/Telegram bằng webhook
+  - [ ] Cho phép cấu hình theo severity
+  - [ ] Có retry và log lỗi gửi thông báo
 
-### Priority: P2 (Medium - Nice to Have)
+- [ ] Dynamic Threshold Management UI
+  - [ ] Cho phép chỉnh ngưỡng ngay trên UI
+  - [ ] Lưu cấu hình theo thiết bị hoặc nhóm thiết bị
+  - [ ] Có validate và rollback về mặc định
 
-- [ ] **Feature 4**: [Description]
+- [ ] Multi-level Severity (WARNING / HIGH / CRITICAL)
+  - [ ] Chuẩn hóa severity nhiều cấp
+  - [ ] Áp dụng cho API, worker và dashboard
+  - [ ] Cập nhật màu sắc/label tương ứng
+
+- [ ] Auto-resolve Alert
+  - [ ] Tự đóng alert khi metric trở về bình thường
+  - [ ] Ghi nhận lý do auto-resolve
+  - [ ] Tránh đóng nhầm alert đang được xử lý thủ công
 
 ---
 
-## Implementation Guidelines
+## Ghi chú triển khai
 
-**Before Coding**:
-1. Thêm tất cả tasks vào file này
-2. User reviews & prioritizes
-3. Wait for explicit approval: "OK, đi code đi"
-4. Only then: start implementation
+**Quy tắc**
+1. Tất cả feature mới phải được thêm vào docs trước khi code.
+2. Chỉ bắt đầu khi bạn xác nhận rõ: "OK, đi code đi".
+3. Khi tách task nhỏ hơn, giữ nguyên tên feature gốc để dễ trace.
 
-**During Development**:
-- Update status: `[ ] → [x]` khi task done
-- Commit message format: `feat: M10 - Brief description`
-- Document changes in this file
-
-**After Completion**:
-- Move completed tasks to `M1-M9-Completed.md`
-- Update overall project status
-- Create new `M11-NewFeatures.md` nếu có features mới
-
----
-
-## Status Tracking
-
-- **Tasks Defined**: 0/TBD
-- **Tasks In Progress**: 0/TBD
-- **Tasks Completed**: 0/TBD
+**Trạng thái**
+- **Tasks Defined**: 9
+- **Tasks In Progress**: 0
+- **Tasks Completed**: 0
 - **Last Updated**: 06/05/2026
 
 ---
 
-## Related Documentation
+## Tài liệu liên quan
 
 - [M1-M9 Completed Work](M1-M9-Completed.md)
-- [Feature Backlog](../BACKLOG.md)
-- [Architecture Decisions](../ADR.md)
-- [Deployment Guide](../../DEPLOYMENT.md)
+- [BACKLOG](../BACKLOG.md)
+- [Milestone 11](M11-Growth-Scale.md)
+- [Milestone 12](M12-Auth-SaaS.md)
+- [Milestone 13](M13-Client-AI.md)
