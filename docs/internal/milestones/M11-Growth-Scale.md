@@ -7,10 +7,10 @@
 
 ## Ưu tiên P0 - Làm trước (theo thứ tự easy -> hard)
 
-- [ ] SLA Dashboard — MTTR, Uptime, Alert Rate
-	- [ ] Hiển thị MTTR theo khoảng thời gian
-	- [ ] Theo dõi uptime và alert rate theo service
-	- [ ] Có bộ lọc theo service và severity
+- [x] SLA Dashboard — MTTR, Uptime, Alert Rate
+	- [x] Hiển thị MTTR theo khoảng thời gian
+	- [x] Theo dõi uptime và alert rate theo service
+	- [x] Có bộ lọc theo service và severity
 
 - [ ] Archive Pipeline (S3-compatible)
 	- [ ] Đẩy dữ liệu cũ (events/alerts) sang object storage
@@ -46,7 +46,7 @@
 **Trạng thái**
 - **Tasks Defined**: 5
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 0
+- **Tasks Completed**: 1
 - **Last Updated**: 07/05/2026
 
 ---

@@ -128,6 +128,41 @@ export class AlertController {
     });
   }
 
+  @ApiOperation({ summary: 'Get SLA dashboard snapshot (MTTR, uptime, alert rate)' })
+  @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
+  @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })
+  @ApiQuery({ name: 'type', required: false, enum: ['latency', 'packet_loss', 'signal'] })
+  @ApiQuery({ name: 'from', required: false, type: String, example: '2026-05-01T00:00:00.000Z' })
+  @ApiQuery({ name: 'to', required: false, type: String, example: '2026-05-07T00:00:00.000Z' })
+  @ApiOkResponse({ description: 'SLA snapshot for selected period and filters' })
+  @Get('sla')
+  async getSlaSnapshot(
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+    @Query('severity') severity?: string,
+    @Query('type') type?: 'latency' | 'packet_loss' | 'signal',
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+
+    if (from && Number.isNaN(fromDate?.getTime())) {
+      throw new BadRequestException('Invalid from date');
+    }
+
+    if (to && Number.isNaN(toDate?.getTime())) {
+      throw new BadRequestException('Invalid to date');
+    }
+
+    return this.alertService.getSlaSnapshot({
+      days,
+      severity,
+      type,
+      from: fromDate,
+      to: toDate,
+    });
+  }
+
   @ApiOperation({ summary: 'Export alert history as CSV' })
   @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
   @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })

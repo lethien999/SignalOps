@@ -124,3 +124,34 @@ export interface ThresholdProfile {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface SlaByDayPoint {
+  date: string;
+  total: number;
+  open: number;
+  acknowledged: number;
+  resolved: number;
+  mttrMinutes: number;
+}
+
+export interface SlaSnapshot {
+  period: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  filters: {
+    severity?: string;
+    type?: 'latency' | 'packet_loss' | 'signal';
+  };
+  totals: {
+    total: number;
+    open: number;
+    acknowledged: number;
+    resolved: number;
+  };
+  mttrMinutes: number;
+  uptimePercent: number;
+  alertRatePerHour: number;
+  byDay: SlaByDayPoint[];
+}
