@@ -48,30 +48,20 @@
   - [x] Áp dụng cho API, worker và dashboard
   - [x] Cập nhật màu sắc/label tương ứng
 
-- [ ] Auto-resolve Alert
-  - [ ] Tự đóng alert khi metric trở về bình thường
-  - [ ] Ghi nhận lý do auto-resolve
-  - [ ] Tránh đóng nhầm alert đang được xử lý thủ công
+- [x] Auto-resolve Alert
+  - [x] Tự đóng alert khi metric trở về bình thường
+  - [x] Ghi nhận lý do auto-resolve
+  - [x] Tránh đóng nhầm alert đang được xử lý thủ công
 
 ---
 
 ## Ghi chú triển khai
 
-### Kế hoạch tiếp theo (chờ duyệt): Auto-resolve Alert
+### Kế hoạch tiếp theo (chờ duyệt): M11 Growth & Scale
 
-- [ ] API Gateway
-  - [ ] Thêm endpoint đọc trạng thái auto-resolve theo thiết bị/vùng
-  - [ ] Thêm cấu hình khoảng trễ trước khi tự đóng alert
-- [ ] Worker Service
-  - [ ] Tự đóng alert khi metric ổn định đủ lâu
-  - [ ] Ghi lý do auto-resolve và tránh đóng nhầm alert thủ công
-- [ ] Dashboard
-  - [ ] Form bật/tắt auto-resolve và cấu hình delay
-  - [ ] Hiển thị trạng thái auto-resolve theo alert/thiết bị
-- [ ] Kiểm thử
-  - [ ] Test alert tự đóng khi chỉ số trở về bình thường
-  - [ ] Test không đóng alert đang được xử lý thủ công
-  - [ ] Test cấu hình delay hoạt động đúng
+- [ ] Mở rộng đa tenant và quota theo tenant
+- [ ] Tối ưu truy vấn aggregation cho dữ liệu lớn
+- [ ] Bổ sung giám sát chi phí và auto-scaling
 
 **Quy tắc**
 1. Tất cả feature mới phải được thêm vào docs trước khi code.
@@ -81,7 +71,7 @@
 **Trạng thái**
 - **Tasks Defined**: 9
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 8
+- **Tasks Completed**: 9
 - **Last Updated**: 07/05/2026
 
 ---
