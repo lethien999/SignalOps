@@ -22,6 +22,15 @@ const ENV_CHECKS: EnvCheck[] = [
   { key: 'CORS_ORIGIN', required: false, default: 'http://localhost:3001', description: 'CORS origins (phân cách bằng dấu phẩy)' },
   { key: 'WEBSOCKET_AUTH_TOKEN', required: false, description: 'Token xác thực WebSocket' },
   { key: 'RATE_LIMIT_MAX', required: false, default: '100', description: 'Giới hạn request/phút' },
+  { key: 'ARCHIVE_S3_ENABLED', required: false, default: 'false', description: 'Bật/tắt archive pipeline S3-compatible' },
+  { key: 'ARCHIVE_S3_BUCKET', required: false, description: 'Bucket lưu file archive' },
+  { key: 'ARCHIVE_S3_ENDPOINT', required: false, description: 'Endpoint S3-compatible (MinIO/R2/S3)' },
+  { key: 'ARCHIVE_S3_REGION', required: false, default: 'auto', description: 'Region cho S3-compatible client' },
+  { key: 'ARCHIVE_S3_ACCESS_KEY_ID', required: false, description: 'Access key của object storage' },
+  { key: 'ARCHIVE_S3_SECRET_ACCESS_KEY', required: false, description: 'Secret key của object storage' },
+  { key: 'ARCHIVE_S3_PREFIX', required: false, default: 'signalops/archive', description: 'Prefix object key khi archive' },
+  { key: 'ARCHIVE_RETENTION_DAYS', required: false, default: '180', description: 'Số ngày giữ archive trước khi xóa object' },
+  { key: 'ARCHIVE_DELETE_SOURCE', required: false, default: 'false', description: 'Xóa dữ liệu nguồn sau khi archive thành công' },
 ];
 
 export function validateEnvironment(): void {

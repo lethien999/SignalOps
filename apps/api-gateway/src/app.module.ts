@@ -7,6 +7,7 @@ import { WebSocketModule } from './modules/websocket/websocket.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ThresholdsModule } from './modules/thresholds/thresholds.module';
+import { ArchiveModule } from './modules/archive/archive.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 
@@ -26,6 +27,7 @@ import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.mi
     AlertModule,
     NotificationModule,
     ThresholdsModule,
+    ArchiveModule,
     AdminModule,
     HealthModule,
     WebSocketModule,

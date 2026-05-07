@@ -12,10 +12,10 @@
 	- [x] Theo dõi uptime và alert rate theo service
 	- [x] Có bộ lọc theo service và severity
 
-- [ ] Archive Pipeline (S3-compatible)
-	- [ ] Đẩy dữ liệu cũ (events/alerts) sang object storage
-	- [ ] Thiết lập retention policy rõ ràng
-	- [ ] Có lệnh hoặc API truy hồi dữ liệu khi cần điều tra
+- [x] Archive Pipeline (S3-compatible)
+	- [x] Đẩy dữ liệu cũ (events/alerts) sang object storage
+	- [x] Thiết lập retention policy rõ ràng
+	- [x] Có lệnh hoặc API truy hồi dữ liệu khi cần điều tra
 
 - [ ] Aggregation Performance Tuning
 	- [ ] Rà soát truy vấn nặng và thêm index phù hợp
@@ -46,7 +46,7 @@
 **Trạng thái**
 - **Tasks Defined**: 5
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 1
+- **Tasks Completed**: 2
 - **Last Updated**: 07/05/2026
 
 ---

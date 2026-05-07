@@ -43,6 +43,9 @@ export class Event extends Document {
   @Prop()
   alertId?: string;
 
+  @Prop()
+  archivedAt?: Date;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
