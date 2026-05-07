@@ -33,10 +33,10 @@
   - [x] Chặn alert spam trong thời gian bảo trì
   - [x] Hiển thị rõ trạng thái suppression trên dashboard
 
-- [ ] Notification Engine — Webhook (Slack/Telegram)
-  - [ ] Gửi alert ra Slack/Telegram bằng webhook
-  - [ ] Cho phép cấu hình theo severity
-  - [ ] Có retry và log lỗi gửi thông báo
+- [x] Notification Engine — Webhook (Slack/Telegram)
+  - [x] Gửi alert ra Slack/Telegram bằng webhook
+  - [x] Cho phép cấu hình theo severity
+  - [x] Có retry và log lỗi gửi thông báo
 
 - [ ] Dynamic Threshold Management UI
   - [ ] Cho phép chỉnh ngưỡng ngay trên UI
@@ -57,21 +57,21 @@
 
 ## Ghi chú triển khai
 
-### Kế hoạch tiếp theo (chờ duyệt): Notification Engine — Webhook (Slack/Telegram)
+### Kế hoạch tiếp theo (chờ duyệt): Dynamic Threshold Management UI
 
 - [ ] API Gateway
-  - [ ] Tạo cấu hình webhook theo kênh (Slack/Telegram) và theo severity
-  - [ ] Thêm endpoint bật/tắt cấu hình webhook
+  - [ ] Thêm endpoint đọc/ghi ngưỡng latency, packet loss, signal
+  - [ ] Áp dụng validate và lưu lịch sử thay đổi ngưỡng
 - [ ] Worker Service
-  - [ ] Đẩy tác vụ gửi webhook khi có alert mới
-  - [ ] Retry có backoff và ghi log lỗi gửi
+  - [ ] Nạp ngưỡng động từ cấu hình thay vì biến môi trường tĩnh
+  - [ ] Cơ chế fallback về ngưỡng mặc định khi cấu hình lỗi
 - [ ] Dashboard
-  - [ ] Thêm giao diện cấu hình webhook và bộ lọc severity
-  - [ ] Hiển thị trạng thái gửi gần nhất (thành công/thất bại)
+  - [ ] Form chỉnh ngưỡng theo thiết bị hoặc toàn cục
+  - [ ] Hiển thị diff thay đổi và nút rollback về mặc định
 - [ ] Kiểm thử
-  - [ ] Test gửi webhook thành công với payload đúng định dạng
-  - [ ] Test retry khi webhook lỗi và dừng khi vượt ngưỡng
-  - [ ] Test lọc severity đúng theo cấu hình
+  - [ ] Test cập nhật ngưỡng và áp dụng ngay vào luồng phát hiện
+  - [ ] Test rollback ngưỡng hoạt động đúng
+  - [ ] Test validate chặn ngưỡng sai định dạng
 
 **Quy tắc**
 1. Tất cả feature mới phải được thêm vào docs trước khi code.
@@ -81,7 +81,7 @@
 **Trạng thái**
 - **Tasks Defined**: 9
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 6
+- **Tasks Completed**: 7
 - **Last Updated**: 07/05/2026
 
 ---

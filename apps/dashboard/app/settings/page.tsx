@@ -5,8 +5,14 @@ import {
   Settings as SettingsIcon, Server, Wifi, Bell, Shield, Activity,
   CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send,
 } from "lucide-react";
-import { fetchDlqFailedJobs, fetchHealth } from "@/lib/api";
-import type { DlqJob } from "@/types";
+import {
+  createNotificationWebhook,
+  fetchDlqFailedJobs,
+  fetchHealth,
+  fetchNotificationWebhooks,
+  updateNotificationWebhook,
+} from "@/lib/api";
+import type { DlqJob, NotificationWebhook, Severity } from "@/types";
 
 function InfoRow({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" | "error" }) {
   return (
@@ -28,6 +34,21 @@ export default function SettingsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [dlqJobs, setDlqJobs] = useState<DlqJob[]>([]);
   const [dlqError, setDlqError] = useState(false);
+  const [webhooks, setWebhooks] = useState<NotificationWebhook[]>([]);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
+  const [savingWebhookId, setSavingWebhookId] = useState<string | null>(null);
+
+  const [newWebhook, setNewWebhook] = useState<{
+    name: string;
+    channel: "slack" | "telegram";
+    webhookUrl: string;
+    severities: Severity[];
+  }>({
+    name: "",
+    channel: "slack",
+    webhookUrl: "",
+    severities: ["high", "critical"],
+  });
 
   // Test event
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -59,10 +80,73 @@ export default function SettingsPage() {
       });
   };
 
+  const loadWebhooks = () => {
+    fetchNotificationWebhooks()
+      .then((items) => {
+        setWebhooks(items);
+        setWebhookError(null);
+      })
+      .catch((error) => {
+        setWebhookError(error instanceof Error ? error.message : "Không thể tải cấu hình webhook");
+      });
+  };
+
   useEffect(() => {
     loadHealth();
     loadDlqJobs();
+    loadWebhooks();
   }, []);
+
+  const toggleWebhook = async (item: NotificationWebhook) => {
+    try {
+      setSavingWebhookId(item._id);
+      const updated = await updateNotificationWebhook(item._id, {
+        enabled: !item.enabled,
+        updatedBy: "dashboard-user",
+      });
+      setWebhooks((prev) => prev.map((w) => (w._id === updated._id ? updated : w)));
+    } catch (error) {
+      setWebhookError(error instanceof Error ? error.message : "Không thể cập nhật webhook");
+    } finally {
+      setSavingWebhookId(null);
+    }
+  };
+
+  const submitNewWebhook = async () => {
+    try {
+      if (!newWebhook.name.trim() || !newWebhook.webhookUrl.trim()) {
+        setWebhookError("Tên và webhook URL là bắt buộc");
+        return;
+      }
+
+      const created = await createNotificationWebhook({
+        name: newWebhook.name.trim(),
+        channel: newWebhook.channel,
+        webhookUrl: newWebhook.webhookUrl.trim(),
+        severities: newWebhook.severities,
+        enabled: true,
+        retryMax: 3,
+        retryBackoffMs: 1000,
+        updatedBy: "dashboard-user",
+      });
+
+      setWebhooks((prev) => [created, ...prev]);
+      setWebhookError(null);
+      setNewWebhook({ name: "", channel: "slack", webhookUrl: "", severities: ["high", "critical"] });
+    } catch (error) {
+      setWebhookError(error instanceof Error ? error.message : "Không thể tạo webhook");
+    }
+  };
+
+  const toggleSeverityForNewWebhook = (severity: Severity) => {
+    setNewWebhook((prev) => {
+      const exists = prev.severities.includes(severity);
+      const severities = exists
+        ? prev.severities.filter((item) => item !== severity)
+        : [...prev.severities, severity];
+      return { ...prev, severities };
+    });
+  };
 
   const formatUptime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
@@ -224,6 +308,121 @@ export default function SettingsPage() {
                 {testResult}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Notification webhooks */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <Bell className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Notification Engine (Webhook)</h2>
+            </div>
+            <button
+              onClick={loadWebhooks}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Làm mới
+            </button>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={newWebhook.name}
+                onChange={(e) => setNewWebhook((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Tên webhook"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+              <select
+                value={newWebhook.channel}
+                onChange={(e) => setNewWebhook((prev) => ({ ...prev, channel: e.target.value as "slack" | "telegram" }))}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="slack">Slack</option>
+                <option value="telegram">Telegram</option>
+              </select>
+            </div>
+            <input
+              type="text"
+              value={newWebhook.webhookUrl}
+              onChange={(e) => setNewWebhook((prev) => ({ ...prev, webhookUrl: e.target.value }))}
+              placeholder="Webhook URL"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            <div className="flex flex-wrap gap-2">
+              {(["low", "warning", "medium", "high", "critical"] as Severity[]).map((severity) => {
+                const selected = newWebhook.severities.includes(severity);
+                return (
+                  <button
+                    key={severity}
+                    onClick={() => toggleSeverityForNewWebhook(severity)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                      selected
+                        ? "bg-indigo-100 text-indigo-800 border-indigo-300"
+                        : "bg-gray-100 text-gray-600 border-gray-200"
+                    }`}
+                  >
+                    {severity.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={submitNewWebhook}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              <Send className="w-4 h-4" />
+              Thêm webhook
+            </button>
+
+            {webhookError && (
+              <p className="text-sm text-red-600">{webhookError}</p>
+            )}
+
+            <div className="space-y-3">
+              {webhooks.length === 0 && !webhookError && (
+                <p className="text-sm text-gray-600">Chưa có webhook nào được cấu hình.</p>
+              )}
+              {webhooks.map((item) => (
+                <div key={item._id} className="rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                      <p className="text-xs text-gray-500">{item.channel.toUpperCase()} • {item.webhookUrl}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Trạng thái gần nhất: {item.lastStatus.toUpperCase()}
+                        {item.lastResponseCode ? ` (HTTP ${item.lastResponseCode})` : ""}
+                        {item.lastError ? ` • ${item.lastError}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleWebhook(item)}
+                      disabled={savingWebhookId === item._id}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                        item.enabled
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-700"
+                      } disabled:opacity-60`}
+                    >
+                      {savingWebhookId === item._id
+                        ? "Đang cập nhật..."
+                        : item.enabled
+                        ? "Đang bật"
+                        : "Đang tắt"}
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {item.severities.map((severity) => (
+                      <span key={`${item._id}-${severity}`} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                        {severity.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

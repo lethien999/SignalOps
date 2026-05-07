@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Alert, Device, DlqJob, Event, SystemStats } from '@/types';
+import type { Alert, Device, DlqJob, Event, NotificationWebhook, SystemStats } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -214,6 +214,57 @@ export async function fetchDlqFailedJobs(limit = 20): Promise<DlqJob[]> {
   } catch (error) {
     console.error('Failed to fetch DLQ jobs:', error);
     throw error;
+  }
+}
+
+export async function fetchNotificationWebhooks(): Promise<NotificationWebhook[]> {
+  try {
+    const response = await api.get<NotificationWebhook[]>('/notifications/webhooks');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch notification webhooks:', error);
+    throw error;
+  }
+}
+
+export async function createNotificationWebhook(payload: {
+  name: string;
+  channel: 'slack' | 'telegram';
+  webhookUrl: string;
+  severities: Array<'low' | 'warning' | 'medium' | 'high' | 'critical'>;
+  enabled?: boolean;
+  retryMax?: number;
+  retryBackoffMs?: number;
+  updatedBy?: string;
+}): Promise<NotificationWebhook> {
+  try {
+    const response = await api.post<NotificationWebhook>('/notifications/webhooks', payload);
+    return response.data;
+  } catch (error) {
+    const message = extractApiErrorMessage(error, 'Không thể tạo cấu hình webhook');
+    throw new Error(message);
+  }
+}
+
+export async function updateNotificationWebhook(
+  id: string,
+  payload: Partial<{
+    name: string;
+    channel: 'slack' | 'telegram';
+    webhookUrl: string;
+    severities: Array<'low' | 'warning' | 'medium' | 'high' | 'critical'>;
+    enabled: boolean;
+    retryMax: number;
+    retryBackoffMs: number;
+    updatedBy: string;
+  }>,
+): Promise<NotificationWebhook> {
+  try {
+    const response = await api.patch<NotificationWebhook>(`/notifications/webhooks/${id}`, payload);
+    return response.data;
+  } catch (error) {
+    const message = extractApiErrorMessage(error, 'Không thể cập nhật cấu hình webhook');
+    throw new Error(message);
   }
 }
 

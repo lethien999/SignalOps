@@ -88,3 +88,22 @@ export interface DlqJob {
   finishedOn?: number;
   data?: Record<string, unknown>;
 }
+
+export interface NotificationWebhook {
+  _id: string;
+  name: string;
+  channel: 'slack' | 'telegram';
+  webhookUrl: string;
+  severities: Severity[];
+  enabled: boolean;
+  retryMax: number;
+  retryBackoffMs: number;
+  lastStatus: 'never' | 'success' | 'failed';
+  lastAttemptAt?: string;
+  lastSuccessAt?: string;
+  lastResponseCode?: number;
+  lastError?: string;
+  updatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
