@@ -7,6 +7,8 @@ import { ThresholdDetector } from './services/threshold-detector';
 import { AlertRepository } from './repositories/alert.repository';
 import { EventRepository } from './repositories/event.repository';
 import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
+import { NotificationWebhookRepository } from './repositories/notification-webhook.repository';
+import { NotificationWebhookService } from './services/notification-webhook.service';
 import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
@@ -69,6 +71,7 @@ async function handleAlertCreation(
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
   pubSubRedis: Redis,
+  notificationWebhookService: NotificationWebhookService,
 ): Promise<number> {
   let createdCount = 0;
 
@@ -99,6 +102,23 @@ async function handleAlertCreation(
         deviceId: savedAlert.deviceId,
       }),
     );
+
+    await notificationWebhookService.notifyAlertCreated({
+      id: savedAlert._id.toString(),
+      alertId: savedAlert.alertId,
+      deviceId: savedAlert.deviceId,
+      type: savedAlert.type,
+      severity: savedAlert.severity,
+      message: savedAlert.message,
+      location: savedAlert.location
+        ? {
+            lat: savedAlert.location.lat,
+            lng: savedAlert.location.lng,
+            ...(savedAlert.location.name ? { name: savedAlert.location.name } : {}),
+          }
+        : undefined,
+      timestamp: new Date().toISOString(),
+    });
 
     Logger.info(`Alert created: ${alertType.type}`, alert);
     createdCount += 1;
@@ -150,6 +170,7 @@ function createWorker(
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
   deviceMaintenanceRepository: DeviceMaintenanceRepository,
+  notificationWebhookService: NotificationWebhookService,
 ): Worker {
   return new Worker(
     resolveQueueName(),
@@ -201,6 +222,7 @@ function createWorker(
             alertRepository,
             eventRepository,
             pubSubRedis,
+            notificationWebhookService,
           );
 
           // E2: Auto-resolve if metrics are back to normal
@@ -334,7 +356,16 @@ async function bootstrap() {
     const alertRepository = new AlertRepository();
     const eventRepository = new EventRepository();
     const deviceMaintenanceRepository = new DeviceMaintenanceRepository();
-    const worker = createWorker(redis, pubSubRedis, alertRepository, eventRepository, deviceMaintenanceRepository);
+    const notificationWebhookRepository = new NotificationWebhookRepository();
+    const notificationWebhookService = new NotificationWebhookService(notificationWebhookRepository);
+    const worker = createWorker(
+      redis,
+      pubSubRedis,
+      alertRepository,
+      eventRepository,
+      deviceMaintenanceRepository,
+      notificationWebhookService,
+    );
 
     context = { redis, pubSubRedis, queue, dlq, worker };
     registerWorkerEvents(worker, dlq);

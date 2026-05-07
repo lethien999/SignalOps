@@ -5,6 +5,7 @@ import { AlertModule } from './modules/alert/alert.module';
 import { HealthModule } from './modules/health/health.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 
@@ -22,6 +23,7 @@ import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.mi
     }),
     EventModule,
     AlertModule,
+    NotificationModule,
     AdminModule,
     HealthModule,
     WebSocketModule,
