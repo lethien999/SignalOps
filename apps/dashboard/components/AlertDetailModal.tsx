@@ -65,7 +65,9 @@ export function AlertDetailModal({ alert, onClose, onActionComplete }: AlertDeta
   };
 
   const severityLabel: Record<string, string> = {
+    critical: "Tới hạn",
     high: "Nghiêm trọng",
+    warning: "Cảnh báo",
     medium: "Trung bình",
     low: "Thấp",
   };
@@ -77,7 +79,9 @@ export function AlertDetailModal({ alert, onClose, onActionComplete }: AlertDeta
   };
 
   const severityColor: Record<string, string> = {
+    critical: "text-red-700 bg-red-100 border-red-300",
     high: "text-red-600 bg-red-50 border-red-200",
+    warning: "text-orange-600 bg-orange-50 border-orange-200",
     medium: "text-yellow-600 bg-yellow-50 border-yellow-200",
     low: "text-blue-600 bg-blue-50 border-blue-200",
   };

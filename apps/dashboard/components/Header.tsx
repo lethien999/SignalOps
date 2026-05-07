@@ -40,7 +40,9 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
 
   const severityColor = (s: string) => {
     switch (s) {
+      case 'critical': return 'bg-red-100 text-red-700 border-red-300';
       case 'high': return 'bg-red-100 text-red-700 border-red-200';
+      case 'warning': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       default: return 'bg-blue-100 text-blue-700 border-blue-200';
     }

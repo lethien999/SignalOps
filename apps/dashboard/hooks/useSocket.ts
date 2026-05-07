@@ -26,7 +26,18 @@ function playAlertSound(severity: Alert['severity']) {
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
-    const frequency = severity === 'high' ? 880 : severity === 'medium' ? 660 : 523;
+    let frequency: number;
+    if (severity === 'critical') {
+      frequency = 987; // B5
+    } else if (severity === 'high') {
+      frequency = 880; // A5
+    } else if (severity === 'warning') {
+      frequency = 741; // F5
+    } else if (severity === 'medium') {
+      frequency = 660; // E5
+    } else {
+      frequency = 523; // C5
+    }
 
     oscillator.type = 'sine';
     oscillator.frequency.value = frequency;

@@ -11,7 +11,9 @@ interface AlertTableProps {
 }
 
 const severityConfig = {
+  critical: { color: "bg-red-100 text-red-700", badge: "bg-red-200", icon: AlertTriangle },
   high: { color: "bg-red-50 text-red-700", badge: "bg-red-100", icon: AlertTriangle },
+  warning: { color: "bg-orange-50 text-orange-700", badge: "bg-orange-100", icon: AlertCircle },
   medium: { color: "bg-yellow-50 text-yellow-700", badge: "bg-yellow-100", icon: AlertCircle },
   low: { color: "bg-blue-50 text-blue-700", badge: "bg-blue-100", icon: AlertCircle },
 };
@@ -19,7 +21,7 @@ const severityConfig = {
 export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertTableProps) {
   const [sortBy, setSortBy] = useState<"severity" | "time">("time");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high">("all");
+  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "warning" | "medium" | "high" | "critical">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [groupByLocation, setGroupByLocation] = useState(false);
@@ -36,7 +38,7 @@ export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertT
 
   const sortedAlerts = [...filteredAlerts].sort((a, b) => {
     if (sortBy === "severity") {
-      const severityOrder = { high: 3, medium: 2, low: 1 };
+      const severityOrder: Record<string, number> = { critical: 5, high: 4, warning: 3, medium: 2, low: 1 };
       return sortOrder === "desc"
         ? severityOrder[b.severity] - severityOrder[a.severity]
         : severityOrder[a.severity] - severityOrder[b.severity];
@@ -97,7 +99,9 @@ export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertT
                   className="min-w-40 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 >
                   <option value="all">Tất cả</option>
+                  <option value="critical">Tới hạn</option>
                   <option value="high">Nghiêm trọng</option>
+                  <option value="warning">Cảnh báo</option>
                   <option value="medium">Trung bình</option>
                   <option value="low">Thấp</option>
                 </select>

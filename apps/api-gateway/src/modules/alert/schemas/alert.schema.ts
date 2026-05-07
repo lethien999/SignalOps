@@ -14,7 +14,7 @@ export class Alert extends Document {
 
   @Prop({
     required: true,
-    enum: ['low', 'medium', 'high'],
+    enum: ['low', 'warning', 'medium', 'high', 'critical'],
   })
   severity: string;
 
