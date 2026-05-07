@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import React, { useMemo, useEffect, useRef } from "react";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet.markercluster";
 import { useDeviceStore } from "@/stores";
 import type { Device, DeviceStatus } from "@/types";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 const createIcon = (status: DeviceStatus) => {
   const color = status === "active" ? "#10b981" : status === "alert" ? "#ef4444" : "#6b7280";
@@ -16,6 +19,99 @@ const createIcon = (status: DeviceStatus) => {
     popupAnchor: [0, -32],
   });
 };
+
+// Wrapper component để sử dụng MarkerClusterGroup
+interface MarkerClusterGroupProps {
+  devices: Device[];
+  onDeviceClick?: (device: Device) => void;
+}
+
+function MarkerClusterManager({ devices, onDeviceClick }: MarkerClusterGroupProps) {
+  const map = useMap();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerClusterGroupRef = useRef<any>(null);
+  const markersRef = useRef<Record<string, L.Marker>>({});
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Tạo marker cluster group
+    const markerClusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 80,
+      disableClusteringAtZoom: 16,
+    });
+
+    markerClusterGroupRef.current = markerClusterGroup;
+    map.addLayer(markerClusterGroup);
+
+    return () => {
+      if (markerClusterGroup && map) {
+        map.removeLayer(markerClusterGroup);
+      }
+    };
+  }, [map]);
+
+  // Cập nhật markers khi devices thay đổi
+  useEffect(() => {
+    if (!markerClusterGroupRef.current) return;
+
+    const mcg = markerClusterGroupRef.current;
+
+    // Xóa markers cũ
+    Object.values(markersRef.current).forEach((marker) => {
+      mcg.removeLayer(marker);
+    });
+    markersRef.current = {};
+
+    // Thêm markers mới
+    devices.forEach((device) => {
+      const marker = L.marker([device.location.lat, device.location.lng], {
+        icon: createIcon(device.status),
+      });
+
+      // Thêm popup
+      const popupContent = document.createElement("div");
+      popupContent.className = "p-2";
+      popupContent.innerHTML = `
+        <p class="font-semibold text-gray-900">${device.name}</p>
+        <p class="text-sm text-gray-600">
+          <span class="inline-block px-2 py-1 rounded text-xs font-semibold ${
+            device.status === "active"
+              ? "bg-green-100 text-green-800"
+              : device.status === "alert"
+              ? "bg-red-100 text-red-800"
+              : "bg-gray-100 text-gray-800"
+          }">
+            ${device.status.toUpperCase()}
+          </span>
+        </p>
+        ${
+          device.metrics
+            ? `
+          <div class="mt-2 text-xs text-gray-600 space-y-1">
+            ${device.metrics.latency ? `<p>Latency: ${device.metrics.latency}ms</p>` : ""}
+            ${device.metrics.packetLoss !== undefined ? `<p>Packet Loss: ${device.metrics.packetLoss}%</p>` : ""}
+            ${device.metrics.signalStrength ? `<p>Signal: ${device.metrics.signalStrength} dBm</p>` : ""}
+          </div>
+        `
+            : ""
+        }
+      `;
+
+      marker.bindPopup(popupContent);
+
+      // Thêm click handler
+      marker.on("click", () => {
+        onDeviceClick?.(device);
+      });
+
+      mcg.addLayer(marker);
+      markersRef.current[device.id] = marker;
+    });
+  }, [devices, onDeviceClick]);
+
+  return null;
+}
 
 interface MapProps {
   devices?: Device[];
@@ -68,50 +164,7 @@ export function Map({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {displayDevices.map((device) => (
-          <Marker
-            key={device.id}
-            position={[device.location.lat, device.location.lng]}
-            icon={createIcon(device.status)}
-            eventHandlers={{
-              click: () => {
-                onDeviceClick?.(device);
-              },
-            }}
-          >
-            <Popup>
-              <div className="p-2">
-                <p className="font-semibold text-gray-900">{device.name}</p>
-                <p className="text-sm text-gray-600">
-                  <span
-                    className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                      device.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : device.status === 'alert'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {device.status.toUpperCase()}
-                  </span>
-                </p>
-                {device.metrics && (
-                  <div className="mt-2 text-xs text-gray-600 space-y-1">
-                    {device.metrics.latency && (
-                      <p>Latency: {device.metrics.latency}ms</p>
-                    )}
-                    {device.metrics.packetLoss !== undefined && (
-                      <p>Packet Loss: {device.metrics.packetLoss}%</p>
-                    )}
-                    {device.metrics.signalStrength && (
-                      <p>Signal: {device.metrics.signalStrength} dBm</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        <MarkerClusterManager devices={displayDevices} onDeviceClick={onDeviceClick} />
       </MapContainer>
 
       <div className="absolute top-4 right-4 z-[1000] rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur-sm">
