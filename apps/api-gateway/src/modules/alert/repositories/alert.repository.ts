@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, PipelineStage } from 'mongoose';
 import { Alert } from '../schemas/alert.schema';
 
 export type AlertFindFilters = {
@@ -11,6 +11,10 @@ export type AlertFindFilters = {
   to?: Date;
   skip: number;
   limit: number;
+};
+
+export type AlertHistoryFilters = Pick<AlertFindFilters, 'severity' | 'status' | 'deviceId' | 'from' | 'to'> & {
+  days?: number;
 };
 
 export type AlertStatusUpdate = {
@@ -85,45 +89,26 @@ export class AlertRepository {
     return this.alertModel.countDocuments({ status: { $ne: 'resolved' } });
   }
 
-  private buildQuery(filters: AlertFindFilters): FilterQuery<Alert> {
-    const query: FilterQuery<Alert> = {};
+  async alertHistory(filters: AlertHistoryFilters = {}): Promise<{ date: string; open: number; acknowledged: number; resolved: number; total: number }[]> {
+    const query = this.buildQuery(filters);
+    const pipeline: PipelineStage[] = [];
 
-    if (filters.severity) {
-      query.severity = filters.severity;
+    if (!filters.from && !filters.to) {
+      const since = new Date();
+      since.setDate(since.getDate() - (filters.days ?? 7));
+
+      pipeline.push({
+        $match: {
+          ...query,
+          createdAt: { ...(query.createdAt as Record<string, unknown> || {}), $gte: since },
+        },
+      });
+    } else {
+      pipeline.push({ $match: query });
     }
-
-    if (filters.status) {
-      query.status = filters.status;
-    }
-
-    if (filters.deviceId) {
-      query.deviceId = filters.deviceId;
-    }
-
-    if (filters.from || filters.to) {
-      query.createdAt = {} as FilterQuery<Alert>['createdAt'];
-
-      if (filters.from) {
-        (query.createdAt as Record<string, Date>)['$gte'] = filters.from;
-      }
-
-      if (filters.to) {
-        (query.createdAt as Record<string, Date>)['$lte'] = filters.to;
-      }
-    }
-
-    return query;
-  }
-
-  /**
-   * E3: Aggregate alert counts by day for the last N days
-   */
-  async alertHistory(days: number = 7): Promise<{ date: string; open: number; acknowledged: number; resolved: number; total: number }[]> {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
 
     const results = await this.alertModel.aggregate([
-      { $match: { createdAt: { $gte: since } } },
+      ...pipeline,
       {
         $group: {
           _id: {
@@ -136,7 +121,6 @@ export class AlertRepository {
       { $sort: { '_id.date': 1 } },
     ]);
 
-    // Transform to day-level summary
     const dayMap = new Map<string, { open: number; acknowledged: number; resolved: number; total: number }>();
     for (const row of results) {
       const date = row._id.date;
@@ -175,5 +159,35 @@ export class AlertRepository {
     }
 
     return lines.join('\n');
+  }
+
+  private buildQuery(filters: Pick<AlertFindFilters, 'severity' | 'status' | 'deviceId' | 'from' | 'to'>): FilterQuery<Alert> {
+    const query: FilterQuery<Alert> = {};
+
+    if (filters.severity) {
+      query.severity = filters.severity;
+    }
+
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    if (filters.deviceId) {
+      query.deviceId = filters.deviceId;
+    }
+
+    if (filters.from || filters.to) {
+      query.createdAt = {} as FilterQuery<Alert>['createdAt'];
+
+      if (filters.from) {
+        (query.createdAt as Record<string, Date>)['$gte'] = filters.from;
+      }
+
+      if (filters.to) {
+        (query.createdAt as Record<string, Date>)['$lte'] = filters.to;
+      }
+    }
+
+    return query;
   }
 }

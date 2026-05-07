@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Alert } from './schemas/alert.schema';
 import { Logger } from '../../common/logger';
 import { randomUUID } from 'crypto';
-import { AlertFindFilters, AlertRepository, AlertStatusUpdate } from './repositories/alert.repository';
+import { AlertFindFilters, AlertHistoryFilters, AlertRepository, AlertStatusUpdate } from './repositories/alert.repository';
 import { AlertsGateway, AlertEmissionPayload } from '../websocket/alerts.gateway';
 import { BusinessMetrics } from '../health/business-metrics';
 
@@ -214,12 +214,12 @@ export class AlertService {
     return payload;
   }
 
-  async getAlertHistory(days: number = 7) {
-    return this.alertRepository.alertHistory(days);
+  async getAlertHistory(filters: AlertHistoryFilters = {}) {
+    return this.alertRepository.alertHistory(filters);
   }
 
-  async exportAlertHistoryCsv(days: number = 7): Promise<string> {
-    const rows = await this.alertRepository.alertHistory(days);
+  async exportAlertHistoryCsv(filters: AlertHistoryFilters = {}): Promise<string> {
+    const rows = await this.alertRepository.alertHistory(filters);
     return this.alertRepository.buildAlertHistoryCsv(rows);
   }
 

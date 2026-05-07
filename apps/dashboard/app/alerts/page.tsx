@@ -6,7 +6,7 @@ import { AlertTable } from "@/components/AlertTable";
 import { AlertDetailModal } from "@/components/AlertDetailModal";
 import { ToastStack, type ToastItem, type ToastType } from "@/components/ToastStack";
 import { useAlertStore } from "@/stores";
-import { fetchAlertsPage } from "@/lib/api";
+import { downloadAlertHistoryCsv, fetchAlertsPage } from "@/lib/api";
 
 type AlertSummary = {
   open: number;
@@ -22,6 +22,7 @@ export default function AlertsPage() {
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [page, setPage] = useState(1);
   const [severity, setSeverity] = useState<"all" | "low" | "medium" | "high">("all");
   const [status, setStatus] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
@@ -77,6 +78,32 @@ export default function AlertsPage() {
     setTimeout(() => setToasts((c) => c.filter((t) => t.id !== id)), 3500);
   };
 
+  const exportCsv = async () => {
+    try {
+      setExportingCsv(true);
+      const blobUrl = await downloadAlertHistoryCsv({
+        severity: severity === "all" ? undefined : severity,
+        status: status === "all" ? undefined : status,
+        deviceId: deviceId.trim() || undefined,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+      });
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "alert-history.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+      pushToast("Đã tải file CSV theo bộ lọc hiện tại", "success");
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : "Không thể tải CSV", "error");
+    } finally {
+      setExportingCsv(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
       <ToastStack toasts={toasts} onDismiss={(id) => setToasts((c) => c.filter((t) => t.id !== id))} />
@@ -89,14 +116,23 @@ export default function AlertsPage() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">Theo dõi, xác nhận và xử lý các cảnh báo theo thời gian thực.</p>
         </div>
-        <button
-          onClick={() => loadAlerts(false)}
-          disabled={refreshing}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportCsv}
+            disabled={exportingCsv}
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition disabled:opacity-50"
+          >
+            {exportingCsv ? "Đang xuất CSV..." : "Tải CSV"}
+          </button>
+          <button
+            onClick={() => loadAlerts(false)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            Làm mới
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
