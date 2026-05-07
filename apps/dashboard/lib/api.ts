@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Alert, DlqJob, Event, SystemStats } from '@/types';
+import type { Alert, Device, DlqJob, Event, SystemStats } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -103,6 +103,36 @@ export async function fetchEvents(params?: {
   } catch (error) {
     console.error('Failed to fetch events:', error);
     throw error;
+  }
+}
+
+export async function fetchDevices(): Promise<Device[]> {
+  try {
+    const response = await api.get<Device[]>('/devices');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch devices:', error);
+    throw error;
+  }
+}
+
+export async function setDeviceMaintenance(
+  deviceId: string,
+  payload: { enabled: boolean; reason?: string; updatedBy?: string },
+): Promise<{ deviceId: string; enabled: boolean; reason?: string; updatedBy?: string; updatedAt?: string }> {
+  try {
+    const response = await api.patch<{
+      deviceId: string;
+      enabled: boolean;
+      reason?: string;
+      updatedBy?: string;
+      updatedAt?: string;
+    }>(`/devices/${deviceId}/maintenance`, payload);
+    return response.data;
+  } catch (error) {
+    const message = extractApiErrorMessage(error, 'Không thể cập nhật trạng thái bảo trì');
+    console.error('Không thể cập nhật trạng thái bảo trì:', message);
+    throw new Error(message);
   }
 }
 

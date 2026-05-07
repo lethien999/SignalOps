@@ -5,6 +5,8 @@ import { EventBrokerService, TelemetryEventPayload } from './event-broker.servic
 import { Logger } from '../../common/logger';
 import { EventCreateInput, EventFindFilters, EventRepository } from './repositories/event.repository';
 import { OutboxRepository, CreateOutboxEventInput } from './repositories/outbox.repository';
+import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
+import { UpdateDeviceMaintenanceDto } from './dto/update-device-maintenance.dto';
 import { getDeviceStatus } from '@signalops/common';
 import { BusinessMetrics } from '../health/business-metrics';
 
@@ -24,6 +26,7 @@ export class EventService {
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly eventBrokerService: EventBrokerService,
+    private readonly deviceMaintenanceRepository: DeviceMaintenanceRepository,
     private readonly outboxRepository?: OutboxRepository,
   ) {}
 
@@ -157,12 +160,20 @@ export class EventService {
   async getDevices() {
     // Use optimized aggregation to get latest event per device
     const latestEvents = await this.eventRepository.findLatestEventPerDevice(500);
+    const deviceIds = latestEvents.map((ev) => ev.deviceId);
+    const maintenanceRecords = await this.deviceMaintenanceRepository.findEnabledByDeviceIds(deviceIds);
+    const maintenanceByDevice = new Map(
+      maintenanceRecords.map((record) => [record.deviceId, record]),
+    );
 
     return latestEvents.map((ev) => ({
       id: ev.deviceId,
       name: ev.location?.name || ev.deviceId,
       location: ev.location || { lat: 0, lng: 0 },
       status: getDeviceStatus(ev.metrics),
+      maintenanceMode: Boolean(maintenanceByDevice.get(ev.deviceId)?.enabled),
+      maintenanceReason: maintenanceByDevice.get(ev.deviceId)?.reason,
+      maintenanceUpdatedAt: maintenanceByDevice.get(ev.deviceId)?.updatedAt,
       lastSeen: ev.createdAt?.toISOString() || new Date().toISOString(),
       metrics: {
         latency: ev.metrics?.latency || 0,
@@ -170,5 +181,46 @@ export class EventService {
         signalStrength: ev.metrics?.signalStrength || 0,
       },
     }));
+  }
+
+  async getMaintenanceDevices(skip: number, limit: number) {
+    const rows = await this.deviceMaintenanceRepository.findEnabled(skip, limit);
+    return rows.map((row) => ({
+      deviceId: row.deviceId,
+      enabled: row.enabled,
+      reason: row.reason,
+      updatedBy: row.updatedBy,
+      updatedAt: row.updatedAt,
+      createdAt: row.createdAt,
+    }));
+  }
+
+  async updateDeviceMaintenance(deviceId: string, payload: UpdateDeviceMaintenanceDto) {
+    const safeDeviceId = deviceId?.trim();
+    if (!safeDeviceId) {
+      throw new BadRequestException('deviceId không hợp lệ');
+    }
+
+    const updated = await this.deviceMaintenanceRepository.setByDeviceId(safeDeviceId, {
+      enabled: payload.enabled,
+      reason: payload.reason?.trim(),
+      updatedBy: payload.updatedBy?.trim(),
+    });
+
+    Logger.info('Cập nhật maintenance mode cho thiết bị', {
+      deviceId: safeDeviceId,
+      enabled: updated.enabled,
+      reason: updated.reason,
+      updatedBy: updated.updatedBy,
+    });
+
+    return {
+      deviceId: updated.deviceId,
+      enabled: updated.enabled,
+      reason: updated.reason,
+      updatedBy: updated.updatedBy,
+      updatedAt: updated.updatedAt,
+      createdAt: updated.createdAt,
+    };
   }
 }

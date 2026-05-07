@@ -13,6 +13,9 @@ export interface Device {
   name: string;
   location: Location;
   status: DeviceStatus;
+  maintenanceMode?: boolean;
+  maintenanceReason?: string;
+  maintenanceUpdatedAt?: string;
   lastSeen?: string;
   metrics?: {
     latency?: number;

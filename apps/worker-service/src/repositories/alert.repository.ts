@@ -4,7 +4,7 @@ type AlertRecord = {
   alertId: string;
   deviceId: string;
   type: 'latency' | 'packet_loss' | 'signal';
-  severity: 'low' | 'medium' | 'high';
+  severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
   location: {
     lat: number;
     lng: number;
@@ -29,7 +29,7 @@ const alertSchema = new mongoose.Schema(
     alertId: { type: String, required: true, unique: true, trim: true },
     deviceId: { type: String, required: true, trim: true },
     type: { type: String, required: true, enum: ['latency', 'packet_loss', 'signal'] },
-    severity: { type: String, required: true, enum: ['low', 'medium', 'high'] },
+    severity: { type: String, required: true, enum: ['low', 'warning', 'medium', 'high', 'critical'] },
     location: {
       lat: { type: Number, required: true, min: -90, max: 90 },
       lng: { type: Number, required: true, min: -180, max: 180 },

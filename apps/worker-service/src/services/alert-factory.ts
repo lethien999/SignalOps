@@ -15,7 +15,7 @@ type WorkerJobPayload = {
 
 type WorkerAlertResult = {
   type: 'latency' | 'packet_loss' | 'signal';
-  severity: 'low' | 'medium' | 'high';
+  severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
   message: string;
 };
 
