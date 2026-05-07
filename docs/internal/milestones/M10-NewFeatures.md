@@ -7,7 +7,8 @@
 
 ## Ưu tiên P0 - Làm trước
 
-- [ ] Export CSV Alert History
+- [x] Export CSV Alert History
+  - [x] Export CSV Alert History
   - [ ] Xuất lịch sử alert theo bộ lọc hiện tại
   - [ ] Hỗ trợ khoảng thời gian và severity
   - [ ] Trả file CSV để tải xuống
@@ -22,10 +23,10 @@
   - [ ] Cho phép bật/tắt trong UI
   - [ ] Tùy biến âm báo theo mức độ nghiêm trọng
 
-- [ ] Server-side Pagination & Filter
-  - [ ] Chuyển phân trang sang server-side
-  - [ ] Lọc theo severity, status, deviceId, thời gian
-  - [ ] Giảm tải cho UI khi dữ liệu lớn
+- [x] Server-side Pagination & Filter
+  - [x] Chuyển phân trang sang server-side
+  - [x] Lọc theo severity, status, deviceId, thời gian
+  - [x] Giảm tải cho UI khi dữ liệu lớn
 
 - [ ] Maintenance Mode / Alert Suppression
   - [ ] Cho phép bật chế độ bảo trì theo thiết bị/vùng
@@ -64,7 +65,7 @@
 **Trạng thái**
 - **Tasks Defined**: 9
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 0
+- **Tasks Completed**: 3
 - **Last Updated**: 06/05/2026
 
 ---

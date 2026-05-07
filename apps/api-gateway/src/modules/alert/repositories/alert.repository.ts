@@ -6,6 +6,9 @@ import { Alert } from '../schemas/alert.schema';
 export type AlertFindFilters = {
   severity?: string;
   status?: string;
+  deviceId?: string;
+  from?: Date;
+  to?: Date;
   skip: number;
   limit: number;
 };
@@ -32,7 +35,7 @@ export class AlertRepository {
     return this.alertModel.findById(id).exec();
   }
 
-  async find(filters: AlertFindFilters): Promise<{ data: Alert[]; total: number }> {
+  async find(filters: AlertFindFilters): Promise<{ data: Alert[]; total: number; summary: { open: number; acknowledged: number; resolved: number; highOpen: number } }> {
     const query = this.buildQuery(filters);
 
     const data = await this.alertModel
@@ -44,7 +47,34 @@ export class AlertRepository {
 
     const total = await this.alertModel.countDocuments(query);
 
-    return { data, total };
+    const summary = await this.alertModel.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          open: {
+            $sum: { $cond: [{ $eq: ['$status', 'open'] }, 1, 0] },
+          },
+          acknowledged: {
+            $sum: { $cond: [{ $eq: ['$status', 'acknowledged'] }, 1, 0] },
+          },
+          resolved: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] },
+          },
+          highOpen: {
+            $sum: {
+              $cond: [{ $and: [{ $eq: ['$status', 'open'] }, { $eq: ['$severity', 'high'] }] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    return {
+      data,
+      total,
+      summary: summary[0] || { open: 0, acknowledged: 0, resolved: 0, highOpen: 0 },
+    };
   }
 
   async updateStatus(id: string, payload: AlertStatusUpdate): Promise<Alert | null> {
@@ -64,6 +94,22 @@ export class AlertRepository {
 
     if (filters.status) {
       query.status = filters.status;
+    }
+
+    if (filters.deviceId) {
+      query.deviceId = filters.deviceId;
+    }
+
+    if (filters.from || filters.to) {
+      query.createdAt = {} as FilterQuery<Alert>['createdAt'];
+
+      if (filters.from) {
+        (query.createdAt as Record<string, Date>)['$gte'] = filters.from;
+      }
+
+      if (filters.to) {
+        (query.createdAt as Record<string, Date>)['$lte'] = filters.to;
+      }
     }
 
     return query;

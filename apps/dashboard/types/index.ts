@@ -1,4 +1,4 @@
-export type Severity = 'low' | 'medium' | 'high';
+export type Severity = 'low' | 'warning' | 'medium' | 'high' | 'critical';
 export type AlertStatus = 'open' | 'acknowledged' | 'resolved';
 export type DeviceStatus = 'active' | 'inactive' | 'alert';
 

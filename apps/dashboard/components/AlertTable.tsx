@@ -7,33 +7,38 @@ import type { Alert } from "@/types";
 interface AlertTableProps {
   alerts: Alert[];
   onSelectAlert: (alert: Alert) => void;
+  serverSide?: boolean;
 }
 
 const severityConfig = {
+  critical: { color: "bg-red-100 text-red-700", badge: "bg-red-200", icon: AlertTriangle },
   high: { color: "bg-red-50 text-red-700", badge: "bg-red-100", icon: AlertTriangle },
+  warning: { color: "bg-orange-50 text-orange-700", badge: "bg-orange-100", icon: AlertCircle },
   medium: { color: "bg-yellow-50 text-yellow-700", badge: "bg-yellow-100", icon: AlertCircle },
   low: { color: "bg-blue-50 text-blue-700", badge: "bg-blue-100", icon: AlertCircle },
 };
 
-export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
+export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertTableProps) {
   const [sortBy, setSortBy] = useState<"severity" | "time">("time");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high">("all");
+  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "warning" | "medium" | "high" | "critical">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [groupByLocation, setGroupByLocation] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const pageSize = 10;
 
-  const filteredAlerts = alerts.filter((alert) => {
-    const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
-    const matchesStatus = statusFilter === "all" || alert.status === statusFilter;
-    return matchesSeverity && matchesStatus;
-  });
+  const filteredAlerts = serverSide
+    ? alerts
+    : alerts.filter((alert) => {
+        const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
+        const matchesStatus = statusFilter === "all" || alert.status === statusFilter;
+        return matchesSeverity && matchesStatus;
+      });
 
   const sortedAlerts = [...filteredAlerts].sort((a, b) => {
     if (sortBy === "severity") {
-      const severityOrder = { high: 3, medium: 2, low: 1 };
+      const severityOrder: Record<string, number> = { critical: 5, high: 4, warning: 3, medium: 2, low: 1 };
       return sortOrder === "desc"
         ? severityOrder[b.severity] - severityOrder[a.severity]
         : severityOrder[a.severity] - severityOrder[b.severity];
@@ -45,7 +50,9 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
   });
 
   const totalPages = Math.max(1, Math.ceil(sortedAlerts.length / pageSize));
-  const paginatedAlerts = sortedAlerts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedAlerts = serverSide
+    ? sortedAlerts
+    : sortedAlerts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (alerts.length === 0) {
     return (
@@ -59,71 +66,75 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-4 md:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Bộ lọc
-            </h3>
-            <p className="mt-1 text-sm text-gray-600">
-              Lọc cảnh báo theo mức độ và trạng thái.
-            </p>
-            <button
-              onClick={() => setGroupByLocation(!groupByLocation)}
-              className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                groupByLocation ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              {groupByLocation ? "Đang nhóm theo vị trí" : "Nhóm theo vị trí"}
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Mức độ
-              <select
-                value={severityFilter}
-                onChange={(event) => {
-                  setSeverityFilter(event.target.value as typeof severityFilter);
-                  setCurrentPage(1);
-                }}
-                className="min-w-40 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+      {!serverSide && (
+        <div className="border-b border-gray-200 bg-gray-50 px-4 py-4 md:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Bộ lọc
+              </h3>
+              <p className="mt-1 text-sm text-gray-600">
+                Lọc cảnh báo theo mức độ và trạng thái.
+              </p>
+              <button
+                onClick={() => setGroupByLocation(!groupByLocation)}
+                className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  groupByLocation ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                }`}
               >
-                <option value="all">Tất cả</option>
-                <option value="high">Nghiêm trọng</option>
-                <option value="medium">Trung bình</option>
-                <option value="low">Thấp</option>
-              </select>
-            </label>
+                <Layers className="w-3.5 h-3.5" />
+                {groupByLocation ? "Đang nhóm theo vị trí" : "Nhóm theo vị trí"}
+              </button>
+            </div>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Trạng thái
-              <div className="flex flex-wrap gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm">
-                {(["all", "open", "acknowledged", "resolved"] as const).map((status) => {
-                  const statusLabels: Record<string, string> = { all: "Tất cả", open: "Đang mở", acknowledged: "Đã xác nhận", resolved: "Đã xử lý" };
-                  return (
-                    <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
-                      <input
-                        type="radio"
-                        name="status-filter"
-                        value={status}
-                        checked={statusFilter === status}
-                        onChange={() => {
-                          setStatusFilter(status);
-                          setCurrentPage(1);
-                        }}
-                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>{statusLabels[status]}</span>
-                    </label>
-                  );
-                })}
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Mức độ
+                <select
+                  value={severityFilter}
+                  onChange={(event) => {
+                    setSeverityFilter(event.target.value as typeof severityFilter);
+                    setCurrentPage(1);
+                  }}
+                  className="min-w-40 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="critical">Tới hạn</option>
+                  <option value="high">Nghiêm trọng</option>
+                  <option value="warning">Cảnh báo</option>
+                  <option value="medium">Trung bình</option>
+                  <option value="low">Thấp</option>
+                </select>
+              </label>
+
+              <div className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Trạng thái
+                <div className="flex flex-wrap gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm">
+                  {(["all", "open", "acknowledged", "resolved"] as const).map((status) => {
+                    const statusLabels: Record<string, string> = { all: "Tất cả", open: "Đang mở", acknowledged: "Đã xác nhận", resolved: "Đã xử lý" };
+                    return (
+                      <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="radio"
+                          name="status-filter"
+                          value={status}
+                          checked={statusFilter === status}
+                          onChange={() => {
+                            setStatusFilter(status);
+                            setCurrentPage(1);
+                          }}
+                          className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{statusLabels[status]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {groupByLocation ? (
         <div className="divide-y divide-gray-200">
@@ -294,7 +305,7 @@ export function AlertTable({ alerts, onSelectAlert }: AlertTableProps) {
         </div>
       )}
 
-      {sortedAlerts.length > pageSize && (
+      {!serverSide && sortedAlerts.length > pageSize && (
         <div className="flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-3 md:px-6">
           <p className="text-sm text-gray-600">
             Trang {currentPage} / {totalPages}

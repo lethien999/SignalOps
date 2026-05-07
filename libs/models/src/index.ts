@@ -25,7 +25,7 @@ export interface IAlert {
   _id?: string;
   deviceId: string;
   type: 'latency' | 'packet_loss' | 'signal';
-  severity: 'low' | 'medium' | 'high';
+  severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
   location: Location;
   message: string;
   status: 'open' | 'acknowledged' | 'resolved';

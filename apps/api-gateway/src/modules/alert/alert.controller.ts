@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   DefaultValuePipe,
@@ -30,6 +31,9 @@ export class AlertController {
   @ApiOperation({ summary: 'List alerts with filters and pagination' })
   @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })
   @ApiQuery({ name: 'status', required: false, type: String, example: 'open' })
+  @ApiQuery({ name: 'deviceId', required: false, type: String, example: 'device-001' })
+  @ApiQuery({ name: 'from', required: false, type: String, example: '2026-05-01' })
+  @ApiQuery({ name: 'to', required: false, type: String, example: '2026-05-06' })
   @ApiQuery({ name: 'skip', required: false, type: Number, example: 0 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiOkResponse({
@@ -38,6 +42,7 @@ export class AlertController {
       example: {
         data: [],
         pagination: { skip: 0, limit: 50, total: 0 },
+        summary: { open: 0, acknowledged: 0, resolved: 0, highOpen: 0 },
       },
     },
   })
@@ -46,12 +51,29 @@ export class AlertController {
   async listAlerts(
     @Query('severity') severity?: string,
     @Query('status') status?: string,
+    @Query('deviceId') deviceId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip?: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
   ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+
+    if (from && Number.isNaN(fromDate?.getTime())) {
+      throw new BadRequestException('Invalid from date');
+    }
+
+    if (to && Number.isNaN(toDate?.getTime())) {
+      throw new BadRequestException('Invalid to date');
+    }
+
     return this.alertService.listAlerts({
       severity,
       status,
+      deviceId,
+      from: fromDate,
+      to: toDate,
       skip: skip || 0,
       limit: limit || 50,
     });
