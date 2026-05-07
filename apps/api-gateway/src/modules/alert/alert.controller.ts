@@ -103,24 +103,58 @@ export class AlertController {
 
   @ApiOperation({ summary: 'Get alert history aggregated by day' })
   @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
+  @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })
+  @ApiQuery({ name: 'status', required: false, type: String, example: 'open' })
+  @ApiQuery({ name: 'deviceId', required: false, type: String, example: 'device-001' })
+  @ApiQuery({ name: 'from', required: false, type: String, example: '2026-05-01' })
+  @ApiQuery({ name: 'to', required: false, type: String, example: '2026-05-06' })
   @ApiOkResponse({ description: 'Alert counts by day' })
   @Get('history')
   async getAlertHistory(
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+    @Query('severity') severity?: string,
+    @Query('status') status?: string,
+    @Query('deviceId') deviceId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    return this.alertService.getAlertHistory(days);
+    return this.alertService.getAlertHistory({
+      days,
+      severity,
+      status,
+      deviceId,
+      from: from ? new Date(from) : undefined,
+      to: to ? new Date(to) : undefined,
+    });
   }
 
   @ApiOperation({ summary: 'Export alert history as CSV' })
   @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
+  @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })
+  @ApiQuery({ name: 'status', required: false, type: String, example: 'open' })
+  @ApiQuery({ name: 'deviceId', required: false, type: String, example: 'device-001' })
+  @ApiQuery({ name: 'from', required: false, type: String, example: '2026-05-01' })
+  @ApiQuery({ name: 'to', required: false, type: String, example: '2026-05-06' })
   @ApiOkResponse({ description: 'CSV file with alert history summary' })
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="alert-history.csv"')
   @Get('history/csv')
   async exportAlertHistoryCsv(
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+    @Query('severity') severity?: string,
+    @Query('status') status?: string,
+    @Query('deviceId') deviceId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    return this.alertService.exportAlertHistoryCsv(days);
+    return this.alertService.exportAlertHistoryCsv({
+      days,
+      severity,
+      status,
+      deviceId,
+      from: from ? new Date(from) : undefined,
+      to: to ? new Date(to) : undefined,
+    });
   }
 
   @ApiOperation({ summary: 'Get alert by id' })

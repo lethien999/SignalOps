@@ -9,9 +9,9 @@
 
 - [x] Export CSV Alert History
   - [x] Export CSV Alert History
-  - [ ] Xuất lịch sử alert theo bộ lọc hiện tại
-  - [ ] Hỗ trợ khoảng thời gian và severity
-  - [ ] Trả file CSV để tải xuống
+  - [x] Xuất lịch sử alert theo bộ lọc hiện tại
+  - [x] Hỗ trợ khoảng thời gian và severity
+  - [x] Trả file CSV để tải xuống
 
 - [x] Marker Clustering trên bản đồ
   - [x] Gom cụm marker khi zoom out

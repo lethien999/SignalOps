@@ -92,6 +92,28 @@ export async function fetchAlertsPage(params?: {
   }
 }
 
+export async function downloadAlertHistoryCsv(params?: {
+  severity?: string;
+  status?: string;
+  deviceId?: string;
+  from?: string;
+  to?: string;
+  days?: number;
+}): Promise<string> {
+  try {
+    const response = await api.get<string>('/alerts/history/csv', {
+      params,
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error('Failed to download alert history CSV:', error);
+    throw error;
+  }
+}
+
 export async function fetchEvents(params?: {
   deviceId?: string;
   skip?: number;
