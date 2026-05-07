@@ -145,7 +145,9 @@ async function handleAutoResolve(
   // If no anomalies detected, check if there are open alerts for this device that can be auto-resolved
   if (detectedAlerts.length > 0) return 0;
 
-  const openAlerts = await alertRepository.findOpenAlertsByDevice(eventData.deviceId);
+  const minOpenMinutes = parseInt(process.env.AUTO_RESOLVE_MIN_OPEN_MINUTES || '2', 10);
+
+  const openAlerts = await alertRepository.findOpenAlertsByDevice(eventData.deviceId, minOpenMinutes);
   if (!openAlerts || openAlerts.length === 0) return 0;
 
   let resolvedCount = 0;
@@ -155,12 +157,16 @@ async function handleAutoResolve(
     const isNormal = ThresholdDetector.isMetricNormal(alertType, eventData.metrics, thresholdProfile);
 
     if (isNormal) {
-      await alertRepository.autoResolve(alert._id.toString());
+      const resolvedAlert = await alertRepository.autoResolve(alert._id.toString());
       await pubSubRedis.publish('alerts:resolved', JSON.stringify({
         id: alert._id.toString(),
         alertId: alert.alertId,
         type: alert.type,
         severity: alert.severity,
+        status: 'resolved',
+        resolvedBy: 'system-auto',
+        resolvedAt: resolvedAlert?.resolvedAt || new Date().toISOString(),
+        resolutionNote: `Tự động đóng: chỉ số ổn định tối thiểu ${minOpenMinutes} phút`,
         message: 'Tự động đóng: chỉ số đã trở về bình thường',
         timestamp: new Date().toISOString(),
         deviceId: eventData.deviceId,

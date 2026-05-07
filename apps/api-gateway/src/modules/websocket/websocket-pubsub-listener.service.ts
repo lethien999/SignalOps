@@ -26,6 +26,21 @@ type AlertCreatedMessage = {
   deviceId?: string;
 };
 
+type AlertResolvedMessage = {
+  id: string;
+  alertId: string;
+  type: string;
+  severity: string;
+  status?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionNote?: string;
+  message: string;
+  timestamp: string;
+  deviceId?: string;
+  autoResolved?: boolean;
+};
+
 type DlqStatusMessage = {
   queue: string;
   failedJobs: number;
@@ -63,10 +78,10 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
       });
 
       // Subscribe to channels
-      await this.pubSubRedis.subscribe('events:processed', 'alerts:created', 'dlq:status');
+      await this.pubSubRedis.subscribe('events:processed', 'alerts:created', 'alerts:resolved', 'dlq:status');
       this.initialized = true;
       Logger.info('WebSocket Pub/Sub listener initialized and subscribed to channels', {
-        channels: 'events:processed,alerts:created,dlq:status',
+        channels: 'events:processed,alerts:created,alerts:resolved,dlq:status',
       });
     } catch (error) {
       this.initialized = false;
@@ -110,6 +125,12 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
       if (channel === 'alerts:created') {
         const payload = JSON.parse(message) as AlertCreatedMessage;
         this.alertsGateway.broadcastAlertNew(payload);
+        return;
+      }
+
+      if (channel === 'alerts:resolved') {
+        const payload = JSON.parse(message) as AlertResolvedMessage;
+        this.alertsGateway.broadcastAlertResolved(payload);
         return;
       }
 

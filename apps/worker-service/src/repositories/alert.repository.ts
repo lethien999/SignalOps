@@ -90,8 +90,13 @@ export class AlertRepository {
     );
   }
 
-  async findOpenAlertsByDevice(deviceId: string) {
-    return AlertModel.find({ deviceId, status: { $in: ['open', 'acknowledged'] } });
+  async findOpenAlertsByDevice(deviceId: string, minOpenMinutes: number = 0) {
+    const minCreatedAt = new Date(Date.now() - Math.max(minOpenMinutes, 0) * 60 * 1000);
+    return AlertModel.find({
+      deviceId,
+      status: 'open',
+      createdAt: { $lte: minCreatedAt },
+    });
   }
 
   async autoResolve(id: string) {
