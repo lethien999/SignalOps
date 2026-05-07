@@ -41,15 +41,15 @@ docker compose --env-file .env -f infrastructure/docker-compose.yml up -d
 ```
 
 **Truy cập:**
-- API: `http://localhost:3000/api/docs`
-- Dashboard: `http://localhost:3001`
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3003`
+- API: http://localhost:3000/api/docs
+- Dashboard: http://localhost:3001
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3003
 
 Dừng hệ thống:
-`ash
+```bash
 docker compose --env-file .env -f infrastructure/docker-compose.yml down
-`
+```
 
 ---
 
