@@ -18,10 +18,10 @@
   - [ ] Tách cụm khi zoom in
   - [ ] Giữ tương thích với tooltip/chi tiết thiết bị
 
-- [ ] Alert Sound Notification
-  - [ ] Phát âm báo khi có alert mới
-  - [ ] Cho phép bật/tắt trong UI
-  - [ ] Tùy biến âm báo theo mức độ nghiêm trọng
+- [x] Alert Sound Notification
+  - [x] Phát âm báo khi có alert mới
+  - [x] Cho phép bật/tắt trong UI
+  - [x] Tùy biến âm báo theo mức độ nghiêm trọng
 
 - [x] Server-side Pagination & Filter
   - [x] Chuyển phân trang sang server-side
@@ -43,10 +43,10 @@
   - [ ] Lưu cấu hình theo thiết bị hoặc nhóm thiết bị
   - [ ] Có validate và rollback về mặc định
 
-- [ ] Multi-level Severity (WARNING / HIGH / CRITICAL)
-  - [ ] Chuẩn hóa severity nhiều cấp
-  - [ ] Áp dụng cho API, worker và dashboard
-  - [ ] Cập nhật màu sắc/label tương ứng
+- [x] Multi-level Severity (WARNING / HIGH / CRITICAL)
+  - [x] Chuẩn hóa severity nhiều cấp
+  - [x] Áp dụng cho API, worker và dashboard
+  - [x] Cập nhật màu sắc/label tương ứng
 
 - [ ] Auto-resolve Alert
   - [ ] Tự đóng alert khi metric trở về bình thường
