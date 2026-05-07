@@ -38,10 +38,10 @@
   - [x] Cho phép cấu hình theo severity
   - [x] Có retry và log lỗi gửi thông báo
 
-- [ ] Dynamic Threshold Management UI
-  - [ ] Cho phép chỉnh ngưỡng ngay trên UI
-  - [ ] Lưu cấu hình theo thiết bị hoặc nhóm thiết bị
-  - [ ] Có validate và rollback về mặc định
+- [x] Dynamic Threshold Management UI
+  - [x] Cho phép chỉnh ngưỡng ngay trên UI
+  - [x] Lưu cấu hình theo thiết bị hoặc nhóm thiết bị
+  - [x] Có validate và rollback về mặc định
 
 - [x] Multi-level Severity (WARNING / HIGH / CRITICAL)
   - [x] Chuẩn hóa severity nhiều cấp
@@ -57,21 +57,21 @@
 
 ## Ghi chú triển khai
 
-### Kế hoạch tiếp theo (chờ duyệt): Dynamic Threshold Management UI
+### Kế hoạch tiếp theo (chờ duyệt): Auto-resolve Alert
 
 - [ ] API Gateway
-  - [ ] Thêm endpoint đọc/ghi ngưỡng latency, packet loss, signal
-  - [ ] Áp dụng validate và lưu lịch sử thay đổi ngưỡng
+  - [ ] Thêm endpoint đọc trạng thái auto-resolve theo thiết bị/vùng
+  - [ ] Thêm cấu hình khoảng trễ trước khi tự đóng alert
 - [ ] Worker Service
-  - [ ] Nạp ngưỡng động từ cấu hình thay vì biến môi trường tĩnh
-  - [ ] Cơ chế fallback về ngưỡng mặc định khi cấu hình lỗi
+  - [ ] Tự đóng alert khi metric ổn định đủ lâu
+  - [ ] Ghi lý do auto-resolve và tránh đóng nhầm alert thủ công
 - [ ] Dashboard
-  - [ ] Form chỉnh ngưỡng theo thiết bị hoặc toàn cục
-  - [ ] Hiển thị diff thay đổi và nút rollback về mặc định
+  - [ ] Form bật/tắt auto-resolve và cấu hình delay
+  - [ ] Hiển thị trạng thái auto-resolve theo alert/thiết bị
 - [ ] Kiểm thử
-  - [ ] Test cập nhật ngưỡng và áp dụng ngay vào luồng phát hiện
-  - [ ] Test rollback ngưỡng hoạt động đúng
-  - [ ] Test validate chặn ngưỡng sai định dạng
+  - [ ] Test alert tự đóng khi chỉ số trở về bình thường
+  - [ ] Test không đóng alert đang được xử lý thủ công
+  - [ ] Test cấu hình delay hoạt động đúng
 
 **Quy tắc**
 1. Tất cả feature mới phải được thêm vào docs trước khi code.
@@ -81,7 +81,7 @@
 **Trạng thái**
 - **Tasks Defined**: 9
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 7
+- **Tasks Completed**: 8
 - **Last Updated**: 07/05/2026
 
 ---

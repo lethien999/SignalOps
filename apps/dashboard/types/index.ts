@@ -107,3 +107,20 @@ export interface NotificationWebhook {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface ThresholdProfile {
+  _id: string;
+  scopeType: 'global' | 'device';
+  scopeId: string;
+  latencyWarningMs: number;
+  latencyCriticalMs: number;
+  packetLossWarningPercent: number;
+  packetLossCriticalPercent: number;
+  signalWarningDbm: number;
+  signalCriticalDbm: number;
+  enabled: boolean;
+  updatedBy?: string;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
