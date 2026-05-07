@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Alert, Device, DlqJob, Event, NotificationWebhook, SystemStats } from '@/types';
+import type { Alert, Device, DlqJob, Event, NotificationWebhook, SystemStats, ThresholdProfile } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -246,6 +246,60 @@ export async function fetchNotificationWebhooks(): Promise<NotificationWebhook[]
   } catch (error) {
     console.error('Failed to fetch notification webhooks:', error);
     throw error;
+  }
+}
+
+export async function fetchThresholdProfiles(): Promise<ThresholdProfile[]> {
+  try {
+    const response = await api.get<ThresholdProfile[]>('/thresholds');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch threshold profiles:', error);
+    throw error;
+  }
+}
+
+export async function fetchEffectiveThresholdProfile(deviceId?: string): Promise<ThresholdProfile[]> {
+  try {
+    const response = await api.get<ThresholdProfile[]>('/thresholds/effective', {
+      params: deviceId ? { deviceId } : undefined,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch effective threshold profile:', error);
+    throw error;
+  }
+}
+
+export async function saveThresholdProfile(payload: {
+  scopeType: 'global' | 'device';
+  scopeId: string;
+  latencyWarningMs?: number;
+  latencyCriticalMs?: number;
+  packetLossWarningPercent?: number;
+  packetLossCriticalPercent?: number;
+  signalWarningDbm?: number;
+  signalCriticalDbm?: number;
+  enabled?: boolean;
+  note?: string;
+  updatedBy?: string;
+}): Promise<ThresholdProfile> {
+  try {
+    const response = await api.patch<ThresholdProfile>('/thresholds', payload);
+    return response.data;
+  } catch (error) {
+    const message = extractApiErrorMessage(error, 'Không thể lưu cấu hình ngưỡng');
+    throw new Error(message);
+  }
+}
+
+export async function rollbackThresholdProfile(scopeType: 'global' | 'device', scopeId: string): Promise<{ success: boolean }> {
+  try {
+    const response = await api.delete<{ success: boolean }>(`/thresholds/${scopeType}/${scopeId}`);
+    return response.data;
+  } catch (error) {
+    const message = extractApiErrorMessage(error, 'Không thể rollback cấu hình ngưỡng');
+    throw new Error(message);
   }
 }
 

@@ -7,12 +7,16 @@ import {
 } from "lucide-react";
 import {
   createNotificationWebhook,
+  fetchEffectiveThresholdProfile,
   fetchDlqFailedJobs,
   fetchHealth,
   fetchNotificationWebhooks,
+  fetchThresholdProfiles,
+  rollbackThresholdProfile,
+  saveThresholdProfile,
   updateNotificationWebhook,
 } from "@/lib/api";
-import type { DlqJob, NotificationWebhook, Severity } from "@/types";
+import type { DlqJob, NotificationWebhook, Severity, ThresholdProfile } from "@/types";
 
 function InfoRow({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" | "error" }) {
   return (
@@ -37,6 +41,20 @@ export default function SettingsPage() {
   const [webhooks, setWebhooks] = useState<NotificationWebhook[]>([]);
   const [webhookError, setWebhookError] = useState<string | null>(null);
   const [savingWebhookId, setSavingWebhookId] = useState<string | null>(null);
+  const [thresholdProfiles, setThresholdProfiles] = useState<ThresholdProfile[]>([]);
+  const [thresholdError, setThresholdError] = useState<string | null>(null);
+  const [savingThreshold, setSavingThreshold] = useState(false);
+  const [thresholdScopeType, setThresholdScopeType] = useState<"global" | "device">("global");
+  const [thresholdScopeId, setThresholdScopeId] = useState("global");
+  const [thresholdDraft, setThresholdDraft] = useState({
+    latencyWarningMs: 150,
+    latencyCriticalMs: 300,
+    packetLossWarningPercent: 3,
+    packetLossCriticalPercent: 8,
+    signalWarningDbm: -80,
+    signalCriticalDbm: -100,
+    enabled: true,
+  });
 
   const [newWebhook, setNewWebhook] = useState<{
     name: string;
@@ -91,10 +109,37 @@ export default function SettingsPage() {
       });
   };
 
+  const loadThresholds = () => {
+    Promise.all([fetchThresholdProfiles(), fetchEffectiveThresholdProfile()])
+      .then(([allProfiles, effectiveProfiles]) => {
+        setThresholdProfiles(allProfiles);
+        setThresholdError(null);
+
+        const active = effectiveProfiles[0];
+        if (active) {
+          setThresholdScopeType(active.scopeType);
+          setThresholdScopeId(active.scopeId);
+          setThresholdDraft({
+            latencyWarningMs: active.latencyWarningMs,
+            latencyCriticalMs: active.latencyCriticalMs,
+            packetLossWarningPercent: active.packetLossWarningPercent,
+            packetLossCriticalPercent: active.packetLossCriticalPercent,
+            signalWarningDbm: active.signalWarningDbm,
+            signalCriticalDbm: active.signalCriticalDbm,
+            enabled: active.enabled,
+          });
+        }
+      })
+      .catch((error) => {
+        setThresholdError(error instanceof Error ? error.message : "Không thể tải cấu hình ngưỡng");
+      });
+  };
+
   useEffect(() => {
     loadHealth();
     loadDlqJobs();
     loadWebhooks();
+    loadThresholds();
   }, []);
 
   const toggleWebhook = async (item: NotificationWebhook) => {
@@ -146,6 +191,42 @@ export default function SettingsPage() {
         : [...prev.severities, severity];
       return { ...prev, severities };
     });
+  };
+
+  const saveThreshold = async () => {
+    try {
+      setSavingThreshold(true);
+      const saved = await saveThresholdProfile({
+        scopeType: thresholdScopeType,
+        scopeId: thresholdScopeType === "global" ? "global" : thresholdScopeId.trim(),
+        ...thresholdDraft,
+        updatedBy: "dashboard-user",
+      });
+      setThresholdProfiles((prev) => {
+        const filtered = prev.filter((item) => !(item.scopeType === saved.scopeType && item.scopeId === saved.scopeId));
+        return [saved, ...filtered];
+      });
+      setThresholdError(null);
+    } catch (error) {
+      setThresholdError(error instanceof Error ? error.message : "Không thể lưu ngưỡng");
+    } finally {
+      setSavingThreshold(false);
+    }
+  };
+
+  const rollbackThreshold = async (profile: ThresholdProfile) => {
+    try {
+      setSavingThreshold(true);
+      await rollbackThresholdProfile(profile.scopeType, profile.scopeId);
+      setThresholdProfiles((prev) => prev.filter((item) => !(item.scopeType === profile.scopeType && item.scopeId === profile.scopeId)));
+      if (thresholdScopeType === profile.scopeType && thresholdScopeId === profile.scopeId) {
+        loadThresholds();
+      }
+    } catch (error) {
+      setThresholdError(error instanceof Error ? error.message : "Không thể rollback ngưỡng");
+    } finally {
+      setSavingThreshold(false);
+    }
   };
 
   const formatUptime = (seconds: number) => {
@@ -221,22 +302,128 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Ngưỡng cảnh báo */}
+        {/* Ngưỡng động */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-4">
-            <Bell className="w-5 h-5 text-yellow-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Ngưỡng cảnh báo</h2>
+          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <Bell className="w-5 h-5 text-yellow-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Ngưỡng cảnh báo động</h2>
+            </div>
+            <button onClick={loadThresholds} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700">
+              <RefreshCw className="w-4 h-4" />
+              Làm mới
+            </button>
           </div>
-          <div className="px-6 py-2">
-            <InfoRow label="Latency tối đa" value="200 ms → Cảnh báo mức HIGH" status="warn" />
-            <InfoRow label="Packet Loss tối đa" value="5% → Cảnh báo mức HIGH" status="warn" />
-            <InfoRow label="Signal Strength tối thiểu" value="-90 dBm → Cảnh báo mức MEDIUM" status="warn" />
-          </div>
-          <div className="px-6 py-3 bg-gray-50 rounded-b-xl">
-            <p className="text-xs text-gray-500">
-              Các ngưỡng được cấu hình qua biến môi trường trên API Gateway.
-              Khi chỉ số vượt ngưỡng, Worker Service tự động tạo cảnh báo.
-            </p>
+          <div className="px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Phạm vi
+                <select
+                  value={thresholdScopeType}
+                  onChange={(event) => setThresholdScopeType(event.target.value as "global" | "device")}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="global">Global</option>
+                  <option value="device">Thiết bị</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Mã phạm vi
+                <input
+                  value={thresholdScopeType === "global" ? "global" : thresholdScopeId}
+                  onChange={(event) => setThresholdScopeId(event.target.value)}
+                  disabled={thresholdScopeType === "global"}
+                  placeholder="device-001"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:bg-gray-100"
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {([
+                ["latencyWarningMs", "Latency warning (ms)"],
+                ["latencyCriticalMs", "Latency critical (ms)"],
+                ["packetLossWarningPercent", "Packet loss warning (%)"],
+                ["packetLossCriticalPercent", "Packet loss critical (%)"],
+                ["signalWarningDbm", "Signal warning (dBm)"],
+                ["signalCriticalDbm", "Signal critical (dBm)"],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                  {label}
+                  <input
+                    type="number"
+                    value={thresholdDraft[key]}
+                    onChange={(event) => setThresholdDraft((prev) => ({ ...prev, [key]: Number(event.target.value) }))}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  />
+                </label>
+              ))}
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={thresholdDraft.enabled}
+                onChange={(event) => setThresholdDraft((prev) => ({ ...prev, enabled: event.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              />
+              Kích hoạt profile ngưỡng này
+            </label>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveThreshold}
+                disabled={savingThreshold}
+                className="inline-flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {savingThreshold ? "Đang lưu..." : "Lưu ngưỡng"}
+              </button>
+              <button
+                onClick={() => {
+                  setThresholdDraft({
+                    latencyWarningMs: 150,
+                    latencyCriticalMs: 300,
+                    packetLossWarningPercent: 3,
+                    packetLossCriticalPercent: 8,
+                    signalWarningDbm: -80,
+                    signalCriticalDbm: -100,
+                    enabled: true,
+                  });
+                  setThresholdScopeType("global");
+                  setThresholdScopeId("global");
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Đặt lại form
+              </button>
+            </div>
+
+            {thresholdError && <p className="text-sm text-red-600">{thresholdError}</p>}
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Cấu hình hiện có</p>
+              <div className="space-y-2">
+                {thresholdProfiles.length === 0 ? (
+                  <p className="text-sm text-gray-600">Chưa có profile nào. Hệ thống sẽ dùng ngưỡng mặc định trong worker.</p>
+                ) : (
+                  thresholdProfiles.map((profile) => (
+                    <div key={`${profile.scopeType}:${profile.scopeId}`} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 border border-gray-200">
+                      <div className="text-xs text-gray-700">
+                        <p className="font-semibold text-gray-900">{profile.scopeType.toUpperCase()} / {profile.scopeId}</p>
+                        <p>Latency {profile.latencyWarningMs}/{profile.latencyCriticalMs} ms • Loss {profile.packetLossWarningPercent}/{profile.packetLossCriticalPercent}% • Signal {profile.signalWarningDbm}/{profile.signalCriticalDbm} dBm</p>
+                      </div>
+                      <button
+                        onClick={() => rollbackThreshold(profile)}
+                        disabled={savingThreshold}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        Rollback
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

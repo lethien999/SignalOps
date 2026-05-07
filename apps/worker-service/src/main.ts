@@ -9,6 +9,7 @@ import { EventRepository } from './repositories/event.repository';
 import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
 import { NotificationWebhookRepository } from './repositories/notification-webhook.repository';
 import { NotificationWebhookService } from './services/notification-webhook.service';
+import { ThresholdProfileRepository } from './repositories/threshold-profile.repository';
 import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
@@ -132,6 +133,14 @@ async function handleAutoResolve(
   detectedAlerts: WorkerAlertResult[],
   alertRepository: AlertRepository,
   pubSubRedis: Redis,
+  thresholdProfile?: {
+    latencyWarningMs: number;
+    latencyCriticalMs: number;
+    packetLossWarningPercent: number;
+    packetLossCriticalPercent: number;
+    signalWarningDbm: number;
+    signalCriticalDbm: number;
+  } | null,
 ): Promise<number> {
   // If no anomalies detected, check if there are open alerts for this device that can be auto-resolved
   if (detectedAlerts.length > 0) return 0;
@@ -143,7 +152,7 @@ async function handleAutoResolve(
   for (const alert of openAlerts) {
     // Check if the specific metric for this alert type is now normal
     const alertType = alert.type as 'latency' | 'packet_loss' | 'signal';
-    const isNormal = ThresholdDetector.isMetricNormal(alertType, eventData.metrics);
+    const isNormal = ThresholdDetector.isMetricNormal(alertType, eventData.metrics, thresholdProfile);
 
     if (isNormal) {
       await alertRepository.autoResolve(alert._id.toString());
@@ -170,6 +179,7 @@ function createWorker(
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
   deviceMaintenanceRepository: DeviceMaintenanceRepository,
+  thresholdProfileRepository: ThresholdProfileRepository,
   notificationWebhookService: NotificationWebhookService,
 ): Worker {
   return new Worker(
@@ -191,6 +201,8 @@ function createWorker(
           const eventId = eventData._id;
 
           await eventRepository.updateProcessedTime(eventId);
+
+          const thresholdProfile = await thresholdProfileRepository.findEffective(eventData.deviceId);
 
           const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(eventData.deviceId);
           if (activeMaintenance) {
@@ -214,7 +226,7 @@ function createWorker(
             return { success: true, alertsCreated: 0, alertsSuppressed: true };
           }
 
-          const detectedAlerts = ThresholdDetector.detectAnomalies(eventData);
+          const detectedAlerts = ThresholdDetector.detectAnomalies(eventData, thresholdProfile || undefined);
           const createdCount = await handleAlertCreation(
             eventId,
             eventData,
@@ -231,6 +243,7 @@ function createWorker(
             detectedAlerts,
             alertRepository,
             pubSubRedis,
+            thresholdProfile || undefined,
           );
           if (autoResolvedCount > 0) {
             Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
@@ -358,12 +371,14 @@ async function bootstrap() {
     const deviceMaintenanceRepository = new DeviceMaintenanceRepository();
     const notificationWebhookRepository = new NotificationWebhookRepository();
     const notificationWebhookService = new NotificationWebhookService(notificationWebhookRepository);
+    const thresholdProfileRepository = new ThresholdProfileRepository();
     const worker = createWorker(
       redis,
       pubSubRedis,
       alertRepository,
       eventRepository,
       deviceMaintenanceRepository,
+      thresholdProfileRepository,
       notificationWebhookService,
     );
 

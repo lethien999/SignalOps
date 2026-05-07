@@ -16,6 +16,35 @@ type EventData = {
   metrics?: EventMetrics;
 };
 
+export type ThresholdProfile = {
+  latencyWarningMs: number;
+  latencyCriticalMs: number;
+  packetLossWarningPercent: number;
+  packetLossCriticalPercent: number;
+  signalWarningDbm: number;
+  signalCriticalDbm: number;
+};
+
+const defaultThresholdProfile: ThresholdProfile = {
+  latencyWarningMs: 150,
+  latencyCriticalMs: 300,
+  packetLossWarningPercent: 3,
+  packetLossCriticalPercent: 8,
+  signalWarningDbm: -80,
+  signalCriticalDbm: -100,
+};
+
+function normalizeThresholdProfile(profile?: Partial<ThresholdProfile> | null): ThresholdProfile {
+  return {
+    latencyWarningMs: toFiniteNumber(profile?.latencyWarningMs) ?? defaultThresholdProfile.latencyWarningMs,
+    latencyCriticalMs: toFiniteNumber(profile?.latencyCriticalMs) ?? defaultThresholdProfile.latencyCriticalMs,
+    packetLossWarningPercent: toFiniteNumber(profile?.packetLossWarningPercent) ?? defaultThresholdProfile.packetLossWarningPercent,
+    packetLossCriticalPercent: toFiniteNumber(profile?.packetLossCriticalPercent) ?? defaultThresholdProfile.packetLossCriticalPercent,
+    signalWarningDbm: toFiniteNumber(profile?.signalWarningDbm) ?? defaultThresholdProfile.signalWarningDbm,
+    signalCriticalDbm: toFiniteNumber(profile?.signalCriticalDbm) ?? defaultThresholdProfile.signalCriticalDbm,
+  };
+}
+
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -30,20 +59,10 @@ function toFiniteNumber(value: unknown): number | null {
 }
 
 export class ThresholdDetector {
-  static detectAnomalies(eventData: EventData | null | undefined): DetectedAlert[] {
+  static detectAnomalies(eventData: EventData | null | undefined, thresholdProfile?: Partial<ThresholdProfile> | null): DetectedAlert[] {
     const alerts: DetectedAlert[] = [];
 
-    const latencyThreshold = toFiniteNumber(process.env.THRESHOLD_LATENCY_MS) ?? 200;
-    const packetLossThreshold = toFiniteNumber(process.env.THRESHOLD_PACKET_LOSS_PERCENT) ?? 5;
-    const signalStrengthThreshold = toFiniteNumber(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) ?? -90;
-
-    // Tiered thresholds for multi-level severity
-    const latencyWarningThreshold = 150;
-    const latencyCriticalThreshold = 300;
-    const packetLossWarningThreshold = 3;
-    const packetLossCriticalThreshold = 8;
-    const signalWarningThreshold = -80;
-    const signalCriticalThreshold = -100;
+    const thresholds = normalizeThresholdProfile(thresholdProfile);
 
     const metrics = eventData?.metrics;
     if (!metrics) {
@@ -54,46 +73,46 @@ export class ThresholdDetector {
     const packetLoss = toFiniteNumber(metrics.packetLoss);
     const signalStrength = toFiniteNumber(metrics.signalStrength);
 
-    if (latency !== null && latency > latencyWarningThreshold) {
+    if (latency !== null && latency > thresholds.latencyWarningMs) {
       let severity: 'warning' | 'high' | 'critical' = 'high';
-      let message = `High latency detected: ${latency}ms (threshold: ${latencyThreshold}ms)`;
+      let message = `High latency detected: ${latency}ms (ngưỡng: ${thresholds.latencyWarningMs}ms)`;
       
-      if (latency <= latencyWarningThreshold) {
+      if (latency <= thresholds.latencyWarningMs) {
         severity = 'warning';
-        message = `Elevated latency detected: ${latency}ms (warning: ${latencyWarningThreshold}ms)`;
-      } else if (latency > latencyCriticalThreshold) {
+        message = `Latency tăng: ${latency}ms (cảnh báo: ${thresholds.latencyWarningMs}ms)`;
+      } else if (latency > thresholds.latencyCriticalMs) {
         severity = 'critical';
-        message = `Critical latency detected: ${latency}ms (critical: ${latencyCriticalThreshold}ms)`;
+        message = `Latency tới hạn: ${latency}ms (tới hạn: ${thresholds.latencyCriticalMs}ms)`;
       }
       
       alerts.push({ type: 'latency', severity, message });
     }
 
-    if (packetLoss !== null && packetLoss > packetLossWarningThreshold) {
+    if (packetLoss !== null && packetLoss > thresholds.packetLossWarningPercent) {
       let severity: 'warning' | 'high' | 'critical' = 'high';
-      let message = `High packet loss detected: ${packetLoss}% (threshold: ${packetLossThreshold}%)`;
+      let message = `High packet loss detected: ${packetLoss}% (ngưỡng: ${thresholds.packetLossWarningPercent}%)`;
       
-      if (packetLoss <= packetLossWarningThreshold) {
+      if (packetLoss <= thresholds.packetLossWarningPercent) {
         severity = 'warning';
-        message = `Elevated packet loss detected: ${packetLoss}% (warning: ${packetLossWarningThreshold}%)`;
-      } else if (packetLoss > packetLossCriticalThreshold) {
+        message = `Packet loss tăng: ${packetLoss}% (cảnh báo: ${thresholds.packetLossWarningPercent}%)`;
+      } else if (packetLoss > thresholds.packetLossCriticalPercent) {
         severity = 'critical';
-        message = `Critical packet loss detected: ${packetLoss}% (critical: ${packetLossCriticalThreshold}%)`;
+        message = `Packet loss tới hạn: ${packetLoss}% (tới hạn: ${thresholds.packetLossCriticalPercent}%)`;
       }
       
       alerts.push({ type: 'packet_loss', severity, message });
     }
 
-    if (signalStrength !== null && signalStrength < signalWarningThreshold) {
+    if (signalStrength !== null && signalStrength < thresholds.signalWarningDbm) {
       let severity: 'warning' | 'medium' | 'critical' = 'medium';
-      let message = `Low signal strength detected: ${signalStrength}dBm (threshold: ${signalStrengthThreshold}dBm)`;
+      let message = `Low signal strength detected: ${signalStrength}dBm (ngưỡng: ${thresholds.signalWarningDbm}dBm)`;
       
-      if (signalStrength < signalCriticalThreshold) {
+      if (signalStrength < thresholds.signalCriticalDbm) {
         severity = 'critical';
-        message = `Critical signal strength detected: ${signalStrength}dBm (critical: ${signalCriticalThreshold}dBm)`;
-      } else if (signalStrength < signalStrengthThreshold) {
+        message = `Signal strength tới hạn: ${signalStrength}dBm (tới hạn: ${thresholds.signalCriticalDbm}dBm)`;
+      } else if (signalStrength < thresholds.signalWarningDbm) {
         severity = 'warning';
-        message = `Weak signal strength detected: ${signalStrength}dBm (warning: ${signalWarningThreshold}dBm)`;
+        message = `Signal strength yếu: ${signalStrength}dBm (cảnh báo: ${thresholds.signalWarningDbm}dBm)`;
       }
       
       alerts.push({ type: 'signal', severity, message });
@@ -105,27 +124,26 @@ export class ThresholdDetector {
   static isMetricNormal(
     alertType: AlertMetricType,
     metrics: EventMetrics | undefined,
+    thresholdProfile?: Partial<ThresholdProfile> | null,
   ): boolean {
     if (!metrics) {
       return false;
     }
 
-    const latencyThreshold = toFiniteNumber(process.env.THRESHOLD_LATENCY_MS) ?? 200;
-    const packetLossThreshold = toFiniteNumber(process.env.THRESHOLD_PACKET_LOSS_PERCENT) ?? 5;
-    const signalStrengthThreshold = toFiniteNumber(process.env.THRESHOLD_SIGNAL_STRENGTH_DBM) ?? -90;
+    const thresholds = normalizeThresholdProfile(thresholdProfile);
 
     const latency = toFiniteNumber(metrics.latency);
     const packetLoss = toFiniteNumber(metrics.packetLoss);
     const signalStrength = toFiniteNumber(metrics.signalStrength);
 
     if (alertType === 'latency') {
-      return latency !== null && latency <= latencyThreshold;
+      return latency !== null && latency <= thresholds.latencyCriticalMs;
     }
 
     if (alertType === 'packet_loss') {
-      return packetLoss !== null && packetLoss <= packetLossThreshold;
+      return packetLoss !== null && packetLoss <= thresholds.packetLossCriticalPercent;
     }
 
-    return signalStrength !== null && signalStrength >= signalStrengthThreshold;
+    return signalStrength !== null && signalStrength >= thresholds.signalWarningDbm;
   }
 }
