@@ -10,8 +10,14 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-const createIcon = (status: DeviceStatus) => {
-  const color = status === "active" ? "#10b981" : status === "alert" ? "#ef4444" : "#6b7280";
+const createIcon = (status: DeviceStatus, maintenanceMode?: boolean) => {
+  const color = maintenanceMode
+    ? "#f59e0b"
+    : status === "active"
+    ? "#10b981"
+    : status === "alert"
+    ? "#ef4444"
+    : "#6b7280";
   return new L.Icon({
     iconUrl: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='${encodeURIComponent(color)}'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z'/%3E%3C/svg%3E`,
     iconSize: [32, 32],
@@ -66,7 +72,7 @@ function MarkerClusterManager({ devices, onDeviceClick }: MarkerClusterGroupProp
     // Thêm markers mới
     devices.forEach((device) => {
       const marker = L.marker([device.location.lat, device.location.lng], {
-        icon: createIcon(device.status),
+        icon: createIcon(device.status, device.maintenanceMode),
       });
 
       // Thêm popup
@@ -74,6 +80,11 @@ function MarkerClusterManager({ devices, onDeviceClick }: MarkerClusterGroupProp
       popupContent.className = "p-2";
       popupContent.innerHTML = `
         <p class="font-semibold text-gray-900">${device.name}</p>
+        ${
+          device.maintenanceMode
+            ? '<p class="mt-1"><span class="inline-block px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-800">BẢO TRÌ</span></p>'
+            : ''
+        }
         <p class="text-sm text-gray-600">
           <span class="inline-block px-2 py-1 rounded text-xs font-semibold ${
             device.status === "active"
@@ -89,6 +100,7 @@ function MarkerClusterManager({ devices, onDeviceClick }: MarkerClusterGroupProp
           device.metrics
             ? `
           <div class="mt-2 text-xs text-gray-600 space-y-1">
+            ${device.maintenanceReason ? `<p>Bảo trì: ${device.maintenanceReason}</p>` : ""}
             ${device.metrics.latency ? `<p>Latency: ${device.metrics.latency}ms</p>` : ""}
             ${device.metrics.packetLoss !== undefined ? `<p>Packet Loss: ${device.metrics.packetLoss}%</p>` : ""}
             ${device.metrics.signalStrength ? `<p>Signal: ${device.metrics.signalStrength} dBm</p>` : ""}
@@ -179,6 +191,10 @@ export function Map({
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-red-500" />
             <span>Thiết bị cảnh báo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-amber-500" />
+            <span>Thiết bị bảo trì (suppress alert)</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-gray-500" />

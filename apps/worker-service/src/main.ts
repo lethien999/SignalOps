@@ -6,6 +6,7 @@ import { buildAlertDocument } from './services/alert-factory';
 import { ThresholdDetector } from './services/threshold-detector';
 import { AlertRepository } from './repositories/alert.repository';
 import { EventRepository } from './repositories/event.repository';
+import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
 import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
@@ -26,7 +27,7 @@ type WorkerJobPayload = {
 
 type WorkerAlertResult = {
   type: 'latency' | 'packet_loss' | 'signal';
-  severity: 'low' | 'medium' | 'high';
+  severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
   message: string;
 };
 
@@ -148,6 +149,7 @@ function createWorker(
   pubSubRedis: Redis,
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
+  deviceMaintenanceRepository: DeviceMaintenanceRepository,
 ): Worker {
   return new Worker(
     resolveQueueName(),
@@ -168,6 +170,28 @@ function createWorker(
           const eventId = eventData._id;
 
           await eventRepository.updateProcessedTime(eventId);
+
+          const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(eventData.deviceId);
+          if (activeMaintenance) {
+            Logger.info('Bỏ qua phát sinh alert do thiết bị đang bảo trì', {
+              deviceId: eventData.deviceId,
+              reason: activeMaintenance.reason,
+            });
+
+            const eventProcessedPayload = JSON.stringify({
+              id: eventData._id,
+              deviceId: eventData.deviceId,
+              location: eventData.location,
+              metrics: eventData.metrics,
+              timestamp: new Date().toISOString(),
+              alertsCreated: 0,
+              alertsSuppressed: true,
+              suppressionReason: activeMaintenance.reason,
+            });
+            await pubSubRedis.publish('events:processed', eventProcessedPayload);
+
+            return { success: true, alertsCreated: 0, alertsSuppressed: true };
+          }
 
           const detectedAlerts = ThresholdDetector.detectAnomalies(eventData);
           const createdCount = await handleAlertCreation(
@@ -309,7 +333,8 @@ async function bootstrap() {
     const { queue, dlq } = createQueuePair(redis);
     const alertRepository = new AlertRepository();
     const eventRepository = new EventRepository();
-    const worker = createWorker(redis, pubSubRedis, alertRepository, eventRepository);
+    const deviceMaintenanceRepository = new DeviceMaintenanceRepository();
+    const worker = createWorker(redis, pubSubRedis, alertRepository, eventRepository, deviceMaintenanceRepository);
 
     context = { redis, pubSubRedis, queue, dlq, worker };
     registerWorkerEvents(worker, dlq);

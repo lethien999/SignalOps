@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Wifi, WifiOff, AlertTriangle, Search } from "lucide-react";
-import { useDeviceStore, useEventStore } from "@/stores";
-import { fetchEvents } from "@/lib/api";
+import { MapPin, Wifi, WifiOff, AlertTriangle, Search, Wrench } from "lucide-react";
+import { useDeviceStore } from "@/stores";
+import { fetchDevices, setDeviceMaintenance } from "@/lib/api";
 import type { Device } from "@/types";
 
 const MapComponent = dynamic(
@@ -22,48 +22,32 @@ const MapComponent = dynamic(
 export default function MapPage() {
   const storeDevices = useDeviceStore((s) => s.devices);
   const setDevices = useDeviceStore((s) => s.setDevices);
-  const setEvents = useEventStore((s) => s.setEvents);
+  const updateDevice = useDeviceStore((s) => s.updateDevice);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingMaintenance, setSavingMaintenance] = useState<string | null>(null);
 
-  // Load events from API and derive devices from them
+  // Load danh sách thiết bị đã tổng hợp từ API
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const evData = await fetchEvents({ limit: 200 });
-        setEvents(evData);
-
-        // Build devices from events (group by deviceId, take latest)
-        const deviceMap = new Map<string, Device>();
-        for (const ev of evData) {
-          const existing = deviceMap.get(ev.deviceId);
-          const isNewer = !existing || new Date(ev.timestamp) > new Date(existing.lastSeen || "");
-          if (isNewer && ev.location) {
-            deviceMap.set(ev.deviceId, {
-              id: ev.deviceId,
-              name: ev.location.name || ev.deviceId,
-              location: ev.location,
-              status: "active",
-              lastSeen: ev.timestamp,
-              metrics: ev.metrics,
-            });
-          }
-        }
-        setDevices(Array.from(deviceMap.values()));
+        const deviceData = await fetchDevices();
+        setDevices(deviceData);
       } catch (err) {
         console.error("Không thể tải dữ liệu thiết bị:", err);
       } finally {
         setLoading(false);
       }
     })();
-  }, [setEvents, setDevices]);
+  }, [setDevices]);
 
   const devices = Array.from(storeDevices.values());
   const activeCount = devices.filter((d) => d.status === "active").length;
   const alertCount = devices.filter((d) => d.status === "alert").length;
   const inactiveCount = devices.filter((d) => d.status === "inactive").length;
+  const maintenanceCount = devices.filter((d) => d.maintenanceMode).length;
 
   const filteredDevices = devices.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -75,6 +59,35 @@ export default function MapPage() {
       case "active": return "bg-green-500";
       case "alert": return "bg-red-500";
       default: return "bg-gray-400";
+    }
+  };
+
+  const toggleMaintenance = async (device: Device) => {
+    try {
+      setSavingMaintenance(device.id);
+      const nextEnabled = !device.maintenanceMode;
+      const reason = nextEnabled ? "Bảo trì theo yêu cầu vận hành" : "";
+      const response = await setDeviceMaintenance(device.id, {
+        enabled: nextEnabled,
+        reason,
+        updatedBy: "dashboard-user",
+      });
+
+      const updates: Partial<Device> = {
+        maintenanceMode: response.enabled,
+        maintenanceReason: response.reason,
+        maintenanceUpdatedAt: response.updatedAt,
+      };
+
+      updateDevice(device.id, updates);
+      if (selectedDevice?.id === device.id) {
+        setSelectedDevice({ ...selectedDevice, ...updates });
+      }
+    } catch (error) {
+      console.error("Không thể cập nhật maintenance mode:", error);
+      alert(error instanceof Error ? error.message : "Không thể cập nhật maintenance mode");
+    } finally {
+      setSavingMaintenance(null);
     }
   };
 
@@ -110,6 +123,9 @@ export default function MapPage() {
           </span>
           <span className="flex items-center gap-2 text-gray-500">
             <WifiOff className="w-4 h-4" /> {inactiveCount} Ngắt kết nối
+          </span>
+          <span className="flex items-center gap-2 text-amber-700">
+            <Wrench className="w-4 h-4" /> {maintenanceCount} Bảo trì
           </span>
         </div>
       </div>
@@ -159,6 +175,13 @@ export default function MapPage() {
                       {statusLabel(device.status)}
                     </span>
                   </div>
+                  {device.maintenanceMode && (
+                    <div className="mt-2">
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
+                        BẢO TRÌ
+                      </span>
+                    </div>
+                  )}
                   {device.metrics && (
                     <div className="mt-2 flex gap-3 text-xs text-gray-500">
                       {device.metrics.latency !== undefined && <span>Latency: {device.metrics.latency}ms</span>}
@@ -197,6 +220,31 @@ export default function MapPage() {
                 <span className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(selectedDevice.status)}`}>
                   {statusLabel(selectedDevice.status)}
                 </span>
+                {selectedDevice.maintenanceMode && (
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
+                    BẢO TRÌ
+                  </span>
+                )}
+              </div>
+              <div className="mb-3">
+                <button
+                  onClick={() => toggleMaintenance(selectedDevice)}
+                  disabled={savingMaintenance === selectedDevice.id}
+                  className={`w-full rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    selectedDevice.maintenanceMode
+                      ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                      : "bg-blue-100 text-blue-900 hover:bg-blue-200"
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                >
+                  {savingMaintenance === selectedDevice.id
+                    ? "Đang cập nhật..."
+                    : selectedDevice.maintenanceMode
+                    ? "Tắt chế độ bảo trì"
+                    : "Bật chế độ bảo trì"}
+                </button>
+                {selectedDevice.maintenanceReason && (
+                  <p className="mt-2 text-xs text-amber-700">Lý do: {selectedDevice.maintenanceReason}</p>
+                )}
               </div>
               {selectedDevice.metrics && (
                 <div className="grid grid-cols-3 gap-3 rounded-lg bg-gray-50 p-3">
