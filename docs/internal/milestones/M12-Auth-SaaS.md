@@ -1,6 +1,6 @@
-# 🔐 Milestone 12: Auth và SaaS Foundation
+# 🔐 Milestone 12: Xác thực và nền tảng SaaS
 
-**Trạng thái**: 🟡 Ready for Implementation  
+**Trạng thái**: 🟡 Sẵn sàng triển khai  
 **Mục tiêu**: Nền tảng xác thực (JWT), RBAC (3 vai trò), multi-tenant architecture để SignalOps có thể đi theo hướng SaaS.  
 **Thời gian ước tính**: 2-3 tuần (P0 tasks)
 
@@ -8,19 +8,19 @@
 
 ## Thiết kế tổng quan
 
-### Architecture Decisions
+### Quyết định kiến trúc
 - **Auth**: JWT stateless (email+password); OAuth → P2
-- **RBAC**: Single role per user (admin/editor/viewer)
-- **Multi-tenant**: `User.tenantId` (1:1 mapping); tenant admin manages users
+- **RBAC**: một role duy nhất cho mỗi user (admin/editor/viewer)
+- **Multi-tenant**: `User.tenantId` (mapping 1:1); tenant admin quản lý user
 - **Scopes**: Public API (API key), Protected API (JWT + role guard)
-- **DB**: User + Role collections; extend Tenant.adminUserIds
+- **DB**: collection User + Role; mở rộng `Tenant.adminUserIds`
 
 ---
 
-## Ưu tiên P0 - Tasks
+## Ưu tiên P0 - Hạng mục
 
-### Task 1: User & Role Schema + Auth Service
-**Deliverables:**
+### Hạng mục 1: User & Role Schema + Auth Service
+**Hạng mục cần làm:**
 - [x] `User` schema (Mongoose): email, passwordHash, tenantId, roleId, createdAt, updatedAt
 - [x] `Role` collection (seeded): admin, editor, viewer with permissions array
 - [x] `auth.service.ts`: signup, login, validateJwt, checkPermission methods
@@ -29,7 +29,7 @@
 - [x] Extend `Tenant` schema: add `adminUserIds: ObjectId[]`
 - [x] Migration script: `db-migrate-users.mjs` (create indexes, seed roles)
 
-**Files:**
+**Tệp liên quan:**
 - `src/modules/user/schemas/user.schema.ts`
 - `src/modules/user/schemas/role.schema.ts`
 - `src/modules/user/services/auth.service.ts`
@@ -40,15 +40,15 @@
 
 ---
 
-### Task 2: JWT & Role Guards
-**Deliverables:**
+### Hạng mục 2: JWT & Role Guards
+**Hạng mục cần làm:**
 - [x] `jwt.guard.ts`: extract & validate JWT from Authorization header
 - [x] `role.guard.ts`: check user role against required permissions
 - [x] `@Authorize(role: string)` decorator for routes
 - [x] Export guards from `src/common/guards/index.ts`
 - [x] Unit tests for guards (mocked user context)
 
-**Files:**
+**Tệp liên quan:**
 - `src/common/guards/jwt.guard.ts`
 - `src/common/guards/role.guard.ts`
 - `src/common/decorators/authorize.decorator.ts`
@@ -56,8 +56,8 @@
 
 ---
 
-### Task 3: Auth Endpoints & Dashboard Integration
-**Deliverables:**
+### Hạng mục 3: Auth Endpoints & Dashboard Integration
+**Hạng mục cần làm:**
 - [x] `UserController`: 
   - `POST /auth/signup` → create user + tenant (auto-assign admin role)
   - `POST /auth/login` → return JWT token + user info
@@ -67,7 +67,7 @@
 - [x] Store JWT in `localStorage`, send in `Authorization: Bearer <token>`
 - [x] Unit tests: user.controller.spec.ts
 
-**Files:**
+**Tệp liên quan:**
 - `src/modules/user/controllers/user.controller.ts`
 - `src/modules/user/dtos/signup.dto.ts`, `login.dto.ts`
 - `apps/dashboard/app/login/page.tsx` (new)
@@ -76,8 +76,8 @@
 
 ---
 
-### Task 4: API Route Protection & Tenant Isolation
-**Deliverables:**
+### Hạng mục 4: API Route Protection & Tenant Isolation
+**Hạng mục cần làm:**
 - [x] Protect admin endpoints: `/api/admin/*` → require JWT + admin role
 - [x] Protect config endpoints: `/api/webhooks/*` → require JWT + editor role
 - [x] Keep public ingestion: `POST /events`, `POST /alerts` → API key only
@@ -86,7 +86,7 @@
 - [x] Block cross-tenant data access (middleware validation)
 - [x] Update existing services to filter by `tenantId`
 
-**Files:**
+**Tệp liên quan:**
 - `src/common/middleware/tenant-context.middleware.ts`
 - Update: `alert.service.ts`, `event.service.ts`, `webhook.service.ts` (add tenantId filters)
 - `src/modules/webhook/webhook.controller.ts` (protect + authorize)
@@ -94,8 +94,8 @@
 
 ---
 
-### Task 5: Tenant Admin & User Management
-**Deliverables:**
+### Hạng mục 5: Tenant Admin & User Management
+**Hạng mục cần làm:**
 - [x] `TenantController`: 
   - `GET /tenants/:id/users` → list users (admin only)
   - `POST /tenants/:id/users` → add user to tenant (admin only)
@@ -105,15 +105,15 @@
 - [x] Validate: admin can only manage users in their tenant
 - [x] Unit tests: tenant.service.spec.ts (user management)
 
-**Files:**
+**Tệp liên quan:**
 - `src/modules/tenant/controllers/tenant.controller.ts` (extend)
 - `src/modules/tenant/services/tenant.service.ts` (extend)
 - `src/modules/tenant/tenant.service.spec.ts` (new tests)
 
 ---
 
-### Task 6: Integration Tests & Docs
-**Deliverables:**
+### Hạng mục 6: Integration Tests & Docs
+**Hạng mục cần làm:**
 - [x] E2E test: signup → login → access protected endpoint with JWT
 - [x] E2E test: cross-tenant isolation (user A cannot access user B's tenant data)
 - [x] E2E test: role-based access (viewer cannot write events)
@@ -121,7 +121,7 @@
 - [x] Add `docs/AUTH.md`: user signup/login, role permissions, tenant isolation
 - [x] Update README: steps to create first admin user (seed script)
 
-**Files:**
+**Tệp liên quan:**
 - `src/modules/user/user.integration.spec.ts`
 - `src/modules/tenant/tenant-isolation.integration.spec.ts`
 - `docs/AUTH.md` (new)
@@ -137,9 +137,9 @@
 - **Tasks Completed**: 6/6 ✅ ALL COMPLETE
 - **Last Updated**: 09/05/2026
 
-**Remote**
-- **Branch pushed**: `origin/m12/p0-auth` (new branch created and pushed)
-- **Push info / PR**: https://github.com/lethien999/SignalOps/pull/new/m12/p0-auth
+**Đã đẩy lên remote**
+- **Branch đã push**: `origin/m12/p0-auth` (đã tạo branch mới và đẩy lên)
+- **Thông tin push / PR**: https://github.com/lethien999/SignalOps/pull/new/m12/p0-auth
 
 ---
 

@@ -1,11 +1,11 @@
-# 📈 Milestone 11: Growth, Ops và Scale
+# 📈 Milestone 11: Tăng trưởng, Vận hành và Scale
 
-**Trạng thái**: � Progress (50% — P0 tasks done, P1 pending)  
+**Trạng thái**: 🟡 Đang tiến hành (50% — P0 đã xong, P1 còn lại)  
 **Mục tiêu**: Tăng khả năng vận hành ở quy mô lớn, tối ưu chi phí và độ tin cậy hệ thống.
 
 ---
 
-## Ưu tiên P0 - Làm trước (theo thứ tự easy -> hard)
+## Ưu tiên P0 - Làm trước (theo thứ tự dễ -> khó)
 
 - [x] SLA Dashboard — MTTR, Uptime, Alert Rate
 	- [x] Hiển thị MTTR theo khoảng thời gian
