@@ -9,6 +9,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { ThresholdsModule } from './modules/thresholds/thresholds.module';
 import { ArchiveModule } from './modules/archive/archive.module';
 import { TenantModule } from './modules/tenant/tenant.module';
+import { UserModule } from './modules/user/user.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 
@@ -33,6 +34,7 @@ import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.mi
     HealthModule,
     WebSocketModule,
     TenantModule,
+    UserModule,
   ],
 })
 export class AppModule implements NestModule {

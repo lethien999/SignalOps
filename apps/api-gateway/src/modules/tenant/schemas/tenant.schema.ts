@@ -40,6 +40,9 @@ export class Tenant {
   @Prop({ type: String, default: null })
   description?: string;
 
+  @Prop({ type: [Types.ObjectId], default: [] })
+  adminUserIds: Types.ObjectId[]; // Users who can manage this tenant
+
   @Prop({ type: Date, default: () => new Date() })
   createdAt: Date;
 
