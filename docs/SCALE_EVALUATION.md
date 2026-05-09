@@ -1,141 +1,141 @@
-# Scale Evaluation: TimescaleDB vs VictoriaMetrics
+# Đánh giá khả năng mở rộng: TimescaleDB so với VictoriaMetrics
 
-## Hiện tại
+## Hiện trạng
 
-**Metrics Stack**: Prometheus (scrape) + Grafana (visualization)
-- **Ingestion Rate**: ~10K metrics/minute (development estimate)
-- **Retention**: Prometheus default 15 days
-- **Storage**: In-memory + disk (single instance)
+**Ngăn xếp metrics**: Prometheus (scrape) + Grafana (hiển thị)
+- **Tốc độ thu thập**: khoảng 10K metrics/phút (ước lượng trong môi trường phát triển)
+- **Thời gian lưu giữ**: mặc định của Prometheus là 15 ngày
+- **Lưu trữ**: bộ nhớ + đĩa (một instance)
 
-**Event/Alert Data**: MongoDB
-- **Write Volume**: ~1K events/minute (normal), spikes to 10K/minute (anomalies)
-- **10M+ events/month** = ~347 events/second sustained
+**Dữ liệu event/alert**: MongoDB
+- **Khối lượng ghi**: khoảng 1K events/phút (bình thường), có thể tăng vọt lên 10K/phút khi có bất thường
+- **10M+ events/tháng** tương đương khoảng 347 events/giây duy trì
 
-## Bottlenecks at 10M+ Events/Month
+## Các điểm nghẽn khi vượt 10M+ events/tháng
 
-| Bottleneck | Current Behavior | Impact |
-|-----------|-----------------|--------|
-| **MongoDB collection size** | No sharding, single replica set | Query performance degrades, index fragmentation |
-| **Prometheus disk I/O** | All metrics on local disk | Slow scrape, missing data during high load |
-| **TTL index cleanup** | Synchronous cleanup | Lock DB during deletion of old data |
-| **Aggregation queries** | Full collection scan (events > 1GB) | Timeout on dashboard load (P0.3 addressed with aggregation) |
+| Điểm nghẽn | Hành vi hiện tại | Tác động |
+|-----------|------------------|---------|
+| **Dung lượng collection MongoDB** | Không sharding, chỉ một replica set | Hiệu năng truy vấn giảm, index bị phân mảnh |
+| **I/O đĩa của Prometheus** | Tất cả metrics nằm trên đĩa cục bộ | Scrape chậm, có thể mất dữ liệu khi tải cao |
+| **Dọn dẹp index TTL** | Dọn dẹp đồng bộ | Khóa DB trong lúc xóa dữ liệu cũ |
+| **Truy vấn tổng hợp** | Quét toàn bộ collection (events > 1GB) | Timeout khi load dashboard (đã được P0.3 xử lý bằng aggregation) |
 
-## Option 1: TimescaleDB for Time-Series Data
+## Phương án 1: TimescaleDB cho dữ liệu chuỗi thời gian
 
-### Characteristics
-- PostgreSQL extension for time-series
-- Automatic partitioning by time
-- Optimized compression (~95% smaller than raw)
-- Native SQL queries, hyper-tables, continuous aggregates
+### Đặc điểm
+- Là extension của PostgreSQL cho dữ liệu chuỗi thời gian
+- Tự động phân vùng theo thời gian
+- Nén tối ưu, dung lượng giảm khoảng 95% so với dữ liệu thô
+- Hỗ trợ SQL native, hyper-table và continuous aggregates
 
-### Evaluation
+### Đánh giá
 
-**Pros**:
-- Reduces data storage 95% via compression
-- Sub-second queries on billion-row tables
-- Hyper-tables eliminate manual partitioning
-- Better than MongoDB for analytical workloads
+**Ưu điểm**:
+- Giảm dung lượng lưu trữ khoảng 95% nhờ nén
+- Truy vấn dưới 1 giây trên các bảng hàng tỷ dòng
+- Hyper-table giúp loại bỏ việc phân vùng thủ công
+- Phù hợp cho workload phân tích hơn MongoDB
 
-**Cons**:
-- Replaces MongoDB (major migration)
-- Requires schema redesign
-- Learning curve for hyper-tables and continuous aggregates
-- Connection pool management per app instance
+**Nhược điểm**:
+- Thay thế MongoDB, tức là phải migration lớn
+- Cần thiết kế lại schema
+- Có độ dốc học tập cho hyper-table và continuous aggregates
+- Phải quản lý connection pool cho từng instance ứng dụng
 
-### Recommendation
-**Use case**: IF events table grows > 5GB and query performance critical
-- Migrate events → TimescaleDB (keep alerts in MongoDB)
-- Use MongoDB for transactional data, TimescaleDB for analytics
-- Estimated setup time: 2-3 weeks (migration + testing)
+### Khuyến nghị
+**Trường hợp nên dùng**: khi bảng events vượt quá 5GB và hiệu năng truy vấn trở nên rất quan trọng
+- Chuyển events sang TimescaleDB (giữ alerts trong MongoDB)
+- Dùng MongoDB cho dữ liệu giao dịch, TimescaleDB cho phân tích
+- Thời gian thiết lập ước tính: 2-3 tuần (migration + test)
 
-**Not recommended now** because:
-- P0.3 (aggregation pipeline) already addresses query performance
-- TTL index handles retention automatically
-- 10M events/month ~ 30GB/year (manageable on single MongoDB instance)
-
----
-
-## Option 2: VictoriaMetrics for Prometheus Metrics
-
-### Characteristics
-- Drop-in Prometheus replacement
-- Better compression, lower memory usage
-- Horizontal scaling via vmcluster
-- Multi-tenant support
-
-### Evaluation
-
-**Pros**:
-- 10x better compression than Prometheus
-- Handles 10M+ metrics/minute (vs Prometheus 100K/minute limit)
-- Easier scaling than Prometheus (remote storage)
-- Better cardinality handling
-
-**Cons**:
-- Not full Prometheus replacement (breaking changes)
-- Requires rewrite of alerts/rules
-- VictoriaMetrics Cluster requires 3+ nodes (minimum)
-- Overkill for current ~10K metrics/minute
-
-### Recommendation
-**Current Status**: Stick with Prometheus + Grafana
-- Current 10K metrics/minute well within Prometheus capacity
-- Add VictoriaMetrics when reaching 500K+ metrics/minute
-
-**Trigger for upgrade**:
-1. Prometheus scrape failures occurring regularly
-2. Storage growing > 100GB per 15 days
-3. Dashboard queries taking > 5 seconds consistently
+**Chưa nên dùng ngay** vì:
+- P0.3 (aggregation pipeline) đã xử lý vấn đề hiệu năng truy vấn
+- TTL index tự động xử lý retention
+- 10M events/tháng tương đương khoảng 30GB/năm, vẫn có thể quản lý trên một MongoDB instance
 
 ---
 
-## Hybrid Recommendation for 10M+ Events/Month
+## Phương án 2: VictoriaMetrics cho metrics của Prometheus
 
-**Phase 1 (Now)**: Current stack + optimizations
-- ✅ MongoDB aggregation pipeline (completed P0.3)
-- ✅ TTL index for auto-cleanup (completed P0.4)
-- ✅ Business metrics collection (completed P1.4)
-- Implement Redis caching for frequently queried aggregations
+### Đặc điểm
+- Có thể thay thế Prometheus theo kiểu drop-in
+- Nén tốt hơn, dùng ít bộ nhớ hơn
+- Mở rộng ngang qua vmcluster
+- Hỗ trợ multi-tenant
 
-**Phase 2 (Q3 2025)**: Scale horizontal read
-- Read replicas in MongoDB (secondary nodes for analytics)
-- Query secondary for heavy aggregations (non-critical reads)
-- Separate connection pool for analytics queries
+### Đánh giá
 
-**Phase 3 (Q4 2025)**: Selective migration
-- Migrate "cold" events (> 90 days) to TimescaleDB archive
-- Keep hot data in MongoDB
-- Use TimescaleDB for historical analysis, reporting
+**Ưu điểm**:
+- Nén tốt hơn Prometheus khoảng 10 lần
+- Xử lý được 10M+ metrics/phút (trong khi giới hạn Prometheus khoảng 100K/phút)
+- Dễ scale hơn Prometheus (remote storage)
+- Xử lý cardinality tốt hơn
 
-**Phase 4 (2026)**: Full time-series database
-- Evaluate VictoriaMetrics for metric ingestion (if needed)
-- Consider ClickHouse for event warehouse
-- Implement data lake for long-term storage
+**Nhược điểm**:
+- Không phải thay thế hoàn toàn Prometheus theo nghĩa không đổi gì
+- Phải viết lại alert/rule
+- VictoriaMetrics Cluster cần tối thiểu 3 node
+- Quá mức cần thiết với tải hiện tại khoảng 10K metrics/phút
 
-## Action Items
+### Khuyến nghị
+**Trạng thái hiện tại**: giữ Prometheus + Grafana
+- Mức 10K metrics/phút hiện tại vẫn nằm trong khả năng của Prometheus
+- Chỉ cân nhắc VictoriaMetrics khi chạm 500K+ metrics/phút
 
-1. **Monitor metrics**:
-   - Add alerts for MongoDB oplog lag
-   - Track query performance percentiles (p50, p95, p99)
-   - Alert on Prometheus scrape failures
+**Dấu hiệu cần nâng cấp**:
+1. Prometheus thường xuyên scrape thất bại
+2. Dung lượng lưu trữ vượt 100GB mỗi 15 ngày
+3. Truy vấn dashboard thường xuyên chậm hơn 5 giây
 
-2. **Prepare for scale**:
-   - Document backup strategy (BACKUP.md)
-   - Test failover procedures
-   - Document scaling playbook
+---
 
-3. **Evaluate in 6 months**:
-   - If events > 50M/month → Move to Phase 2
-   - If metrics > 500K/minute → Evaluate VictoriaMetrics
-   - Based on actual usage patterns
+## Khuyến nghị lai cho 10M+ events/tháng
 
-## Estimated Costs (AWS)
+**Giai đoạn 1 (hiện tại)**: giữ nguyên stack hiện tại + tối ưu
+- ✅ Aggregation pipeline của MongoDB (đã hoàn thành ở P0.3)
+- ✅ TTL index để tự động dọn dữ liệu (đã hoàn thành ở P0.4)
+- ✅ Thu thập business metrics (đã hoàn thành ở P1.4)
+- Bổ sung cache Redis cho các truy vấn tổng hợp được dùng nhiều
 
-| Option | Compute | Storage | Monthly |
-|--------|---------|---------|---------|
-| **Current (MongoDB)** | 2x m5.large | 500GB EBS | $500 |
+**Giai đoạn 2 (Q3/2025)**: scale đọc ngang
+- Thêm read replica cho MongoDB (secondary node phục vụ phân tích)
+- Cho phép query secondary với các truy vấn nặng nhưng không quá nhạy cảm
+- Tách riêng connection pool cho truy vấn phân tích
+
+**Giai đoạn 3 (Q4/2025)**: migration chọn lọc
+- Chuyển các events “lạnh” (trên 90 ngày) sang TimescaleDB archive
+- Giữ dữ liệu nóng trong MongoDB
+- Dùng TimescaleDB cho phân tích lịch sử và báo cáo
+
+**Giai đoạn 4 (2026)**: cơ sở dữ liệu chuỗi thời gian đầy đủ
+- Đánh giá VictoriaMetrics cho ingestion metrics nếu thật sự cần
+- Cân nhắc ClickHouse làm warehouse cho event
+- Xây dựng data lake cho lưu trữ dài hạn
+
+## Các việc cần làm
+
+1. **Theo dõi metrics**:
+   - Thêm cảnh báo cho MongoDB oplog lag
+   - Theo dõi các percentile hiệu năng truy vấn (p50, p95, p99)
+   - Cảnh báo khi Prometheus scrape thất bại
+
+2. **Chuẩn bị cho việc scale**:
+   - Ghi tài liệu chiến lược backup (BACKUP.md)
+   - Kiểm thử quy trình failover
+   - Viết playbook scale
+
+3. **Đánh giá lại sau 6 tháng**:
+   - Nếu events > 50M/tháng → chuyển sang Giai đoạn 2
+   - Nếu metrics > 500K/phút → đánh giá VictoriaMetrics
+   - Dựa trên mẫu sử dụng thực tế
+
+## Chi phí ước tính (AWS)
+
+| Phương án | Compute | Lưu trữ | Hàng tháng |
+|----------|---------|---------|-----------|
+| **Hiện tại (MongoDB)** | 2x m5.large | 500GB EBS | $500 |
 | **+ TimescaleDB** | 3x m5.large | 200GB EBS | $700 |
 | **+ VictoriaMetrics** | 3x m5.xlarge | 1TB EBS | $1200 |
 | **Full migration** | 5x m5.large | 2TB EBS | $1500 |
 
-**Note**: Based on AWS pricing; adjust for your cloud provider.
+**Lưu ý**: các con số trên dựa trên giá AWS; cần điều chỉnh theo nhà cung cấp cloud đang dùng.

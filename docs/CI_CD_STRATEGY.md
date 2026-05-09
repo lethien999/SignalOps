@@ -1,23 +1,23 @@
-# GitHub Actions CI/CD & Deployment Strategy
+# Chiến lược CI/CD và triển khai bằng GitHub Actions
 
 ## Mục đích
 
 Tự động hóa:
-1. Build & test trên mỗi commit
-2. Deploy lên staging/production
-3. Rollback nhanh nếu có vấn đề
+1. Build và test sau mỗi lần commit
+2. Triển khai lên môi trường staging/production
+3. Rollback nhanh nếu phát sinh sự cố
 
 ---
 
-## Trigger Events
+## Các sự kiện kích hoạt
 
-| Event | Action | Workflow |
-|-------|--------|----------|
-| Push to `main` | Build → Test → Deploy to Staging | `build-and-test.yml` |
-| Push to `develop` | Build → Test → Deploy to Dev | `build-and-test.yml` |
-| Create Release tag | Build → Test → Deploy to Production | `release.yml` |
-| Pull Request | Build → Test → Report coverage | `pr-check.yml` |
-| Manual dispatch | Deploy specific version | `deploy-manual.yml` |
+| Sự kiện | Hành động | Workflow |
+|---------|-----------|----------|
+| Push lên `main` | Build → Test → Triển khai lên Staging | `build-and-test.yml` |
+| Push lên `develop` | Build → Test → Triển khai lên Dev | `build-and-test.yml` |
+| Tạo release tag | Build → Test → Triển khai lên Production | `release.yml` |
+| Pull Request | Build → Test → Báo cáo coverage | `pr-check.yml` |
+| Chạy thủ công | Triển khai một phiên bản cụ thể | `deploy-manual.yml` |
 
 ---
 
@@ -97,178 +97,180 @@ jobs:
 
 ---
 
-## Rollback Strategy
+## Chiến lược rollback
 
-### Scenario 1: Immediate Rollback (< 1 hour)
+### Kịch bản 1: Rollback ngay lập tức (< 1 giờ)
 
-**Trigger**: Bug discovered in production
+**Khi nào kích hoạt**: phát hiện lỗi trên production
 
-**Process**:
+**Quy trình**:
 ```bash
-# 1. Identify bad version
+# 1. Xác định phiên bản lỗi
 kubectl get deployment -A | grep signalops
 
-# 2. List recent versions
+# 2. Liệt kê các version gần nhất
 docker images | grep signalops-api | head -5
 
-# 3. Rollback to previous version
+# 3. Rollback về version trước
 kubectl rollout undo deployment/signalops-api -n production
 
-# 4. Verify health
+# 4. Kiểm tra lại trạng thái
 kubectl rollout status deployment/signalops-api -n production
 ```
 
-**Expected time**: 2-5 minutes
+**Thời gian dự kiến**: 2-5 phút
 
-### Scenario 2: Blue-Green Deployment
+### Kịch bản 2: Triển khai Blue-Green
 
-**Setup**:
+**Thiết lập**:
 ```yaml
-# Blue (current)
+# Blue (hiện tại)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: signalops-api-blue
   
-# Green (new version)
+# Green (phiên bản mới)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: signalops-api-green
 
-# Service routes to Blue
+# Service trỏ về Blue
 apiVersion: v1
 kind: Service
 metadata:
   name: signalops-api
 spec:
   selector:
-    version: blue  # Switch to 'green' for rollout
+    version: blue  # Đổi sang 'green' khi rollout
 ```
 
-**Rollout Process**:
+**Quy trình rollout**:
 ```bash
-# 1. Deploy to Green (while Blue handles traffic)
+# 1. Triển khai lên Green trong khi Blue vẫn phục vụ traffic
 kubectl apply -f deploy-green.yml
 
-# 2. Test Green behind internal DNS
+# 2. Kiểm thử Green qua DNS nội bộ
 curl http://signalops-api-green.svc.cluster.local/health
 
-# 3. Switch traffic
+# 3. Chuyển traffic
 kubectl patch service signalops-api -p '{"spec":{"selector":{"version":"green"}}}'
 
-# 4. Monitor metrics for 5 minutes
-# If errors spike, rollback:
+# 4. Theo dõi metrics trong 5 phút
+# Nếu lỗi tăng đột biến, rollback:
 kubectl patch service signalops-api -p '{"spec":{"selector":{"version":"blue"}}}'
 
-# 5. Cleanup old Blue
+# 5. Dọn dẹp Blue cũ
 kubectl delete deployment signalops-api-blue
 ```
 
-**Expected time**: 30-60 seconds for cutover
+**Thời gian dự kiến**: 30-60 giây cho bước chuyển traffic
 
-### Scenario 3: Canary Deployment (Staged Rollout)
+### Kịch bản 3: Canary Deployment (triển khai theo giai đoạn)
 
 ```bash
-# 1. Deploy new version alongside old
-# 2. Route 10% traffic to new version
-# 3. Monitor error rate, latency, business metrics
-# 4. Gradually increase: 25% → 50% → 100%
-# 5. Or rollback if metrics degraded
+# 1. Đưa version mới chạy song song với version cũ
+# 2. Chuyển 10% traffic sang version mới
+# 3. Theo dõi tỷ lệ lỗi, độ trễ, business metrics
+# 4. Tăng dần: 25% → 50% → 100%
+# 5. Hoặc rollback nếu metrics xấu đi
 
-# Tools: Flagger + Prometheus metrics
+# Công cụ: Flagger + Prometheus metrics
 kubectl apply -f canary.yml
 ```
 
 ---
 
-## Health Checks & Monitoring
+## Kiểm tra sức khỏe và monitoring
 
-### Pre-deployment Validation
+### Xác thực trước khi deploy
 
 ```bash
-# Schema validation
+# Kiểm tra schema
 npm run validate:schema
 
-# Build verification
+# Xác minh build
 npm run build
 
-# Integration tests
+# Chạy integration test
 npm run test:integration
 
-# Load testing (optional)
+# Load test (không bắt buộc)
 npm run test:load -- --rps=1000 --duration=60
 ```
 
-### Post-deployment Checks
+### Kiểm tra sau khi deploy
 
-| Metric | Alert Threshold | Action |
-|--------|-----------------|--------|
-| Error rate | > 1% | Immediate rollback |
-| p99 latency | > 10s | Escalate to ops |
-| Memory usage | > 80% | Scale horizontally |
-| Queue depth | > 10K jobs | Alert for investigation |
-
----
-
-## Rollback Triggers
-
-| Condition | Severity | Action |
-|-----------|----------|--------|
-| HTTP 5xx errors > 5% | CRITICAL | Auto-rollback |
-| All replicas down | CRITICAL | Manual investigation |
-| Database connection fails | CRITICAL | Auto-rollback |
-| Memory leak (OOM) | HIGH | Auto-rollback after 3 min |
-| Performance degradation > 50% | MEDIUM | Manual review |
+| Chỉ số | Ngưỡng cảnh báo | Hành động |
+|-------|-----------------|-----------|
+| Tỷ lệ lỗi | > 1% | Rollback ngay |
+| Độ trễ p99 | > 10s | Báo ops xử lý |
+| Mức dùng bộ nhớ | > 80% | Scale ngang |
+| Độ sâu queue | > 10K jobs | Cảnh báo để kiểm tra |
 
 ---
 
-## Deployment Checklist
+## Ngưỡng rollback
+
+| Điều kiện | Mức độ | Hành động |
+|-----------|--------|----------|
+| HTTP 5xx > 5% | CRITICAL | Auto-rollback |
+| Tất cả replica ngừng hoạt động | CRITICAL | Kiểm tra thủ công |
+| Kết nối database thất bại | CRITICAL | Auto-rollback |
+| Rò rỉ bộ nhớ (OOM) | HIGH | Auto-rollback sau 3 phút |
+| Suy giảm hiệu năng > 50% | MEDIUM | Xem xét thủ công |
+
+---
+
+## Checklist deploy
 
 ```markdown
-## Pre-deployment
-- [ ] Code review approved
-- [ ] All tests passing (CI/CD green)
-- [ ] Changelog updated
-- [ ] Database migrations tested
-- [ ] Rollback plan documented
+## Trước khi deploy
+- [ ] Code review đã được duyệt
+- [ ] Tất cả test đều pass (CI/CD xanh)
+- [ ] Changelog đã cập nhật
+- [ ] Đã test migrations database
+- [ ] Đã ghi chú kế hoạch rollback
 
-## During deployment
-- [ ] Health checks passing
-- [ ] No error rate spike
-- [ ] WebSocket connections stable
-- [ ] Queue processing normal
-- [ ] Monitoring dashboards green
+## Trong lúc deploy
+- [ ] Health check pass
+- [ ] Không có spike tỷ lệ lỗi
+- [ ] Kết nối WebSocket ổn định
+- [ ] Xử lý queue bình thường
+- [ ] Dashboard monitoring hiển thị xanh
 
-## Post-deployment
-- [ ] Smoke tests passing
-- [ ] Business metrics normal
-- [ ] No alert escalations
-- [ ] Logs reviewed for errors
-- [ ] Performance metrics as expected
-- [ ] Schedule follow-up review if large change
+## Sau khi deploy
+- [ ] Smoke test pass
+- [ ] Business metrics bình thường
+- [ ] Không có cảnh báo mới
+- [ ] Logs đã được kiểm tra lỗi
+- [ ] Metrics hiệu năng đúng kỳ vọng
+- [ ] Lên lịch review lại nếu thay đổi lớn
 ```
 
 ---
 
-## Secrets Management
+## Quản lý secrets
 
 ```yaml
 # .github/workflows/deploy.yml
 env:
   REGISTRY: ghcr.io
-  
+```
+
+```yaml
 jobs:
   deploy:
     steps:
-      - name: Authenticate with registry
+      - name: Xác thực với registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN }}
       
-      - name: Deploy with secrets
+      - name: Triển khai với secrets
         env:
           MONGODB_PASSWORD: ${{ secrets.PROD_MONGODB_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.PROD_REDIS_PASSWORD }}
@@ -276,14 +278,14 @@ jobs:
         run: ./scripts/deploy-prod.sh
 ```
 
-**Store secrets in GitHub**:
+**Lưu secrets trong GitHub**:
 - Organization Settings → Secrets and variables
-- Reference as `${{ secrets.SECRET_NAME }}`
-- Rotate credentials quarterly
+- Tham chiếu bằng `${{ secrets.SECRET_NAME }}`
+- Luân chuyển thông tin xác thực theo quý
 
 ---
 
-## Versioning & Release
+## Phiên bản và phát hành
 
 ### Semantic Versioning
 
@@ -292,54 +294,54 @@ v1.0.0 = MAJOR.MINOR.PATCH
         = Breaking change.Feature.Bugfix
 ```
 
-**Examples**:
-- v0.1.0 → v0.1.1: Bugfix
-- v0.1.0 → v0.2.0: New feature
-- v0.2.0 → v1.0.0: Breaking change (production ready)
+**Ví dụ**:
+- v0.1.0 → v0.1.1: Sửa lỗi
+- v0.1.0 → v0.2.0: Tính năng mới
+- v0.2.0 → v1.0.0: Breaking change (đã sẵn sàng cho production)
 
-### Creating a Release
+### Tạo release
 
 ```bash
-# 1. Update version in package.json
-npm version patch  # or minor, major
+# 1. Cập nhật version trong package.json
+npm version patch  # hoặc minor, major
 
-# 2. Commit and tag
+# 2. Commit và gắn tag
 git push origin main --tags
 
-# 3. GitHub Actions automatically deploys on tag
-# 4. Release notes auto-generated from commit messages
+# 3. GitHub Actions tự động deploy khi có tag
+# 4. Release notes được tạo tự động từ commit message
 ```
 
 ---
 
-## Monitoring Deployments
+## Theo dõi triển khai
 
-**Real-time dashboard**:
+**Dashboard thời gian thực**:
 ```bash
-# Watch deployment status
+# Xem trạng thái deployment
 watch kubectl get deployment -A
 
-# Stream logs from new version
+# Stream logs của version mới
 kubectl logs -f deployment/signalops-api -n production --tail=100
 
-# Check rollout history
+# Xem lịch sử rollout
 kubectl rollout history deployment/signalops-api -n production
 ```
 
 ---
 
-## Troubleshooting
+## Xử lý sự cố
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Deployment stuck | Pod not becoming healthy | `kubectl describe pod POD_NAME` |
-| Rollback failed | Previous version also broken | Manual restore from backup |
-| Image not found | Registry authentication failed | Check secrets, rerun auth |
-| Health check failing | Service not ready | Increase startup probe grace period |
+| Vấn đề | Nguyên nhân | Giải pháp |
+|-------|-------------|-----------|
+| Deploy bị kẹt | Pod chưa sẵn sàng | `kubectl describe pod POD_NAME` |
+| Rollback thất bại | Phiên bản trước cũng lỗi | Khôi phục thủ công từ backup |
+| Không tìm thấy image | Xác thực registry thất bại | Kiểm tra secrets, chạy lại auth |
+| Health check thất bại | Service chưa sẵn sàng | Tăng thời gian grace cho startup probe |
 
 ---
 
-## Links & References
+## Liên kết và tài liệu tham khảo
 
 - [GitHub Actions Docs](https://docs.github.com/actions)
 - [Kubernetes Rollout Docs](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)

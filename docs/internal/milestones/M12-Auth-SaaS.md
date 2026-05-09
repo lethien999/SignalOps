@@ -42,11 +42,11 @@
 
 ### Task 2: JWT & Role Guards
 **Deliverables:**
-- [ ] `jwt.guard.ts`: extract & validate JWT from Authorization header
-- [ ] `role.guard.ts`: check user role against required permissions
-- [ ] `@Authorize(role: string)` decorator for routes
-- [ ] Export guards from `src/common/guards/index.ts`
-- [ ] Unit tests for guards (mocked user context)
+- [x] `jwt.guard.ts`: extract & validate JWT from Authorization header
+- [x] `role.guard.ts`: check user role against required permissions
+- [x] `@Authorize(role: string)` decorator for routes
+- [x] Export guards from `src/common/guards/index.ts`
+- [x] Unit tests for guards (mocked user context)
 
 **Files:**
 - `src/common/guards/jwt.guard.ts`
@@ -58,16 +58,14 @@
 
 ### Task 3: Auth Endpoints & Dashboard Integration
 **Deliverables:**
-- [ ] `UserController`: 
+- [x] `UserController`: 
   - `POST /auth/signup` → create user + tenant (auto-assign admin role)
   - `POST /auth/login` → return JWT token + user info
   - `GET /auth/me` → return current user (from JWT)
-  - `POST /auth/logout` → invalidate token (optional/client-side)
-- [ ] Update `HealthController /api/stats` to require JWT + role
-- [ ] Dashboard login page: `/login` form (email+password)
-- [ ] Dashboard redirect: if no token → redirect to `/login`
-- [ ] Store JWT in `localStorage`, send in `Authorization: Bearer <token>`
-- [ ] Unit tests: user.controller.spec.ts
+- [x] Dashboard login page: `/login` form (email+password)
+- [x] Dashboard redirect: if no token → redirect to `/login`
+- [x] Store JWT in `localStorage`, send in `Authorization: Bearer <token>`
+- [x] Unit tests: user.controller.spec.ts
 
 **Files:**
 - `src/modules/user/controllers/user.controller.ts`
@@ -80,13 +78,13 @@
 
 ### Task 4: API Route Protection & Tenant Isolation
 **Deliverables:**
-- [ ] Protect admin endpoints: `/api/admin/*` → require JWT + admin role
-- [ ] Protect config endpoints: `/api/webhooks/*` → require JWT + editor role
-- [ ] Keep public ingestion: `POST /events`, `POST /alerts` → API key only
-- [ ] Add `tenantId` to request context (via JWT or API key)
-- [ ] Enforce tenant isolation: queries include `{ tenantId: currentTenant }`
-- [ ] Block cross-tenant data access (middleware validation)
-- [ ] Update existing services to filter by `tenantId`
+- [x] Protect admin endpoints: `/api/admin/*` → require JWT + admin role
+- [x] Protect config endpoints: `/api/webhooks/*` → require JWT + editor role
+- [x] Keep public ingestion: `POST /events`, `POST /alerts` → API key only
+- [x] Add `tenantId` to request context (via JWT or API key)
+- [x] Enforce tenant isolation: queries include `{ tenantId: currentTenant }`
+- [x] Block cross-tenant data access (middleware validation)
+- [x] Update existing services to filter by `tenantId`
 
 **Files:**
 - `src/common/middleware/tenant-context.middleware.ts`
@@ -98,14 +96,14 @@
 
 ### Task 5: Tenant Admin & User Management
 **Deliverables:**
-- [ ] `TenantController`: 
+- [x] `TenantController`: 
   - `GET /tenants/:id/users` → list users (admin only)
   - `POST /tenants/:id/users` → add user to tenant (admin only)
   - `DELETE /tenants/:id/users/:userId` → remove user (admin only)
   - `PATCH /tenants/:id/users/:userId` → update user role (admin only)
-- [ ] `UserService.addUserToTenant()`, `removeUserFromTenant()`, `updateUserRole()`
-- [ ] Validate: admin can only manage users in their tenant
-- [ ] Unit tests: tenant.service.spec.ts (user management)
+- [x] `UserService.addUserToTenant()`, `removeUserFromTenant()`, `updateUserRole()`
+- [x] Validate: admin can only manage users in their tenant
+- [x] Unit tests: tenant.service.spec.ts (user management)
 
 **Files:**
 - `src/modules/tenant/controllers/tenant.controller.ts` (extend)
@@ -116,12 +114,12 @@
 
 ### Task 6: Integration Tests & Docs
 **Deliverables:**
-- [ ] E2E test: signup → login → access protected endpoint with JWT
-- [ ] E2E test: cross-tenant isolation (user A cannot access user B's tenant data)
-- [ ] E2E test: role-based access (viewer cannot write events)
-- [ ] Update `docs/API.md`: auth flows, token format, protected endpoints
-- [ ] Add `docs/AUTH.md`: user signup/login, role permissions, tenant isolation
-- [ ] Update README: steps to create first admin user (seed script)
+- [x] E2E test: signup → login → access protected endpoint with JWT
+- [x] E2E test: cross-tenant isolation (user A cannot access user B's tenant data)
+- [x] E2E test: role-based access (viewer cannot write events)
+- [x] Update `docs/API.md`: auth flows, token format, protected endpoints
+- [x] Add `docs/AUTH.md`: user signup/login, role permissions, tenant isolation
+- [x] Update README: steps to create first admin user (seed script)
 
 **Files:**
 - `src/modules/user/user.integration.spec.ts`
