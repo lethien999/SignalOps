@@ -1,11 +1,23 @@
 import axios from 'axios';
 import type { Alert, Device, DlqJob, Event, NotificationWebhook, SlaSnapshot, SystemStats, ThresholdProfile } from '@/types';
+import { getAuthHeader } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
+});
+
+// Add auth headers to all requests
+api.interceptors.request.use((config) => {
+  const authHeader = getAuthHeader();
+  if (authHeader && 'Authorization' in authHeader) {
+    config.headers.Authorization = authHeader.Authorization;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 type AlertApiResponse = Alert & {
