@@ -8,6 +8,118 @@
 
 ---
 
+## Xác thực & Phép cấp (Authentication & Authorization)
+
+Tất cả các endpoint (trừ `/auth/signup` và `/auth/login`) yêu cầu JWT token trong header:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+Chi tiết xem tại [AUTH.md](./AUTH.md)
+
+### `POST /auth/signup`
+
+Đăng ký tài khoản mới và tạo tenant
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123",
+  "tenantId": "mongodb-objectid"
+}
+```
+
+**Response (201):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "tenantId": "tenant-id",
+    "roleId": "admin"
+  }
+}
+```
+
+### `POST /auth/login`
+
+Đăng nhập với email và mật khẩu
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "tenantId": "tenant-id",
+    "roleId": "admin"
+  }
+}
+```
+
+### `GET /auth/me`
+
+Lấy thông tin người dùng hiện tại (yêu cầu JWT)
+
+**Response (200):**
+```json
+{
+  "userId": "user-id",
+  "email": "user@example.com",
+  "tenantId": "tenant-id",
+  "roleId": "admin"
+}
+```
+
+### `GET /tenants/:tenantId/users`
+
+Danh sách người dùng trong tenant (chỉ admin)
+
+**Query params:**
+- `skip` (default: 0)
+- `limit` (default: 50, max: 100)
+
+### `POST /tenants/:tenantId/users`
+
+Thêm người dùng vào tenant (chỉ admin)
+
+**Request:**
+```json
+{
+  "email": "newuser@example.com",
+  "roleId": "editor"
+}
+```
+
+### `DELETE /tenants/:tenantId/users/:userId`
+
+Xóa người dùng khỏi tenant (chỉ admin)
+
+### `PATCH /tenants/:tenantId/users/:userId/role`
+
+Cập nhật role người dùng (chỉ admin)
+
+**Request:**
+```json
+{
+  "roleId": "admin"
+}
+```
+
+---
+
 ## Nguồn Gốc & Loại API
 
 ### 🔵 **APIs Xây Mới (Custom Built)**
