@@ -42,11 +42,40 @@ export class BusinessMetrics {
     registers: [register],
   });
 
+  private static readonly aggregationDuration = new Histogram({
+    name: 'signalops_aggregation_duration_seconds',
+    help: 'Duration of MongoDB aggregation pipelines',
+    labelNames: ['pipeline'],
+    buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10],
+    registers: [register],
+  });
+
   private static readonly eventLatency = new Histogram({
     name: 'signalops_event_latency_ms',
     help: 'Event latency from metrics (milliseconds)',
     labelNames: ['device_type'],
     buckets: [50, 100, 200, 300, 500, 1000],
+    registers: [register],
+  });
+
+  private static readonly tenantUsage = new Gauge({
+    name: 'signalops_tenant_usage',
+    help: 'Current tenant quota usage',
+    labelNames: ['tenant_name', 'resource_type'],
+    registers: [register],
+  });
+
+  private static readonly tenantQuotaRemaining = new Gauge({
+    name: 'signalops_tenant_quota_remaining',
+    help: 'Remaining quota for tenant',
+    labelNames: ['tenant_name', 'resource_type'],
+    registers: [register],
+  });
+
+  private static readonly tenantQuotaExceeded = new Counter({
+    name: 'signalops_tenant_quota_exceeded_total',
+    help: 'Total quota exceeded events',
+    labelNames: ['tenant_name', 'resource_type'],
     registers: [register],
   });
 
@@ -74,5 +103,18 @@ export class BusinessMetrics {
     if (metricType === 'latency') {
       this.eventLatency.observe({ device_type: deviceType }, value);
     }
+  }
+
+  static recordAggregationDuration(pipeline: string, seconds: number) {
+    this.aggregationDuration.observe({ pipeline }, seconds);
+  }
+
+  static recordTenantUsage(tenantName: string, resourceType: 'events' | 'alerts', current: number, quota: number) {
+    this.tenantUsage.set({ tenant_name: tenantName, resource_type: resourceType }, current);
+    this.tenantQuotaRemaining.set({ tenant_name: tenantName, resource_type: resourceType }, Math.max(0, quota - current));
+  }
+
+  static recordTenantQuotaExceeded(tenantName: string, resourceType: 'events' | 'alerts') {
+    this.tenantQuotaExceeded.inc({ tenant_name: tenantName, resource_type: resourceType });
   }
 }

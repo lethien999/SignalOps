@@ -31,6 +31,9 @@ const ENV_CHECKS: EnvCheck[] = [
   { key: 'ARCHIVE_S3_PREFIX', required: false, default: 'signalops/archive', description: 'Prefix object key khi archive' },
   { key: 'ARCHIVE_RETENTION_DAYS', required: false, default: '180', description: 'Số ngày giữ archive trước khi xóa object' },
   { key: 'ARCHIVE_DELETE_SOURCE', required: false, default: 'false', description: 'Xóa dữ liệu nguồn sau khi archive thành công' },
+  { key: 'TENANT_QUOTA_EVENTS_DEFAULT', required: false, default: '1000000', description: 'Default events/month quota per tenant' },
+  { key: 'TENANT_QUOTA_ALERTS_DEFAULT', required: false, default: '100000', description: 'Default alerts/month quota per tenant' },
+  { key: 'TENANT_QUOTA_OVERRIDE_KEYS', required: false, description: 'JSON map of apiKey->{ eventsPerMonth, alertsPerMonth }' },
 ];
 
 export function validateEnvironment(): void {
