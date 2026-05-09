@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "signalops_aggregation_duration_seconds",
     "help":  "Duration of MongoDB aggregation pipelines",
     "type":  "histogram",
