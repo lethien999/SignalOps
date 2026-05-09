@@ -48,6 +48,9 @@ export type BatchUpdateResult = {
 
 @Injectable()
 export class AlertService {
+  private readonly slaCache = new Map<string, { value: AlertSlaSnapshot; expiresAt: number }>();
+  private readonly slaCacheTtlSeconds = Math.max(10, Number(process.env.SLA_CACHE_TTL_SECONDS || '60'));
+
   constructor(
     private readonly alertRepository: AlertRepository,
     private readonly alertsGateway: AlertsGateway,
@@ -224,7 +227,31 @@ export class AlertService {
   }
 
   async getSlaSnapshot(filters: AlertSlaFilters = {}): Promise<AlertSlaSnapshot> {
-    return this.alertRepository.getSlaSnapshot(filters);
+    const key = JSON.stringify({ days: filters.days || 7, severity: filters.severity || null, type: filters.type || null, from: filters.from?.toISOString?.() || null, to: filters.to?.toISOString?.() || null });
+    const now = Date.now();
+
+    const cached = this.slaCache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.value;
+    }
+
+    const result = await this.alertRepository.getSlaSnapshot(filters);
+
+    this.slaCache.set(key, { value: result, expiresAt: now + this.slaCacheTtlSeconds * 1000 });
+
+    // Cleanup expired cache entries occasionally
+    if (this.slaCache.size > 1000) {
+      const cutoff = Date.now() - this.slaCacheTtlSeconds * 1000;
+      for (const [k, v] of this.slaCache.entries()) {
+        if (v.expiresAt <= cutoff) this.slaCache.delete(k);
+      }
+    }
+
+    return result;
+  }
+
+  async explainSla(filters: AlertSlaFilters = {}) {
+    return this.alertRepository.explainSla(filters);
   }
 
   async batchAcknowledge(ids: string[], acknowledgedBy?: string): Promise<BatchUpdateResult> {

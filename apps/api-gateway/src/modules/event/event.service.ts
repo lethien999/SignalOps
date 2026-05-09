@@ -1,10 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Event } from './schemas/event.schema';
 import { CreateEventDto } from './dto/create-event.dto';
 import { EventBrokerService, TelemetryEventPayload } from './event-broker.service';
 import { Logger } from '../../common/logger';
 import { EventCreateInput, EventFindFilters, EventRepository } from './repositories/event.repository';
-import { OutboxRepository, CreateOutboxEventInput } from './repositories/outbox.repository';
+import { OutboxRepository } from './repositories/outbox.repository';
 import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
 import { UpdateDeviceMaintenanceDto } from './dto/update-device-maintenance.dto';
 import { getDeviceStatus } from '@signalops/common';

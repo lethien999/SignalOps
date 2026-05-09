@@ -79,6 +79,41 @@ export class BusinessMetrics {
     registers: [register],
   });
 
+  private static readonly infrastructureCpuUsage = new Gauge({
+    name: 'signalops_infrastructure_cpu_usage_percent',
+    help: 'Current infrastructure CPU usage percentage',
+    labelNames: ['service'],
+    registers: [register],
+  });
+
+  private static readonly infrastructureMemoryUsage = new Gauge({
+    name: 'signalops_infrastructure_memory_usage_bytes',
+    help: 'Current infrastructure memory usage in bytes',
+    labelNames: ['service'],
+    registers: [register],
+  });
+
+  private static readonly infrastructureStorageUsage = new Gauge({
+    name: 'signalops_infrastructure_storage_usage_bytes',
+    help: 'Current MongoDB storage usage in bytes',
+    labelNames: ['database'],
+    registers: [register],
+  });
+
+  private static readonly infrastructureCostEstimate = new Gauge({
+    name: 'signalops_infrastructure_cost_estimate_usd',
+    help: 'Estimated infrastructure cost in USD',
+    labelNames: ['period'],
+    registers: [register],
+  });
+
+  private static readonly scaleRecommendation = new Gauge({
+    name: 'signalops_scale_recommendation',
+    help: 'Auto-scaling recommendation (-1 scale down, 0 stable, 1 scale up)',
+    labelNames: ['service'],
+    registers: [register],
+  });
+
   static recordEventIngested(source: string = 'api') {
     this.eventsIngested.inc({ source });
   }
@@ -116,5 +151,28 @@ export class BusinessMetrics {
 
   static recordTenantQuotaExceeded(tenantName: string, resourceType: 'events' | 'alerts') {
     this.tenantQuotaExceeded.inc({ tenant_name: tenantName, resource_type: resourceType });
+  }
+
+  static recordInfrastructureSnapshot(input: {
+    service: string;
+    cpuPercent: number;
+    memoryBytes: number;
+    storageBytes: number;
+    queueName: string;
+    queueDepth: number;
+    costPerHourUsd: number;
+    periodUsd: number;
+    period: 'day' | 'week' | 'month';
+  }) {
+    this.infrastructureCpuUsage.set({ service: input.service }, input.cpuPercent);
+    this.infrastructureMemoryUsage.set({ service: input.service }, input.memoryBytes);
+    this.infrastructureStorageUsage.set({ database: input.service }, input.storageBytes);
+    this.queueDepth.set({ queue_name: input.queueName }, input.queueDepth);
+    this.infrastructureCostEstimate.set({ period: 'hour' }, input.costPerHourUsd);
+    this.infrastructureCostEstimate.set({ period: input.period }, input.periodUsd);
+  }
+
+  static recordScaleRecommendation(service: string, recommendation: -1 | 0 | 1) {
+    this.scaleRecommendation.set({ service }, recommendation);
   }
 }

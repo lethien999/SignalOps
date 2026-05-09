@@ -24,15 +24,15 @@
 
 ## Ưu tiên P1 - Làm sau
 
-- [ ] Tenant Quota & Rate Guard
-	- [ ] Giới hạn tốc độ ingest theo tenant hoặc nguồn
-	- [ ] Cảnh báo khi chạm ngưỡng quota
-	- [ ] Có cấu hình override theo môi trường
+- [x] Tenant Quota & Rate Guard
+	- [x] Giới hạn tốc độ ingest theo tenant hoặc nguồn
+	- [x] Cảnh báo khi chạm ngưỡng quota
+	- [x] Có cấu hình override theo môi trường
 
-- [ ] Cost & Auto-scaling Observability
-	- [ ] Dashboard theo dõi chi phí hạ tầng chính
-	- [ ] Đề xuất ngưỡng scale up/down theo tải thực tế
-	- [ ] Cảnh báo khi có dấu hiệu tăng chi phí bất thường
+- [x] Cost & Auto-scaling Observability
+	- [x] Dashboard theo dõi chi phí hạ tầng chính
+	- [x] Đề xuất ngưỡng scale up/down theo tải thực tế
+	- [x] Cảnh báo khi có dấu hiệu tăng chi phí bất thường
 
 ---
 
@@ -46,7 +46,7 @@
 **Trạng thái**
 - **Tasks Defined**: 5
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 3 (SLA Dashboard, Archive Pipeline, Aggregation Performance Tuning)
+- **Tasks Completed**: 5 (SLA Dashboard, Archive Pipeline, Aggregation Performance Tuning, Tenant Quota & Rate Guard, Cost & Auto-scaling Observability)
 - **Last Updated**: 09/05/2026
 
 ---

@@ -34,6 +34,16 @@ const ENV_CHECKS: EnvCheck[] = [
   { key: 'TENANT_QUOTA_EVENTS_DEFAULT', required: false, default: '1000000', description: 'Default events/month quota per tenant' },
   { key: 'TENANT_QUOTA_ALERTS_DEFAULT', required: false, default: '100000', description: 'Default alerts/month quota per tenant' },
   { key: 'TENANT_QUOTA_OVERRIDE_KEYS', required: false, description: 'JSON map of apiKey->{ eventsPerMonth, alertsPerMonth }' },
+  { key: 'COST_ALERT_THRESHOLD_USD_PER_HOUR', required: false, default: '1', description: 'Threshold for cost alert logging per hour' },
+  { key: 'COST_CPU_HOURLY_USD', required: false, default: '0.08', description: 'Estimated CPU hourly cost in USD' },
+  { key: 'COST_MEMORY_GB_HOURLY_USD', required: false, default: '0.01', description: 'Estimated memory GB-hour cost in USD' },
+  { key: 'COST_STORAGE_GB_MONTHLY_USD', required: false, default: '0.02', description: 'Estimated storage GB-month cost in USD' },
+  { key: 'SCALE_UP_CPU_PERCENT', required: false, default: '70', description: 'CPU percent threshold for scale up' },
+  { key: 'SCALE_DOWN_CPU_PERCENT', required: false, default: '30', description: 'CPU percent threshold for scale down' },
+  { key: 'SCALE_UP_MEMORY_PERCENT', required: false, default: '80', description: 'Memory percent threshold for scale up' },
+  { key: 'SCALE_DOWN_MEMORY_PERCENT', required: false, default: '50', description: 'Memory percent threshold for scale down' },
+  { key: 'SCALE_UP_QUEUE_DEPTH', required: false, default: '10000', description: 'Queue depth threshold for scale up' },
+  { key: 'SCALE_DOWN_QUEUE_DEPTH', required: false, default: '1000', description: 'Queue depth threshold for scale down' },
 ];
 
 export function validateEnvironment(): void {

@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "ts-node src/main.ts",
     "start": "node ../../dist/apps/worker-service/main.js",
+    "backfill:alert-summaries": "ts-node src/scripts/backfill-alert-summaries.ts",
     "test": "jest --config ./jest.config.cjs --coverage",
     "lint": "eslint src --ext .ts"
   },

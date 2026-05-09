@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PipelineStage } from 'mongoose';
 import { Alert } from '../schemas/alert.schema';
+import { BusinessMetrics } from '../../health/business-metrics';
 
 export type AlertFindFilters = {
   severity?: string;
@@ -173,6 +174,7 @@ export class AlertRepository {
   }
 
   async getSlaSnapshot(filters: AlertSlaFilters = {}): Promise<AlertSlaSnapshot> {
+    const aggStart = process.hrtime();
     const now = new Date();
     const periodTo = filters.to || now;
     const safeDays = Math.min(Math.max(filters.days ?? 7, 1), 90);
@@ -215,6 +217,13 @@ export class AlertRepository {
             resolvedAt: { $exists: true },
           },
         },
+        // project early to reduce document size
+        {
+          $project: {
+            createdAt: 1,
+            resolvedAt: 1,
+          },
+        },
         {
           $project: {
             durationMinutes: {
@@ -230,7 +239,14 @@ export class AlertRepository {
         },
       ]),
       this.alertModel.aggregate([
+        // match then project only timestamps to reduce IO
         { $match: match },
+        {
+          $project: {
+            createdAt: 1,
+            resolvedAt: 1,
+          },
+        },
         {
           $project: {
             durationMs: {
@@ -266,6 +282,8 @@ export class AlertRepository {
       ]),
       this.alertModel.aggregate([
         { $match: match },
+        // only need createdAt and status for by-day counts
+        { $project: { createdAt: 1, status: 1 } },
         {
           $group: {
             _id: {
@@ -285,6 +303,8 @@ export class AlertRepository {
             resolvedAt: { $exists: true },
           },
         },
+        // project timestamps only
+        { $project: { createdAt: 1, resolvedAt: 1 } },
         {
           $group: {
             _id: {
@@ -299,6 +319,14 @@ export class AlertRepository {
         },
       ]),
     ]);
+
+    const aggDiff = process.hrtime(aggStart);
+    const aggSeconds = aggDiff[0] + aggDiff[1] / 1e9;
+    try {
+      BusinessMetrics.recordAggregationDuration('sla_snapshot', aggSeconds);
+    } catch {
+      // swallow metric errors
+    }
 
     const totals = totalsRows[0] || { total: 0, open: 0, acknowledged: 0, resolved: 0 };
     const mttrMinutes = Number((mttrRows[0]?.avgMinutes || 0).toFixed(2));
@@ -360,6 +388,80 @@ export class AlertRepository {
       alertRatePerHour,
       byDay,
     };
+  }
+
+  async explainSla(filters: AlertSlaFilters = {}): Promise<Record<string, unknown>> {
+    const now = new Date();
+    const periodTo = filters.to || now;
+    const safeDays = Math.min(Math.max(filters.days ?? 7, 1), 90);
+    const periodFrom = filters.from || new Date(periodTo.getTime() - safeDays * 24 * 60 * 60 * 1000);
+
+    const match: FilterQuery<Alert> = {
+      createdAt: {
+        $gte: periodFrom,
+        $lte: periodTo,
+      },
+    };
+
+    if (filters.severity) match.severity = filters.severity;
+    if (filters.type) match.type = filters.type as any;
+
+    const pipelines = {
+      totals: [
+        { $match: match },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            open: { $sum: { $cond: [{ $eq: ['$status', 'open'] }, 1, 0] } },
+            acknowledged: { $sum: { $cond: [{ $eq: ['$status', 'acknowledged'] }, 1, 0] } },
+            resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
+          },
+        },
+      ],
+      mttr: [
+        {
+          $match: {
+            ...match,
+            status: 'resolved',
+            resolvedAt: { $exists: true },
+          },
+        },
+        { $project: { createdAt: 1, resolvedAt: 1 } },
+        { $project: { durationMinutes: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] } } },
+        { $group: { _id: null, avgMinutes: { $avg: '$durationMinutes' } } },
+      ],
+      downtime: [
+        { $match: match },
+        { $project: { createdAt: 1, resolvedAt: 1 } },
+        { $project: { durationMs: { $max: [0, { $subtract: [{ $cond: [{ $and: [{ $ifNull: ['$resolvedAt', false] }, { $lt: ['$resolvedAt', periodTo] }] }, '$resolvedAt', periodTo] }, '$createdAt'] }] } } },
+        { $group: { _id: null, totalDurationMs: { $sum: '$durationMs' } } },
+      ],
+      byDayStatus: [
+        { $match: match },
+        { $project: { createdAt: 1, status: 1 } },
+        { $group: { _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, status: '$status' }, count: { $sum: 1 } } },
+        { $sort: { '_id.date': 1 } },
+      ],
+      byDayMttr: [
+        { $match: { ...match, status: 'resolved', resolvedAt: { $exists: true } } },
+        { $project: { createdAt: 1, resolvedAt: 1 } },
+        { $group: { _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } } }, avgMinutes: { $avg: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] } } } },
+      ],
+    };
+
+    const explains: Record<string, unknown> = {};
+    for (const [k, pipeline] of Object.entries(pipelines)) {
+      // use explain with executionStats
+      try {
+        // @ts-expect-error - mongoose typings for explain are loose
+        explains[k] = await (this.alertModel.aggregate(pipeline) as any).explain('executionStats');
+      } catch (err) {
+        explains[k] = { error: String(err) };
+      }
+    }
+
+    return explains;
   }
 
   buildAlertHistoryCsv(rows: { date: string; open: number; acknowledged: number; resolved: number; total: number }[]): string {

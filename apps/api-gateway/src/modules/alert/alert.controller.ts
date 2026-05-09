@@ -163,6 +163,30 @@ export class AlertController {
     });
   }
 
+  @ApiOperation({ summary: 'Explain SLA aggregation pipelines (dev/admin)' })
+  @ApiOkResponse({ description: 'Explain output for aggregation pipelines' })
+  @Get('sla/explain')
+  async explainSla(
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+    @Query('severity') severity?: string,
+    @Query('type') type?: 'latency' | 'packet_loss' | 'signal',
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+
+    if (from && Number.isNaN(fromDate?.getTime())) {
+      throw new BadRequestException('Invalid from date');
+    }
+
+    if (to && Number.isNaN(toDate?.getTime())) {
+      throw new BadRequestException('Invalid to date');
+    }
+
+    return this.alertService.explainSla({ days, severity, type, from: fromDate, to: toDate });
+  }
+
   @ApiOperation({ summary: 'Export alert history as CSV' })
   @ApiQuery({ name: 'days', required: false, type: Number, example: 7 })
   @ApiQuery({ name: 'severity', required: false, type: String, example: 'high' })
