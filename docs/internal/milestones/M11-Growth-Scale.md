@@ -1,6 +1,6 @@
 # 📈 Milestone 11: Growth, Ops và Scale
 
-**Trạng thái**: 🟡 Planning  
+**Trạng thái**: � Progress (50% — P0 tasks done, P1 pending)  
 **Mục tiêu**: Tăng khả năng vận hành ở quy mô lớn, tối ưu chi phí và độ tin cậy hệ thống.
 
 ---
@@ -17,10 +17,10 @@
 	- [x] Thiết lập retention policy rõ ràng
 	- [x] Có lệnh hoặc API truy hồi dữ liệu khi cần điều tra
 
-- [ ] Aggregation Performance Tuning
-	- [ ] Rà soát truy vấn nặng và thêm index phù hợp
-	- [ ] Tối ưu pipeline thống kê cho dashboard/metrics
-	- [ ] Có benchmark trước/sau tối ưu
+- [x] Aggregation Performance Tuning
+	- [x] Rà soát truy vấn nặng và thêm index phù hợp
+	- [x] Tối ưu pipeline thống kê cho dashboard/metrics
+	- [x] Có benchmark trước/sau tối ưu
 
 ## Ưu tiên P1 - Làm sau
 
@@ -46,8 +46,8 @@
 **Trạng thái**
 - **Tasks Defined**: 5
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 2
-- **Last Updated**: 07/05/2026
+- **Tasks Completed**: 3 (SLA Dashboard, Archive Pipeline, Aggregation Performance Tuning)
+- **Last Updated**: 09/05/2026
 
 ---
 
