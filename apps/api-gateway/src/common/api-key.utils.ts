@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -17,7 +18,7 @@ export async function hashApiKey(key: string): Promise<string> {
 export async function verifyApiKey(plaintext: string, hash: string): Promise<boolean> {
   try {
     return await bcrypt.compare(plaintext, hash);
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -26,5 +27,5 @@ export async function verifyApiKey(plaintext: string, hash: string): Promise<boo
  * Generate a secure random API key (64 chars hex)
  */
 export function generateRandomApiKey(): string {
-  return require('crypto').randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString('hex');
 }

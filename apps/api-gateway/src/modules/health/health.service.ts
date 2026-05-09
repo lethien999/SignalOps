@@ -4,6 +4,7 @@ import { Connection } from 'mongoose';
 import { EventBrokerService } from '../event/event-broker.service';
 import { EventService } from '../event/event.service';
 import { AlertService } from '../alert/alert.service';
+import { InfrastructureObservability } from './infrastructure-observability';
 
 type ConnectionStatus = 'up' | 'down';
 
@@ -47,10 +48,17 @@ export class HealthService {
       this.eventService.countEventsPerMinute(),
     ]);
 
+    const [costMetrics, scaleStatus] = await Promise.all([
+      InfrastructureObservability.getCostSnapshot(this.mongooseConnection, 'day'),
+      InfrastructureObservability.getScaleStatus(this.mongooseConnection),
+    ]);
+
     return {
       totalEvents,
       activeAlerts,
       eventsPerMinute,
+      costMetrics,
+      scaleStatus,
       timestamp: new Date().toISOString(),
     };
   }

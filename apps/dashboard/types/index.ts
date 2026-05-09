@@ -70,6 +70,43 @@ export interface SystemStats {
     completed: number;
     failed: number;
   };
+  costMetrics?: {
+    period: 'day' | 'week' | 'month';
+    hours: number;
+    cpuPercent: number;
+    memoryPercent: number;
+    memoryBytes: number;
+    storageBytes: number;
+    queueName: string;
+    queueDepth: number;
+    hourlyCostUsd: number;
+    periodCostUsd: number;
+    warning?: string;
+    breakdown: Array<{
+      resource: 'cpu' | 'memory' | 'storage';
+      amountUsd: number;
+      note: string;
+    }>;
+    timestamp: string;
+  };
+  scaleStatus?: {
+    recommendation: 'scale_up' | 'stable' | 'scale_down';
+    score: number;
+    reasons: string[];
+    cpuPercent: number;
+    memoryPercent: number;
+    queueDepth: number;
+    queueName: string;
+    thresholds: {
+      scaleUpCpuPercent: number;
+      scaleDownCpuPercent: number;
+      scaleUpMemoryPercent: number;
+      scaleDownMemoryPercent: number;
+      scaleUpQueueDepth: number;
+      scaleDownQueueDepth: number;
+    };
+    timestamp: string;
+  };
 }
 
 export interface WebSocketMessage<T = unknown> {
@@ -123,4 +160,35 @@ export interface ThresholdProfile {
   note?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface SlaByDayPoint {
+  date: string;
+  total: number;
+  open: number;
+  acknowledged: number;
+  resolved: number;
+  mttrMinutes: number;
+}
+
+export interface SlaSnapshot {
+  period: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  filters: {
+    severity?: string;
+    type?: 'latency' | 'packet_loss' | 'signal';
+  };
+  totals: {
+    total: number;
+    open: number;
+    acknowledged: number;
+    resolved: number;
+  };
+  mttrMinutes: number;
+  uptimePercent: number;
+  alertRatePerHour: number;
+  byDay: SlaByDayPoint[];
 }

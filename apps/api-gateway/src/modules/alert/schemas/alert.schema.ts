@@ -59,6 +59,9 @@ export class Alert extends Document {
   @Prop()
   eventId?: string;
 
+  @Prop()
+  archivedAt?: Date;
+
   createdAt?: Date;
 
   updatedAt?: Date;

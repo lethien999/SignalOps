@@ -1,9 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { EventService } from '../event.service';
-import { EventRepository } from '../repositories/event.repository';
-import { EventBrokerService } from '../event-broker.service';
-import { OutboxRepository } from '../repositories/outbox.repository';
-
 /**
  * Integration Test: API -> Queue -> Worker -> Database Flow
  * Tests the entire event ingestion and processing pipeline
@@ -14,12 +8,6 @@ import { OutboxRepository } from '../repositories/outbox.repository';
  * - Docker containers or local services
  */
 describe('Event Processing Pipeline (Integration)', () => {
-  let eventService: EventService;
-  let eventRepository: EventRepository;
-  let eventBrokerService: EventBrokerService;
-  let outboxRepository: OutboxRepository;
-  let module: TestingModule;
-
   beforeAll(async () => {
     // TODO: Setup MongoDB test connection
     // TODO: Setup Redis test connection

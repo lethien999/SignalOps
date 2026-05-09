@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Alert, Device, DlqJob, Event, NotificationWebhook, SystemStats, ThresholdProfile } from '@/types';
+import type { Alert, Device, DlqJob, Event, NotificationWebhook, SlaSnapshot, SystemStats, ThresholdProfile } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -182,6 +182,22 @@ export async function fetchSystemStats(): Promise<SystemStats> {
     return response.data;
   } catch (error) {
     console.error('Failed to fetch system stats:', error);
+    throw error;
+  }
+}
+
+export async function fetchSlaSnapshot(params?: {
+  days?: number;
+  severity?: string;
+  type?: 'latency' | 'packet_loss' | 'signal';
+  from?: string;
+  to?: string;
+}): Promise<SlaSnapshot> {
+  try {
+    const response = await api.get<SlaSnapshot>('/alerts/sla', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch SLA snapshot:', error);
     throw error;
   }
 }

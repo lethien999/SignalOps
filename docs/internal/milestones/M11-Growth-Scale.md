@@ -1,38 +1,38 @@
 # 📈 Milestone 11: Growth, Ops và Scale
 
-**Trạng thái**: 🟡 Planning  
+**Trạng thái**: � Progress (50% — P0 tasks done, P1 pending)  
 **Mục tiêu**: Tăng khả năng vận hành ở quy mô lớn, tối ưu chi phí và độ tin cậy hệ thống.
 
 ---
 
 ## Ưu tiên P0 - Làm trước (theo thứ tự easy -> hard)
 
-- [ ] SLA Dashboard — MTTR, Uptime, Alert Rate
-	- [ ] Hiển thị MTTR theo khoảng thời gian
-	- [ ] Theo dõi uptime và alert rate theo service
-	- [ ] Có bộ lọc theo service và severity
+- [x] SLA Dashboard — MTTR, Uptime, Alert Rate
+	- [x] Hiển thị MTTR theo khoảng thời gian
+	- [x] Theo dõi uptime và alert rate theo service
+	- [x] Có bộ lọc theo service và severity
 
-- [ ] Archive Pipeline (S3-compatible)
-	- [ ] Đẩy dữ liệu cũ (events/alerts) sang object storage
-	- [ ] Thiết lập retention policy rõ ràng
-	- [ ] Có lệnh hoặc API truy hồi dữ liệu khi cần điều tra
+- [x] Archive Pipeline (S3-compatible)
+	- [x] Đẩy dữ liệu cũ (events/alerts) sang object storage
+	- [x] Thiết lập retention policy rõ ràng
+	- [x] Có lệnh hoặc API truy hồi dữ liệu khi cần điều tra
 
-- [ ] Aggregation Performance Tuning
-	- [ ] Rà soát truy vấn nặng và thêm index phù hợp
-	- [ ] Tối ưu pipeline thống kê cho dashboard/metrics
-	- [ ] Có benchmark trước/sau tối ưu
+- [x] Aggregation Performance Tuning
+	- [x] Rà soát truy vấn nặng và thêm index phù hợp
+	- [x] Tối ưu pipeline thống kê cho dashboard/metrics
+	- [x] Có benchmark trước/sau tối ưu
 
 ## Ưu tiên P1 - Làm sau
 
-- [ ] Tenant Quota & Rate Guard
-	- [ ] Giới hạn tốc độ ingest theo tenant hoặc nguồn
-	- [ ] Cảnh báo khi chạm ngưỡng quota
-	- [ ] Có cấu hình override theo môi trường
+- [x] Tenant Quota & Rate Guard
+	- [x] Giới hạn tốc độ ingest theo tenant hoặc nguồn
+	- [x] Cảnh báo khi chạm ngưỡng quota
+	- [x] Có cấu hình override theo môi trường
 
-- [ ] Cost & Auto-scaling Observability
-	- [ ] Dashboard theo dõi chi phí hạ tầng chính
-	- [ ] Đề xuất ngưỡng scale up/down theo tải thực tế
-	- [ ] Cảnh báo khi có dấu hiệu tăng chi phí bất thường
+- [x] Cost & Auto-scaling Observability
+	- [x] Dashboard theo dõi chi phí hạ tầng chính
+	- [x] Đề xuất ngưỡng scale up/down theo tải thực tế
+	- [x] Cảnh báo khi có dấu hiệu tăng chi phí bất thường
 
 ---
 
@@ -46,8 +46,8 @@
 **Trạng thái**
 - **Tasks Defined**: 5
 - **Tasks In Progress**: 0
-- **Tasks Completed**: 0
-- **Last Updated**: 07/05/2026
+- **Tasks Completed**: 5 (SLA Dashboard, Archive Pipeline, Aggregation Performance Tuning, Tenant Quota & Rate Guard, Cost & Auto-scaling Observability)
+- **Last Updated**: 09/05/2026
 
 ---
 

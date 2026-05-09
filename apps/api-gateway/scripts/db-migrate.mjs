@@ -110,6 +110,10 @@ async function up(db) {
   await createIndexSafe(db, 'alerts', { status: 1, severity: -1, createdAt: -1 });
   await createIndexSafe(db, 'alerts', { resolvedAt: 1 });
   await createIndexSafe(db, 'alerts', { message: 'text' });
+  // Additional indexes to support SLA and aggregation queries
+  await createIndexSafe(db, 'alerts', { type: 1, createdAt: -1 });
+  await createIndexSafe(db, 'alerts', { severity: 1, createdAt: -1 });
+  await createIndexSafe(db, 'alerts', { deviceId: 1, createdAt: -1 });
 
   await createIndexSafe(db, 'failed_events', { retryCount: 1 });
   await createIndexSafe(db, 'failed_events', { nextRetryAt: 1 });

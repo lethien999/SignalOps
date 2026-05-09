@@ -39,6 +39,16 @@ export class StatsController {
         totalEvents: 1000,
         activeAlerts: 12,
         eventsPerMinute: 45,
+        costMetrics: {
+          period: 'day',
+          hours: 24,
+          hourlyCostUsd: 0.83,
+          periodCostUsd: 19.92,
+        },
+        scaleStatus: {
+          recommendation: 'stable',
+          score: 42,
+        },
         timestamp: '2026-04-25T02:10:00.000Z',
       },
     },

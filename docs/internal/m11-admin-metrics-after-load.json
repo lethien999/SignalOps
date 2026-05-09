@@ -1,0 +1,103 @@
+{
+    "name":  "signalops_aggregation_duration_seconds",
+    "help":  "Duration of MongoDB aggregation pipelines",
+    "type":  "histogram",
+    "values":  [
+                   {
+                       "value":  0,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  0.01,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  0.05,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  0.1,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  0.5,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  1,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  2,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  5,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  10,
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_bucket",
+                       "exemplar":  null,
+                       "labels":  {
+                                      "le":  "+Inf",
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  0.0140304,
+                       "metricName":  "signalops_aggregation_duration_seconds_sum",
+                       "labels":  {
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   },
+                   {
+                       "value":  1,
+                       "metricName":  "signalops_aggregation_duration_seconds_count",
+                       "labels":  {
+                                      "pipeline":  "sla_snapshot"
+                                  }
+                   }
+               ],
+    "aggregator":  "sum"
+}
