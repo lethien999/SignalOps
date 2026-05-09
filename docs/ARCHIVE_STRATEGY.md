@@ -1,53 +1,53 @@
-# Data Archive Strategy
+# Chiến lược lưu trữ dữ liệu
 
 ## Mục đích
 
 Định nghĩa chính sách lưu trữ dữ liệu để:
-1. **Giảm chi phí** (di chuyển dữ liệu cũ khỏi database đắt tiền)
-2. **Cải thiện hiệu suất** (database nhỏ → query nhanh)
-3. **Tuân thủ quy định** (lưu audit log lâu dài)
-4. **Hỗ trợ phân tích lịch sử** (warehouse cho big data)
+1. **Giảm chi phí** bằng cách chuyển dữ liệu cũ ra khỏi database đắt tiền
+2. **Cải thiện hiệu suất** vì database nhỏ hơn sẽ query nhanh hơn
+3. **Tuân thủ quy định** bằng cách lưu audit log dài hạn
+4. **Hỗ trợ phân tích lịch sử** với warehouse cho dữ liệu lớn
 
-## Định nghĩa Dữ liệu
+## Phân loại dữ liệu
 
-| Dữ liệu | Thời gian sống | TTL | Archive Destination |
-|--------|----------------|-----|-------------------|
+| Dữ liệu | Thời gian sống | TTL | Đích lưu trữ |
+|--------|----------------|-----|-------------|
 | **Events** | 90 ngày | `expireAfterSeconds: 7776000` ✅ | S3 (Parquet) |
-| **Alerts** | 180 ngày | Cần thêm | S3 (CSV) |
-| **Logs** | 30 ngày | Cần thêm | CloudWatch / S3 |
-| **Metrics** | 15 ngày | Prometheus default | S3 (InfluxDB format) |
+| **Alerts** | 180 ngày | Cần bổ sung | S3 (CSV) |
+| **Logs** | 30 ngày | Cần bổ sung | CloudWatch / S3 |
+| **Metrics** | 15 ngày | Theo mặc định của Prometheus | S3 (định dạng InfluxDB) |
 
 ---
 
-## Chiến lược Archive
+## Chiến lược lưu trữ
 
-### Phase 0: Hiện tại (Đã triển khai)
+### Giai đoạn 0: Hiện tại (đã triển khai)
 
 **Events**:
-- ✅ TTL index on `createdAt` (90 days)
-- ✅ MongoDB auto-deletes after expiration
-- ⚠️ **Vấn đề**: Dữ liệu không lưu trữ, mất hết sau 90 ngày
+- ✅ TTL index trên `createdAt` (90 ngày)
+- ✅ MongoDB tự xóa sau khi hết hạn
+- ⚠️ **Vấn đề**: dữ liệu không được lưu trữ dài hạn, sẽ mất sau 90 ngày
 
-**Action**: Triển khai snapshot trước khi TTL xóa
+**Hành động**: triển khai snapshot trước khi TTL xóa dữ liệu
 
-### Phase 1: Snapshot Before Delete (Q2 2025)
+### Giai đoạn 1: Snapshot trước khi xóa (Q2/2025)
 
 **Quy trình**:
 ```
-Day 90: Events < createdAt (90 days ago) are marked for archival
+Ngày 90: Events có createdAt cũ hơn 90 ngày sẽ được đánh dấu để lưu trữ
         ↓
-        Export to Parquet file
+Xuất ra file Parquet
         ↓
-        Upload to S3 (s3://signalops-archive/events/YYYY/MM/DD/)
+Upload lên S3 (s3://signalops-archive/events/YYYY/MM/DD/)
         ↓
-        Verify record count matches
+Xác minh số lượng bản ghi khớp
         ↓
-        Delete from MongoDB
+Xóa khỏi MongoDB
         ↓
-        Retain S3 for 7 years (tax compliance)
+Giữ trên S3 trong 7 năm (tuân thủ thuế và kiểm toán)
 ```
 
-**Cron Job** (nightly at 02:00 UTC):
+**Cron job** (chạy hằng đêm lúc 02:00 UTC):
 ```bash
 #!/bin/bash
 YESTERDAY_MIDNIGHT=$(date -d yesterday +%Y-%m-%dT00:00:00Z)
@@ -59,34 +59,34 @@ aws s3 cp events-archive.parquet \
   s3://signalops-archive/events/$(date +%Y/%m/%d)/
 ```
 
-### Phase 2: Cold/Hot Tiering (Q3 2025)
+### Giai đoạn 2: Phân tầng nóng/lạnh (Q3/2025)
 
-**Concept**:
-- **Hot** (0-30 days): MongoDB (query speed)
-- **Warm** (30-90 days): MongoDB with higher TTL indices
-- **Cold** (> 90 days): S3 (cost optimization)
+**Khái niệm**:
+- **Hot** (0-30 ngày): MongoDB (tối ưu tốc độ truy vấn)
+- **Warm** (30-90 ngày): MongoDB với TTL index cao hơn
+- **Cold** (> 90 ngày): S3 (tối ưu chi phí)
 
-**Implementation**:
+**Triển khai**:
 ```typescript
 // Archive service
 async archiveOldEvents() {
   const cutoffDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   
-  // 1. Query events before cutoff
+  // 1. Truy vấn các event trước mốc cutoff
   const oldEvents = await Event.find({ 
     createdAt: { $lt: cutoffDate } 
   }).cursor();
 
-  // 2. Export to Parquet
+  // 2. Xuất ra Parquet
   const parquetWriter = new ParquetWriter({ schema: eventSchema });
   for await (const event of oldEvents) {
     parquetWriter.write(event);
   }
   
-  // 3. Upload to S3
+  // 3. Upload lên S3
   const s3Path = await uploadParquetToS3(parquetWriter.getPath());
   
-  // 4. Create archive metadata
+  // 4. Tạo metadata cho archive
   await ArchiveMetadata.create({
     collection: 'events',
     startDate: startOfMonth,
@@ -96,12 +96,12 @@ async archiveOldEvents() {
     verificationHash: md5(parquetWriter.getBuffer()),
   });
 
-  // 5. Delete from MongoDB
+  // 5. Xóa khỏi MongoDB
   await Event.deleteMany({ createdAt: { $lt: cutoffDate } });
 }
 ```
 
-**S3 Structure**:
+**Cấu trúc S3**:
 ```
 s3://signalops-archive/
 ├── events/
@@ -118,11 +118,11 @@ s3://signalops-archive/
     └── weekly/2024-W01.tar.gz
 ```
 
-### Phase 3: Athena for Analysis (Q4 2025)
+### Giai đoạn 3: Athena cho phân tích (Q4/2025)
 
 **Athena + Glue Catalog**:
 ```python
-# Query archived events via Athena
+# Truy vấn event đã lưu trữ qua Athena
 import boto3
 athena = boto3.client('athena')
 
@@ -145,21 +145,21 @@ response = athena.start_query_execution(
 
 ---
 
-## Retention Policy
+## Chính sách lưu giữ
 
-| Data Type | Retention | Action on Expiry |
-|-----------|-----------|------------------|
-| Hot Events | 90 days | Archive to S3 |
-| Warm Events | 1 year | Delete |
-| Cold Backups | 7 years | Delete (tax compliance: keep for audits) |
-| Audit Logs | 3 years | Archive to S3 (compliance) |
-| PII Data | 30 days after account deletion | Cryptographic wipe |
+| Loại dữ liệu | Thời gian lưu | Hành động khi hết hạn |
+|--------------|--------------|----------------------|
+| Hot Events | 90 ngày | Lưu trữ sang S3 |
+| Warm Events | 1 năm | Xóa |
+| Cold Backups | 7 năm | Xóa (tuân thủ thuế: giữ cho kiểm toán) |
+| Audit Logs | 3 năm | Lưu trữ sang S3 (tuân thủ) |
+| Dữ liệu PII | 30 ngày sau khi xóa tài khoản | Xóa bằng phương pháp cryptographic wipe |
 
 ---
 
-## Backup Strategy
+## Chiến lược backup
 
-**Daily Backup** (2:00 AM):
+**Backup hằng ngày** (2:00 AM):
 ```bash
 mongodump --archive=signalops-backup-$(date +%Y-%m-%d).archive \
   --gzip --quiet
@@ -167,51 +167,51 @@ aws s3 cp signalops-backup-$(date +%Y-%m-%d).archive \
   s3://signalops-backups/daily/
 ```
 
-**Weekly Backup** (Sunday 2:00 AM):
+**Backup hằng tuần** (Chủ nhật 2:00 AM):
 ```bash
-# Same as daily but to weekly/ prefix
-# Keep 12 weeks (3 months)
+# Tương tự backup hằng ngày nhưng đẩy vào prefix weekly/
+# Giữ 12 tuần (3 tháng)
 aws s3 ls s3://signalops-backups/weekly/ | head -n 12
 ```
 
-**Disaster Recovery**:
+**Khôi phục khi sự cố nghiêm trọng**:
 ```bash
-# Restore from backup
+# Khôi phục từ backup
 aws s3 cp s3://signalops-backups/daily/signalops-backup-2024-01-01.archive .
 mongorestore --archive=signalops-backup-2024-01-01.archive --gzip
 ```
 
 ---
 
-## Cost Analysis
+## Phân tích chi phí
 
-### Current (No Archive)
-- MongoDB storage: 500GB × $0.25/GB = **$125/month**
-- Backup storage: 50GB × $0.023/GB = **$1/month**
-- **Total**: $126/month
+### Hiện tại (không archive)
+- Dung lượng MongoDB: 500GB × $0.25/GB = **$125/tháng**
+- Dung lượng backup: 50GB × $0.023/GB = **$1/tháng**
+- **Tổng**: $126/tháng
 
-### With Archive (Phase 1)
-- MongoDB storage: 200GB (hot only) × $0.25/GB = **$50/month**
-- S3 Archive: 300GB × $0.023/GB = **$7/month**
-- **Total**: $57/month (55% cost reduction)
+### Có archive (giai đoạn 1)
+- Dung lượng MongoDB: 200GB (chỉ hot data) × $0.25/GB = **$50/tháng**
+- S3 Archive: 300GB × $0.023/GB = **$7/tháng**
+- **Tổng**: $57/tháng (giảm 55% chi phí)
 
-### Estimates at 10M+ Events/Month
-- Events size: ~1GB/month
-- Archive after 90 days → 3GB in hot storage
-- 12 months archive → 12GB in S3 (4x cheaper than MongoDB)
-- **Annual savings**: ~$1500 vs keeping everything in MongoDB
+### Ước tính tại 10M+ events/tháng
+- Kích thước event: khoảng 1GB/tháng
+- Archive sau 90 ngày → 3GB trong hot storage
+- Archive 12 tháng → 12GB trên S3 (rẻ hơn MongoDB khoảng 4 lần)
+- **Tiết kiệm hằng năm**: khoảng $1500 so với việc giữ toàn bộ trong MongoDB
 
 ---
 
-## Implementation Roadmap
+## Lộ trình triển khai
 
-| Phase | Timeline | Tasks | Owner |
-|-------|----------|-------|-------|
-| Phase 0 | ✅ Done | TTL index setup | Backend |
-| Phase 1 | Q2 2025 | Archive service + S3 setup | Infra |
-| Phase 2 | Q3 2025 | Tiering, warm layer config | Backend + Infra |
-| Phase 3 | Q4 2025 | Athena catalog, historical queries | Data / Infra |
-| Phase 4 | 2026 | Data warehouse (ClickHouse/BigQuery) | Data Engineer |
+| Giai đoạn | Thời gian | Việc cần làm | Chủ trì |
+|----------|----------|-------------|--------|
+| Giai đoạn 0 | ✅ Xong | Thiết lập TTL index | Backend |
+| Giai đoạn 1 | Q2/2025 | Service archive + cấu hình S3 | Infra |
+| Giai đoạn 2 | Q3/2025 | Phân tầng, cấu hình lớp warm | Backend + Infra |
+| Giai đoạn 3 | Q4/2025 | Athena catalog, truy vấn lịch sử | Data / Infra |
+| Giai đoạn 4 | 2026 | Data warehouse (ClickHouse/BigQuery) | Data Engineer |
 
 ---
 
@@ -219,47 +219,42 @@ mongorestore --archive=signalops-backup-2024-01-01.archive --gzip
 
 **CloudWatch Alarms**:
 ```python
-# Alert if archive fails
+# Cảnh báo nếu job archive thất bại
 cloudwatch.put_metric_alarm(
     AlarmName='ArchiveJobFailure',
     MetricName='ArchiveExitCode',
     Statistic='Maximum',
-    Period=3600,  # 1 hour
+    Period=3600,  # 1 giờ
     EvaluationPeriods=1,
     Threshold=0,
     ComparisonOperator='GreaterThan',
 )
 
-# Alert if S3 archive growth stalls
+# Cảnh báo nếu tốc độ tăng trưởng archive S3 bị chững
 cloudwatch.put_metric_alarm(
     AlarmName='ArchiveSizeNotIncreasing',
     MetricName='S3BucketSize',
     Statistic='Average',
-    Period=86400,  # 1 day
+    Period=86400,  # 1 ngày
     Threshold=1000000,  # 1GB
 )
 ```
 
 ---
 
-## Q&A
+## Hỏi đáp
 
-**Q: Why not keep everything in MongoDB?**
-- MongoDB not optimized for 10+ year retention
-- Indexes grow linearly with data
-- Query performance degrades significantly
-- Cost per GB in managed MongoDB is 10x+ S3
+**Hỏi: Tại sao không giữ tất cả trong MongoDB?**
+- MongoDB không tối ưu cho lưu giữ 10+ năm
+- Index tăng tuyến tính theo dữ liệu
+- Hiệu năng truy vấn giảm đáng kể
+- Chi phí mỗi GB trên MongoDB managed cao hơn S3 rất nhiều
 
-**Q: How long to recover from S3 archive?**
-- 100GB archive: ~2 hours to restore to MongoDB
-- Include pre-restore testing: plan for 4-6 hours
+**Hỏi: Khôi phục từ S3 archive mất bao lâu?**
+- Archive 100GB: khoảng 2 giờ để restore về MongoDB
+- Tính thêm kiểm thử trước khi restore: nên dự trù 4-6 giờ
 
-**Q: What if we accidentally delete data?**
-- Keep backup + archive for recovery
-- Backup: 12-week retention = 3 months recovery window
-- Archive: 7-year retention = long-term recovery
-
-**Q: Can we query archived data directly?**
-- Yes, Athena/Presto queries S3 Parquet files
-- Join with hot MongoDB data via federation
-- ~5-10 seconds for billion-row queries
+**Hỏi: Nếu lỡ tay xóa dữ liệu thì sao?**
+- Giữ cả backup và archive để phục hồi
+- Backup: giữ 12 tuần, tức khoảng 3 tháng cửa sổ phục hồi
+- Archive: giữ 7 năm, phục vụ phục hồi dài hạn và kiểm toán

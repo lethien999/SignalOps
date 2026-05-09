@@ -1,18 +1,18 @@
-# 🤖 Milestone 13: Mobile App và AI
+# 🤖 Milestone 13: Ứng dụng di động và AI
 
-**Trạng thái**: ⚪ Draft  
+**Trạng thái**: ⚪ Bản nháp  
 **Mục tiêu**: Gom các hạng mục trải nghiệm người dùng nâng cao và AI/ML để không làm loãng các milestone vận hành lõi.
 
 ---
 
 ## Ưu tiên P2 - Nhóm mở rộng
 
-- [ ] Mobile App (React Native / PWA)
+- [ ] Ứng dụng di động (React Native / PWA)
 	- [ ] Chọn hướng triển khai: React Native hoặc PWA
 	- [ ] Đồng bộ alert và trạng thái thiết bị từ backend
-	- [ ] Tối ưu trải nghiệm mobile cho operator
+	- [ ] Tối ưu trải nghiệm di động cho operator
 
-- [ ] AI Anomaly Detection
+- [ ] Phát hiện bất thường bằng AI
 	- [ ] Phát hiện bất thường bằng mô hình AI/ML
 	- [ ] So sánh với ngưỡng rule-based hiện tại
 	- [ ] Hiển thị lý do và độ tin cậy của dự đoán
