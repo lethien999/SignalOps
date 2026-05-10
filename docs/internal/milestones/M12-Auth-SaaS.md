@@ -151,3 +151,70 @@
 - API key routes (events, alerts ingestion) vẫn public, không require JWT
 - OAuth / SSO → P1 (không làm ở P0)
 - Session-based auth → không cần (JWT đủ)
+
+---
+
+## Ưu tiên P1 - Xác thực nâng cao
+
+### Hạng mục 1: Đặt lại mật khẩu (Password Reset)
+**Hạng mục cần làm:**
+- [ ] `POST /auth/forgot-password` → gửi link reset email
+- [ ] Lưu reset token (hash + expiry 24 giờ) trong collection `PasswordResetToken`
+- [ ] `POST /auth/reset-password` → verify token + cập nhật mật khẩu mới
+- [ ] Email template để gửi reset link (Node Mailer or SendGrid)
+- [ ] Unit tests: password reset flow
+
+**Tệp liên quan:**
+- `src/modules/user/schemas/password-reset-token.schema.ts`
+- `src/modules/user/services/password-reset.service.ts`
+- `src/modules/user/controllers/user.controller.ts` (thêm endpoints)
+- `src/modules/user/dtos/forgot-password.dto.ts`, `reset-password.dto.ts`
+- `src/common/email/email.service.ts` (new)
+
+---
+
+### Hạng mục 2: Two-Factor Authentication (2FA)
+**Hạng mục cần làm:**
+- [ ] `POST /auth/2fa/enable` → generate TOTP secret (Google Authenticator)
+- [ ] `POST /auth/2fa/verify-setup` → verify TOTP code + save secret
+- [ ] `POST /auth/login` → accept OTP code (6 digits)
+- [ ] `POST /auth/2fa/disable` → turn off 2FA (require password)
+- [ ] Store 2FA secret + backup codes trong User schema
+- [ ] Unit tests: 2FA enable/verify/login flow
+
+**Tệp liên quan:**
+- `src/modules/user/schemas/user.schema.ts` (thêm totp secret + backup codes)
+- `src/modules/user/services/two-factor.service.ts` (new)
+- `src/modules/user/controllers/user.controller.ts` (thêm 2FA endpoints)
+- `src/modules/user/dtos/verify-2fa.dto.ts`
+- Dashboard: `apps/dashboard/app/login/page.tsx` (thêm OTP input nếu 2FA enabled)
+
+---
+
+### Hạng mục 3: OAuth2 (Google, GitHub)
+**Hạng mục cần làm:**
+- [ ] Cấu hình OAuth2 Passport strategies (Google, GitHub)
+- [ ] `GET /auth/oauth/:provider` → redirect đến provider login
+- [ ] `GET /auth/oauth/:provider/callback` → handle OAuth response + create/link user
+- [ ] Link OAuth account với existing user (connect social)
+- [ ] Unlink OAuth account (disconnect)
+- [ ] Unit tests: OAuth flow + account linking
+
+**Tệp liên quan:**
+- `src/modules/auth/strategies/google.strategy.ts`
+- `src/modules/auth/strategies/github.strategy.ts`
+- `src/modules/auth/controllers/oauth.controller.ts` (new)
+- `src/modules/user/services/oauth.service.ts` (new)
+- `src/modules/user/schemas/user.schema.ts` (thêm oauth providers field)
+- Dashboard: OAuth login buttons
+
+---
+
+### Timeline P1
+- Week 1: Password Reset (Task 1)
+- Week 2: 2FA Setup (Task 2)
+- Week 3: OAuth2 Implementation (Task 3)
+- Total: ~3 tuần
+
+**Status**: Chưa bắt đầu (awaiting approval)
+
