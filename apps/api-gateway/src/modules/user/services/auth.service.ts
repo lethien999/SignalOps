@@ -142,6 +142,19 @@ export class AuthService {
     return bcrypt.compare(plainPassword, hash);
   }
 
+  generateToken(user: UserDocument): string {
+    const payload: JwtPayload = {
+      userId: user._id.toString(),
+      tenantId: user.tenantId.toString(),
+      email: user.email,
+      roleId: user.roleId,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+    };
+
+    return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn as any });
+  }
+
   private async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, BCRYPT_ROUNDS);
   }

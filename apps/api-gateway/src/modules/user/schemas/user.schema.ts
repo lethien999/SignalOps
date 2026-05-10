@@ -35,6 +35,24 @@ export class User {
   @Prop({ type: Boolean, default: false })
   totpEnabled: boolean; // Is 2FA enabled
 
+  @Prop({
+    type: [
+      {
+        provider: { type: String, enum: ['google', 'github'] },
+        providerId: { type: String },
+        email: { type: String },
+        linkedAt: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  })
+  oauthProviders: Array<{
+    provider: string;
+    providerId: string;
+    email: string;
+    linkedAt: Date;
+  }>; // OAuth provider accounts linked to this user
+
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 
@@ -48,3 +66,4 @@ export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ email: 1 });
 UserSchema.index({ tenantId: 1 });
 UserSchema.index({ tenantId: 1, roleId: 1 });
+UserSchema.index({ 'oauthProviders.provider': 1, 'oauthProviders.providerId': 1 }, { unique: true, sparse: true });

@@ -105,3 +105,120 @@ export function isTokenExpired(token: string): boolean {
   const now = Math.floor(Date.now() / 1000);
   return now >= decoded.exp;
 }
+
+/**
+ * Handle OAuth callback from URL parameters
+ * Extracts token and provider from URL and stores auth data
+ */
+export function handleOAuthCallback(): { success: boolean; provider?: string; error?: string } {
+  if (typeof window === 'undefined') {
+    return { success: false, error: 'Client-side only' };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const provider = params.get('provider');
+  const error = params.get('error');
+
+  if (error) {
+    return { success: false, error: decodeURIComponent(error) };
+  }
+
+  if (!token) {
+    return { success: false, error: 'No token received from OAuth provider' };
+  }
+
+  // Decode token to extract user info
+  const decoded = decodeJwt(token);
+  if (!decoded) {
+    return { success: false, error: 'Invalid token format' };
+  }
+
+  // Store auth data
+  const authData: AuthToken = {
+    token,
+    user: {
+      id: decoded.userId,
+      email: decoded.email,
+      tenantId: decoded.tenantId,
+      roleId: decoded.roleId,
+    },
+  };
+
+  setAuthToken(authData);
+
+  // Clean up URL
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  return { success: true, provider: provider || 'unknown' };
+}
+
+/**
+ * Get OAuth login URL for a provider
+ */
+export function getOAuthLoginUrl(provider: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  return `${baseUrl}/auth/oauth/${provider}`;
+}
+
+/**
+ * Get OAuth link URL for a provider (requires authentication)
+ */
+export function getOAuthLinkUrl(provider: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  return `${baseUrl}/auth/oauth/link/${provider}`;
+}
+
+export interface LinkedProvider {
+  provider: string;
+  email: string;
+  linkedAt: string;
+}
+
+/**
+ * Fetch linked OAuth providers for current user
+ */
+export async function getLinkedProviders(): Promise<LinkedProvider[]> {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/me`, {
+    headers: getAuthHeader(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user info');
+  }
+
+  const data = await response.json();
+  return data.user?.oauthProviders || [];
+}
+
+/**
+ * Unlink an OAuth provider
+ */
+export async function unlinkOAuthProvider(provider: string, password: string): Promise<void> {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/oauth/${provider}/unlink`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ password }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to unlink provider');
+  }
+}

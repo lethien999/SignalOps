@@ -211,10 +211,118 @@
 ---
 
 ### Timeline P1
-- Week 1: Password Reset (Task 1)
-- Week 2: 2FA Setup (Task 2)
-- Week 3: OAuth2 Implementation (Task 3)
+- Week 1: Password Reset (Task 1) ✅ DONE
+- Week 2: 2FA Setup (Task 2) ✅ DONE
+- Week 3: OAuth2 Implementation (Task 3) 🟡 READY FOR REVIEW
 - Total: ~3 tuần
 
-**Status**: Chưa bắt đầu (awaiting approval)
+---
+
+## 📋 M12 P1 Task 3: OAuth2 Implementation Checklist
+
+### Objective
+Cho phép users đăng nhập bằng Google hoặc GitHub, link social accounts với existing SignalOps account.
+
+### Part 1: Infrastructure Setup
+**Database Schema**:
+- [ ] Update `User` schema: thêm `oauthProviders: Array<{ provider: string, providerId: string, email: string, linkedAt: Date }>`
+- [ ] Add unique indexes: `oauthProviders.provider` + `oauthProviders.providerId` (compound)
+
+**Configuration**:
+- [ ] Add `.env` variables:
+  - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
+  - `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL`
+- [ ] Create `src/config/oauth.config.ts` to centralize OAuth settings
+
+### Part 2: Passport Strategies
+**File**: `src/modules/auth/strategies/google.strategy.ts`
+- [ ] Configure Passport Google OAuth2 Strategy (profile scope)
+- [ ] Validate `profile.emails[0].value` format
+
+**File**: `src/modules/auth/strategies/github.strategy.ts`
+- [ ] Configure Passport GitHub OAuth2 Strategy (user:email scope)
+- [ ] Validate `profile.emails` existence and format
+
+### Part 3: OAuth Service
+**File**: `src/modules/user/services/oauth.service.ts` (new)
+- [ ] Method: `findOrCreateUserViaOAuth(provider, providerId, email, profile)` 
+  - If user exists by email: link provider + return user
+  - If user not exists: create new user (generate secure password) + link provider + auto-assign tenant + return user
+- [ ] Method: `linkOAuthProvider(userId, provider, providerId, email)`
+  - Validate provider/providerId not already linked to another user
+  - Add to `oauthProviders` array
+- [ ] Method: `unlinkOAuthProvider(userId, provider)`
+  - Validate user has at least email+password OR another OAuth provider
+  - Remove from `oauthProviders` array
+- [ ] Method: `getLinkedProviders(userId)` - return array of linked providers
+- [ ] Unit tests: all methods with mocked User model
+
+### Part 4: OAuth Controller
+**File**: `src/modules/auth/controllers/oauth.controller.ts` (new, move from user controller)
+- [ ] `@Get('/oauth/:provider')` (unprotected)
+  - Validate provider (google|github)
+  - Redirect to `passport.authenticate(provider)` with scope+state
+- [ ] `@Get('/oauth/:provider/callback')` (unprotected, called by provider)
+  - Handle `passport.authenticate(provider)` callback
+  - Call `oauthService.findOrCreateUserViaOAuth()`
+  - Generate JWT token
+  - Redirect frontend with token: `/callback?token=<jwt>&provider=<provider>`
+- [ ] `@Post('/oauth/link')` (protected by JWT)
+  - Start linking flow: return URL to redirect user to provider
+- [ ] `@Post('/oauth/:provider/link-callback')` (protected by JWT)
+  - Complete linking: call `oauthService.linkOAuthProvider()`
+  - Return `{ message, linkedProviders[] }`
+- [ ] `@Post('/oauth/:provider/unlink')` (protected by JWT)
+  - Validate password (like 2FA disable)
+  - Call `oauthService.unlinkOAuthProvider()`
+  - Return `{ message, linkedProviders[] }`
+
+### Part 5: Dashboard Integration
+**File**: `apps/dashboard/lib/auth.ts` (existing, update)
+- [ ] Add `handleOAuthCallback(token, provider)` - extract token from URL, store in localStorage
+- [ ] Add `getLinkedProviders()` - fetch from `/auth/me` or new endpoint
+
+**File**: `apps/dashboard/app/login/page.tsx` (existing, update)
+- [ ] Add Google OAuth button: `<a href="/api/auth/oauth/google">Sign in with Google</a>`
+- [ ] Add GitHub OAuth button: `<a href="/api/auth/oauth/github">Sign in with GitHub</a>`
+- [ ] Style buttons (Google blue, GitHub black)
+
+**File**: `apps/dashboard/app/settings/page.tsx` (existing or new)
+- [ ] Display linked providers section
+- [ ] Button to link new provider (if not already linked)
+- [ ] Button to unlink provider (with password confirmation modal)
+- [ ] Show provider email for each linked account
+
+### Part 6: Testing & Validation
+- [ ] Unit tests: `oauth.service.spec.ts` (all methods + edge cases)
+- [ ] Integration test: OAuth flow (signup → token → fetch user)
+- [ ] Integration test: Account linking (existing user links Google)
+- [ ] Integration test: Account unlinking (validation + removal)
+- [ ] Manual test: Google OAuth flow
+- [ ] Manual test: GitHub OAuth flow
+
+### Part 7: Error Handling & Edge Cases
+- [ ] OAuth provider returns error → friendly message to user
+- [ ] Email mismatch between SignalOps user and provider profile → handle gracefully
+- [ ] User tries to link provider already linked to another user → reject + message
+- [ ] User tries to unlink their only auth method → reject (must have email+password or 2+ providers)
+- [ ] Token expiry during callback → redirect to login with message
+- [ ] Provider email not available → generate default email or request additional permission
+
+### Deployment Prerequisites
+- [ ] Google OAuth app created in Google Cloud Console
+- [ ] GitHub OAuth app created in GitHub Settings
+- [ ] `.env` variables set in production
+- [ ] Callback URLs match environment (localhost:3000 for dev, production URL for staging/prod)
+
+### Estimated Effort
+- **Setup & Config**: 30 min
+- **Strategies**: 45 min
+- **OAuth Service**: 1 hour
+- **OAuth Controller**: 1 hour
+- **Dashboard Integration**: 45 min
+- **Testing & Manual Verification**: 1 hour
+- **Total**: ~5-6 hours
+
+**Status**: 🔄 READY FOR USER APPROVAL
 

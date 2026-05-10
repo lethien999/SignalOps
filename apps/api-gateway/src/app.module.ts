@@ -10,6 +10,7 @@ import { ThresholdsModule } from './modules/thresholds/thresholds.module';
 import { ArchiveModule } from './modules/archive/archive.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
@@ -36,6 +37,7 @@ import { TenantContextMiddleware } from './common/middleware/tenant-context.midd
     WebSocketModule,
     TenantModule,
     UserModule,
+    AuthModule,
   ],
 })
 export class AppModule implements NestModule {

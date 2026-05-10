@@ -8,6 +8,7 @@ import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
 import { PasswordResetService } from './services/password-reset.service';
 import { TwoFactorService } from './services/two-factor.service';
+import { OAuthService } from './services/oauth.service';
 import { EmailService } from '../../common/email';
 import { UserController } from './user.controller';
 
@@ -23,8 +24,8 @@ import { UserController } from './user.controller';
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
     }),
   ],
-  providers: [AuthService, UserService, PasswordResetService, TwoFactorService, EmailService],
-  exports: [AuthService, UserService, PasswordResetService, TwoFactorService],
+  providers: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService, EmailService],
+  exports: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService],
   controllers: [UserController],
 })
 export class UserModule {}
