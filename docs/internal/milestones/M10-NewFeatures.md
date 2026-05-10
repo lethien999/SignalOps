@@ -1,6 +1,6 @@
 # 🚀 Mốc 10: Tính năng vận hành lõi
 
-**Trạng thái**: 🟡 Lên kế hoạch  
+**Trạng thái**: 🟢 Hoàn thành (P0 hoàn tất, phần mở rộng đã chuyển và hoàn tất ở M11)  
 **Mục tiêu**: Các tính năng cần làm sớm để SignalOps trở thành hệ thống vận hành thực sự, không chỉ là dashboard quan sát.
 
 ---
@@ -59,9 +59,9 @@
 
 ### Kế hoạch tiếp theo (chờ duyệt): M11 Tăng trưởng & Mở rộng
 
-- [ ] Mở rộng đa tenant và quota theo tenant
-- [ ] Tối ưu truy vấn aggregation cho dữ liệu lớn
-- [ ] Bổ sung giám sát chi phí và auto-scaling
+- [x] Mở rộng đa tenant và quota theo tenant (đã hoàn thành ở M11)
+- [x] Tối ưu truy vấn aggregation cho dữ liệu lớn (đã hoàn thành ở M11)
+- [x] Bổ sung giám sát chi phí và auto-scaling (đã hoàn thành ở M11)
 
 **Quy tắc**
 1. Tất cả feature mới phải được thêm vào docs trước khi code.
@@ -71,8 +71,8 @@
 **Trạng thái**
 - **Tổng số hạng mục**: 9
 - **Đang thực hiện**: 0
-- **Đã hoàn thành**: 9
-- **Cập nhật lần cuối**: 07/05/2026
+- **Đã hoàn thành**: 9 (P0) + 3 hạng mục mở rộng đã hoàn thành ở M11
+- **Cập nhật lần cuối**: 10/05/2026
 
 ---
 
