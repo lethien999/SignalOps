@@ -2,17 +2,20 @@ import { Controller, Post, Get, Body, UseGuards, HttpCode, Request } from '@nest
 import { Types } from 'mongoose';
 import { AuthService } from './services/auth.service';
 import { PasswordResetService } from './services/password-reset.service';
+import { TwoFactorService } from './services/two-factor.service';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { SignupDto } from './dtos/signup.dto';
 import { LoginDto } from './dtos/login.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { Enable2FaDto, Disable2FaDto } from './dtos/verify-2fa.dto';
 
 @Controller('auth')
 export class UserController {
   constructor(
     private readonly authService: AuthService,
     private readonly passwordResetService: PasswordResetService,
+    private readonly twoFactorService: TwoFactorService,
   ) {}
 
   /**
@@ -74,5 +77,76 @@ export class UserController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.passwordResetService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Mật khẩu đã được đặt lại thành công' };
+  }
+
+  /**
+   * POST /auth/2fa/enable
+   * Start 2FA setup (returns secret + QR code URL)
+   */
+  @Post('2fa/enable')
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  async enableTwoFa(@Request() req: any) {
+    const email = req.user.email;
+    const { secret, qrCodeUrl } = this.twoFactorService.generateTotpSecret(email);
+
+    return {
+      secret,
+      qrCodeUrl,
+      message: 'Quét mã QR bằng Google Authenticator, sau đó xác minh bằng mã OTP',
+    };
+  }
+
+  /**
+   * POST /auth/2fa/verify-setup
+   * Verify TOTP code and finalize 2FA setup
+   */
+  @Post('2fa/verify-setup')
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  async verifyTwoFaSetup(
+    @Request() req: any,
+    @Body() dto: Enable2FaDto & { secret: string },
+  ) {
+    const userId = req.user.userId;
+    const backupCodes = await this.twoFactorService.enableTotp(
+      userId,
+      dto.secret,
+      dto.code,
+    );
+
+    return {
+      message: '2FA được bật thành công',
+      backupCodes,
+      warning: 'Lưu các mã backup ở nơi an toàn. Bạn sẽ cần chúng nếu mất quyền truy cập Authenticator',
+    };
+  }
+
+  /**
+   * POST /auth/2fa/disable
+   * Disable 2FA (requires password confirmation)
+   */
+  @Post('2fa/disable')
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  async disableTwoFa(@Request() req: any, @Body() dto: Disable2FaDto) {
+    const userId = req.user.userId;
+    const user = await this.authService.getUserById(userId);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Verify password
+    const isPasswordValid = await this.authService.validatePassword(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!isPasswordValid) {
+      throw new Error('Mật khẩu không chính xác');
+    }
+
+    await this.twoFactorService.disableTotp(userId);
+    return { message: '2FA đã bị tắt' };
   }
 }

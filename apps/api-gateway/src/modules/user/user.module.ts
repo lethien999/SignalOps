@@ -7,7 +7,8 @@ import { PasswordResetToken, PasswordResetTokenSchema } from './schemas/password
 import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
 import { PasswordResetService } from './services/password-reset.service';
-import { EmailService } from '../../common/email/email.service';
+import { TwoFactorService } from './services/two-factor.service';
+import { EmailService } from '../../common/email';
 import { UserController } from './user.controller';
 
 @Module({
@@ -22,8 +23,8 @@ import { UserController } from './user.controller';
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
     }),
   ],
-  providers: [AuthService, UserService, PasswordResetService, EmailService],
-  exports: [AuthService, UserService, PasswordResetService],
+  providers: [AuthService, UserService, PasswordResetService, TwoFactorService, EmailService],
+  exports: [AuthService, UserService, PasswordResetService, TwoFactorService],
   controllers: [UserController],
 })
 export class UserModule {}

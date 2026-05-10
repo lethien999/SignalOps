@@ -26,6 +26,15 @@ export class User {
   @Prop({ type: Date })
   lastLoginAt?: Date;
 
+  @Prop({ type: String })
+  totpSecret?: string; // TOTP secret for 2FA
+
+  @Prop({ type: [String], default: [] })
+  backupCodes: string[]; // One-time backup codes for 2FA recovery
+
+  @Prop({ type: Boolean, default: false })
+  totpEnabled: boolean; // Is 2FA enabled
+
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 

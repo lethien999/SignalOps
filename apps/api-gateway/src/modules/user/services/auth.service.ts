@@ -138,6 +138,10 @@ export class AuthService {
     return this.userModel.findById(userId).lean();
   }
 
+  async validatePassword(plainPassword: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(plainPassword, hash);
+  }
+
   private async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, BCRYPT_ROUNDS);
   }
