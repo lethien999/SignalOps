@@ -73,7 +73,7 @@ export function isAuthenticated(): boolean {
 /**
  * Get Authorization header for API requests
  */
-export function getAuthHeader(): { Authorization: string } | {} {
+export function getAuthHeader(): { Authorization: string } | Record<string, never> {
   const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

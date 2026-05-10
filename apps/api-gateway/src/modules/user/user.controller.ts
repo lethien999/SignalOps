@@ -1,13 +1,19 @@
 import { Controller, Post, Get, Body, UseGuards, HttpCode, Request } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AuthService } from './services/auth.service';
+import { PasswordResetService } from './services/password-reset.service';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { SignupDto } from './dtos/signup.dto';
 import { LoginDto } from './dtos/login.dto';
+import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 @Controller('auth')
 export class UserController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordResetService: PasswordResetService,
+  ) {}
 
   /**
    * POST /auth/signup
@@ -45,5 +51,28 @@ export class UserController {
       tenantId: jwtPayload.tenantId,
       roleId: jwtPayload.roleId,
     };
+  }
+
+  /**
+   * POST /auth/forgot-password
+   * Request password reset email
+   */
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Request() req: any) {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    await this.passwordResetService.generateResetToken(dto.email, baseUrl);
+    return { message: 'Nếu email tồn tại, link reset password sẽ được gửi' };
+  }
+
+  /**
+   * POST /auth/reset-password
+   * Reset password with token
+   */
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.passwordResetService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Mật khẩu đã được đặt lại thành công' };
   }
 }
