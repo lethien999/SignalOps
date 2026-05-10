@@ -3,8 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { User, UserSchema } from './schemas/user.schema';
 import { Role, RoleSchema } from './schemas/role.schema';
+import { PasswordResetToken, PasswordResetTokenSchema } from './schemas/password-reset-token.schema';
 import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
+import { PasswordResetService } from './services/password-reset.service';
+import { TwoFactorService } from './services/two-factor.service';
+import { OAuthService } from './services/oauth.service';
+import { EmailService } from '../../common/email';
 import { UserController } from './user.controller';
 
 @Module({
@@ -12,14 +17,15 @@ import { UserController } from './user.controller';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Role.name, schema: RoleSchema },
+      { name: PasswordResetToken.name, schema: PasswordResetTokenSchema },
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev-secret-key-change-in-prod',
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
     }),
   ],
-  providers: [AuthService, UserService],
-  exports: [AuthService, UserService],
+  providers: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService, EmailService],
+  exports: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService],
   controllers: [UserController],
 })
 export class UserModule {}

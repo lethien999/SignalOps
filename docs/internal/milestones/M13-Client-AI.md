@@ -1,4 +1,4 @@
-# 🤖 Milestone 13: Ứng dụng di động và AI
+# 🤖 Mốc 13: Ứng dụng di động và AI
 
 **Trạng thái**: ⚪ Bản nháp  
 **Mục tiêu**: Gom các hạng mục trải nghiệm người dùng nâng cao và AI/ML để không làm loãng các milestone vận hành lõi.
@@ -23,4 +23,4 @@
 
 - Chỉ đưa các hạng mục vào đây khi M10-M12 đã được chốt phạm vi.
 - Giữ riêng phần mobile và AI để dễ ước lượng, review và rollout.
-- Nếu sau này có thêm tính năng client-side lớn, ưu tiên đặt tiếp ở milestone này trước khi mở M14.
+- Nếu sau này có thêm tính năng phía client lớn, ưu tiên đặt tiếp ở mốc này trước khi mở M14.
