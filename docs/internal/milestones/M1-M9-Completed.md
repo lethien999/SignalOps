@@ -1,13 +1,13 @@
-# ✅ Milestones 1-9: Completed Work
+# ✅ Mốc 1-9: Công việc đã hoàn thành
 
-**Project**: SignalOps  
-**Status**: 🟢 COMPLETE (18/18 tasks)  
-**Duration**: M1-M9 (estimated 500-800 person-hours)  
-**Last Updated**: 05/05/2026
+**Dự án**: SignalOps  
+**Trạng thái**: 🟢 HOÀN THÀNH (18/18 hạng mục)  
+**Thời lượng**: M1-M9 (ước tính 500-800 giờ công)  
+**Cập nhật lần cuối**: 05/05/2026
 
 ---
 
-## Milestone 1: Thiết lập dự án & hạ tầng
+## Mốc 1: Thiết lập dự án & hạ tầng
 
 ### Thiết lập môi trường
 - [x] Đã cài Node.js v18+
@@ -30,7 +30,7 @@
 
 ### Thiết lập Docker
 - [x] Docker đã cài và đang chạy
-- [x] `docker-compose.yml` created with:
+- [x] `docker-compose.yml` được tạo với:
   - [x] MongoDB service
   - [x] Redis service
   - [x] Nginx reverse proxy (optional)
@@ -54,7 +54,7 @@
 
 ---
 
-## Milestone 2: Luồng sự kiện & hệ thống hàng đợi
+## Mốc 2: Luồng sự kiện & hệ thống hàng đợi
 
 ### Dịch vụ API Gateway
 - [x] Đã tạo scaffold ứng dụng NestJS
@@ -93,7 +93,7 @@
 
 ---
 
-## Milestone 3: Worker & logic phát hiện
+## Mốc 3: Worker & logic phát hiện
 
 ### Thiết lập Worker Service
 - [x] Ứng dụng NestJS hoặc process worker tách riêng
@@ -135,11 +135,11 @@
 
 ---
 
-## Milestone 4: Lưu trữ & API
+## Mốc 4: Lưu trữ & API
 
 ### Mẫu Repository MongoDB
-- [x] `EventRepository` service created
-- [x] `AlertRepository` service created
+- [x] Đã tạo service `EventRepository`
+- [x] Đã tạo service `AlertRepository`
 
 ### Các REST API Endpoint (Hoàn chỉnh)
 - [x] Events API: POST/GET/GET:id
@@ -167,7 +167,7 @@
 
 ---
 
-## Milestone 5: Giao tiếp thời gian thực
+## Mốc 5: Giao tiếp thời gian thực
 
 ### Thiết lập máy chủ WebSocket
 - [x] Đã cài Socket.io
@@ -203,7 +203,7 @@
 
 ---
 
-## Milestone 6: Frontend Dashboard
+## Mốc 6: Frontend Dashboard
 
 ### Thiết lập React/Next.js
 - [x] Tạo app Next.js trong `apps/dashboard`
@@ -254,7 +254,7 @@
 
 ---
 
-## Milestone 7: Hoàn thiện CI/CD & DevOps
+## Mốc 7: Hoàn thiện CI/CD & DevOps
 
 ### Cấu hình Docker
 - [x] API Gateway Dockerfile (multi-stage)
@@ -289,7 +289,7 @@
 - [x] Secrets không commit
 
 ### Kiểm thử
-- [x] Unit tests (>70% coverage)
+- [x] Unit test (>70% coverage)
 - [x] Integration tests scaffold
 - [x] Load/Performance test harness
 - [x] WebSocket fan-out tests
@@ -327,36 +327,36 @@
 
 ---
 
-## Milestone 8: Sửa lỗi & tinh chỉnh
+## Mốc 8: Sửa lỗi & tinh chỉnh
 
-### 🔴 Critical Fixes (Hoàn Tất)
-- [x] Dashboard — Fix NEXT_PUBLIC environment variables
-- [x] API Gateway — Apply ApiKeyGuard decorator
-- [x] MongoDB — Fix authentication environment variables
+### 🔴 Sửa lỗi mức nghiêm trọng (Hoàn tất)
+- [x] Dashboard — Sửa biến môi trường NEXT_PUBLIC
+- [x] API Gateway — Áp dụng decorator ApiKeyGuard
+- [x] MongoDB — Sửa biến môi trường xác thực
 
 ### 🟡 High Priority (Hoàn Tất)
-- [x] Jenkinsfile — Remove dangerous `|| true`
-- [x] API Gateway — Add CORS_ORIGIN to docker-compose
-- [x] Monitoring — Fix Grafana password hardcoded
-- [x] MongoDB & Redis — Remove port bindings from production
-- [x] Worker Service — Extract and test `isMetricNormal()` logic
-- [x] Add API Key security scheme to Swagger
+- [x] Jenkinsfile — Loại bỏ `|| true` nguy hiểm
+- [x] API Gateway — Thêm CORS_ORIGIN vào docker-compose
+- [x] Monitoring — Sửa mật khẩu Grafana bị hardcode
+- [x] MongoDB & Redis — Bỏ ánh xạ cổng ở môi trường production
+- [x] Worker Service — Tách và kiểm thử logic `isMetricNormal()`
+- [x] Thêm API Key security scheme vào Swagger
 
 ### 🟡 Medium Priority (Scaffolded)
-- [x] Jenkinsfile — Add Docker push to registry (structure)
-- [x] Jenkinsfile — Setup environment file in CI (structure)
-- [x] API Gateway — Add unit tests (scaffold)
+- [x] Jenkinsfile — Thêm bước đẩy Docker lên registry (khung)
+- [x] Jenkinsfile — Thiết lập file môi trường trong CI (khung)
+- [x] API Gateway — Bổ sung unit test (khung)
 
 ### 🔵 Nice-to-have (Scaffolded)
-- [x] docker-compose.dev.yml for hot reload
-- [x] DLQ monitoring & alerting
-- [x] Connect Monitoring stack to App network
-- [x] Add Docker resource limits
-- [x] Event Broker service fate (decided: remove)
+- [x] docker-compose.dev.yml cho hot reload
+- [x] Theo dõi và cảnh báo DLQ
+- [x] Kết nối monitoring stack vào mạng ứng dụng
+- [x] Thêm giới hạn tài nguyên Docker
+- [x] Hướng xử lý Event Broker service (đã quyết định: loại bỏ)
 
 ---
 
-## Milestone 9: Repo Audit 2026-05-04
+## Mốc 9: Kiểm toán repo 2026-05-04
 
 ### ✅ P0 — Trước Production (7/7)
 - [x] Thêm `restart: unless-stopped` cho worker-service
@@ -399,43 +399,43 @@
 - [x] Integration tests scaffold
 - [x] Contract tests scaffold
 
-### ✅ P2 — Trung Hạn (5/5)
-- [x] OpenTelemetry tracing
-  - [x] tracing.config.ts initialization
-  - [x] Auto-instrumentation
+### ✅ P2 — Trung hạn (5/5)
+- [x] Theo vết OpenTelemetry
+  - [x] Khởi tạo tracing.config.ts
+  - [x] Tự động instrumentation
   - [x] Jaeger + Console exporter
-  - [x] Integration: api-gateway + worker
-- [x] SSL termination (Nginx)
+  - [x] Tích hợp: api-gateway + worker
+- [x] Kết thúc SSL (Nginx)
   - [x] default-ssl.conf
   - [x] docker-compose-ssl.yml
   - [x] HSTS, security headers
-- [x] Scale evaluation
+- [x] Đánh giá mở rộng quy mô
   - [x] SCALE_EVALUATION.md (TimescaleDB vs VictoriaMetrics)
-  - [x] Recommendation: Stick with MongoDB + Prometheus (Q3/Q4 re-evaluate)
-- [x] Archive strategy
+  - [x] Khuyến nghị: tiếp tục dùng MongoDB + Prometheus (đánh giá lại Q3/Q4)
+- [x] Chiến lược lưu trữ
   - [x] ARCHIVE_STRATEGY.md (retention, backup, Athena)
-  - [x] Phase 1-3 planning
-  - [x] Cost analysis (55% reduction)
-- [x] CI/CD + Rollback strategy
+  - [x] Lập kế hoạch giai đoạn 1-3
+  - [x] Phân tích chi phí (giảm 55%)
+- [x] Chiến lược CI/CD + rollback
   - [x] CI_CD_STRATEGY.md
   - [x] GitHub Actions workflows
-  - [x] Rollback procedures (Immediate, Blue-Green, Canary)
+  - [x] Quy trình rollback (Immediate, Blue-Green, Canary)
 - [x] ADR documentation
   - [x] 11 architecture decision records
   - [x] 1 decision under review (TimescaleDB)
 
-### 🎯 Summary
-- **Total Tasks Completed**: 18/18 ✅
-- **Production Ready**: ✅ Yes
-- **Docker Stack**: ✅ Stable (all 7 containers)
-- **Lint Status**: ✅ 0 warnings (all workspaces)
-- **Test Scaffolds**: ✅ Integration + Contract tests
+### 🎯 Tổng kết
+- **Tổng hạng mục hoàn thành**: 18/18 ✅
+- **Sẵn sàng production**: ✅ Có
+- **Docker stack**: ✅ Ổn định (toàn bộ 7 container)
+- **Trạng thái lint**: ✅ 0 cảnh báo (mọi workspace)
+- **Khung kiểm thử**: ✅ Integration + Contract tests
 
 ---
 
-## Key Artifacts Created
+## Các thành phần chính đã tạo
 
-### Libraries & Utilities
+### Thư viện và tiện ích
 - `libs/common/threshold.util.ts` (Shared threshold detection)
 - `libs/common/redis.config.ts` (Centralized Redis config)
 - `libs/common/circuit-breaker.ts` (Circuit breaker pattern)
@@ -443,12 +443,12 @@
 - `libs/common/correlation-context.ts` (AsyncLocalStorage)
 - `libs/common/tracing.config.ts` (OpenTelemetry)
 
-### Database & Repositories
+### Cơ sở dữ liệu và repository
 - `OutboxEvent` schema
 - `OutboxRepository` (create, publish, cleanup)
 - `OutboxPublisherService` (5s polling, auto-cleanup)
 
-### Middleware & Services
+### Middleware và service
 - `RequestTimeoutMiddleware` (30s timeout)
 - `CorrelationIdMiddleware` (AsyncLocalStorage)
 - `Logger.buildLogEntry()` (correlationId included)
@@ -456,29 +456,29 @@
 - `EventService.getDevices()` (MongoDB aggregation)
 - `BusinessMetrics` class (Prometheus metrics)
 
-### Infrastructure
+### Hạ tầng
 - Multi-stage Dockerfiles (4 backends + dashboard)
 - `docker-compose-ssl.yml` (SSL configuration)
 - `default-ssl.conf` (Nginx SSL settings)
 - `prometheus.yml` (monitoring config)
 - `grafana-dashboard.json` (dashboards)
 
-### Documentation
+### Tài liệu
 - `ADR.md` (11 architecture decisions)
 - `SCALE_EVALUATION.md` (scale analysis)
 - `ARCHIVE_STRATEGY.md` (retention + backup)
 - `CI_CD_STRATEGY.md` (GitHub Actions + rollback)
 - `OPERATIONS.md` (updated with SSL/TLS)
 
-### Security Fixes (M9 Completion)
+### Sửa lỗi bảo mật (hoàn tất M9)
 - ✅ bcrypt API key hashing (12 rounds)
 - ✅ WebSocket auth mandatory in production
 - ✅ Trace files removed from git history
-- ✅ Committed: security: Fix 3 critical vulnerabilities
+- ✅ Đã commit: security: Fix 3 critical vulnerabilities
 
 ---
 
-**Final Status**: 🟢 COMPLETE  
-**Ready For**: Staging deployment + new feature development  
-**Recommended Team Size**: 2-3 developers  
-**Estimated Effort**: 500-800 person-hours
+**Trạng thái cuối cùng**: 🟢 HOÀN THÀNH  
+**Sẵn sàng cho**: Triển khai staging + phát triển tính năng mới  
+**Quy mô đội ngũ khuyến nghị**: 2-3 lập trình viên  
+**Nỗ lực ước tính**: 500-800 giờ công
