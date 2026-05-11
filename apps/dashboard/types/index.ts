@@ -40,6 +40,11 @@ export interface Alert {
   resolvedBy?: string;
   resolvedAt?: string;
   resolutionNote?: string;
+  aiModelVersion?: string;
+  anomalyScore?: number;
+  anomalyConfidence?: number;
+  anomalyLabel?: 'normal' | 'suspicious' | 'anomalous';
+  anomalyReasons?: string[];
 }
 
 export interface Event {
@@ -52,6 +57,11 @@ export interface Event {
     signalStrength?: number;
   };
   timestamp: string;
+  aiModelVersion?: string;
+  anomalyScore?: number;
+  anomalyConfidence?: number;
+  anomalyLabel?: 'normal' | 'suspicious' | 'anomalous';
+  anomalyReasons?: string[];
 }
 
 export interface SystemStats {

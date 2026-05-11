@@ -60,6 +60,21 @@ export class Alert extends Document {
   eventId?: string;
 
   @Prop()
+  aiModelVersion?: string;
+
+  @Prop({ min: 0, max: 100 })
+  anomalyScore?: number;
+
+  @Prop({ min: 0, max: 100 })
+  anomalyConfidence?: number;
+
+  @Prop({ enum: ['normal', 'suspicious', 'anomalous'] })
+  anomalyLabel?: string;
+
+  @Prop({ type: [String], default: [] })
+  anomalyReasons?: string[];
+
+  @Prop()
   archivedAt?: Date;
 
   createdAt?: Date;

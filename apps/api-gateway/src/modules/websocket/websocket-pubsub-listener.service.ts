@@ -13,6 +13,11 @@ type EventProcessedMessage = {
   metrics?: { latency?: number; packetLoss?: number; signalStrength?: number };
   timestamp: string;
   alertsCreated: number;
+  aiModelVersion?: string;
+  anomalyScore?: number;
+  anomalyConfidence?: number;
+  anomalyLabel?: 'normal' | 'suspicious' | 'anomalous';
+  anomalyReasons?: string[];
 };
 
 type AlertCreatedMessage = {
@@ -111,6 +116,11 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
           location: payload.location,
           metrics: payload.metrics,
           timestamp: payload.timestamp,
+          aiModelVersion: payload.aiModelVersion,
+          anomalyScore: payload.anomalyScore,
+          anomalyConfidence: payload.anomalyConfidence,
+          anomalyLabel: payload.anomalyLabel,
+          anomalyReasons: payload.anomalyReasons,
         });
 
         this.eventsGateway.broadcastDeviceStatusChanged({
