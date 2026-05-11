@@ -48,7 +48,7 @@
 - [x] Lưu kết quả AI song song với alert rule-based
 
 ### Giai đoạn 3: Rollout và vận hành
-- [ ] Bật hiển thị confidence + reason trên dashboard/mobile
+- [x] Bật hiển thị confidence + reason trên dashboard/mobile
 - [x] Chạy A/B với rule-based trong môi trường staging (chuẩn bị sẵn sàng)
 - [ ] Đánh giá hiệu quả trước khi bật production
 

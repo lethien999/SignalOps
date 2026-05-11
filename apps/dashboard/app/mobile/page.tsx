@@ -8,6 +8,7 @@ import {
   useDeviceStore,
   useSystemStore,
 } from "@/stores";
+import { AIConfidenceBadge } from "@/components/AIScoreDisplay";
 import { fetchAlerts, fetchDevices, fetchEvents, fetchSystemStats } from "@/lib/api";
 
 export default function MobileOpsPage() {
@@ -161,15 +162,20 @@ export default function MobileOpsPage() {
               .slice(0, 5)
               .map((event) => (
                 <div key={event.id} className="rounded-lg border border-purple-200 bg-white px-3 py-2">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">Thiết bị {event.deviceId}</p>
                       <p className="truncate text-xs text-gray-600">{event.anomalyReasons?.[0] || 'Đang đánh giá bất thường'}</p>
                     </div>
-                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-purple-700">
+                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-purple-700 flex-shrink-0">
                       {event.anomalyScore ?? 0}%
                     </span>
                   </div>
+                  {event.anomalyConfidence !== undefined && (
+                    <div className="flex justify-end">
+                      <AIConfidenceBadge confidence={event.anomalyConfidence} className="text-[10px] px-2 py-0.5" />
+                    </div>
+                  )}
                 </div>
               ))}
           </div>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, CheckCircle2, RotateCcw, Clock, MapPin, User, FileText } from "lucide-react";
 import { updateAlertStatus } from "@/lib/api";
 import { useAlertStore } from "@/stores";
+import { AIScoreDisplay } from "./AIScoreDisplay";
 import type { Alert } from "@/types";
 import type { ToastType } from "@/components/ToastStack";
 
@@ -199,30 +200,13 @@ export function AlertDetailModal({ alert, onClose, onActionComplete }: AlertDeta
               )}
             </div>
             {(alert.anomalyScore !== undefined || alert.anomalyLabel || alert.anomalyReasons?.length) && (
-              <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 md:col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">
-                  AI shadow mode
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  <span className="rounded-full bg-white px-3 py-1 font-semibold text-purple-700 ring-1 ring-purple-200">
-                    Score {alert.anomalyScore ?? 0}/100
-                  </span>
-                  <span className="rounded-full bg-white px-3 py-1 font-semibold text-purple-700 ring-1 ring-purple-200">
-                    {alert.anomalyLabel || 'normal'}
-                  </span>
-                  {alert.anomalyConfidence !== undefined && (
-                    <span className="rounded-full bg-white px-3 py-1 font-semibold text-purple-700 ring-1 ring-purple-200">
-                      Confidence {alert.anomalyConfidence}%
-                    </span>
-                  )}
-                </div>
-                {alert.anomalyReasons?.length ? (
-                  <ul className="mt-3 space-y-1 text-sm text-purple-900">
-                    {alert.anomalyReasons.slice(0, 3).map((reason, index) => (
-                      <li key={`${alert.id}-ai-${index}`}>• {reason}</li>
-                    ))}
-                  </ul>
-                ) : null}
+              <div className="md:col-span-2">
+                <AIScoreDisplay
+                  score={alert.anomalyScore}
+                  confidence={alert.anomalyConfidence}
+                  label={alert.anomalyLabel}
+                  reasons={alert.anomalyReasons}
+                />
               </div>
             )}
             {alert.resolutionNote && (

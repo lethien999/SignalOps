@@ -7,3 +7,4 @@ export { AlertDetailModal } from './AlertDetailModal';
 export { EventMetricsChart } from './EventMetricsChart';
 export { ToastStack } from './ToastStack';
 export { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
+export { AIScoreDisplay, AIConfidenceBadge, parseConfidenceLevel } from './AIScoreDisplay';
