@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, MapPin, AlertCircle, BarChart3, Settings, Radio } from 'lucide-react';
+import { LayoutDashboard, MapPin, AlertCircle, BarChart3, Settings, Radio, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUIStore, useAlertStore } from '@/stores';
@@ -16,6 +16,7 @@ export function Sidebar() {
     { label: 'Bản đồ', href: '/map', icon: MapPin },
     { label: 'Cảnh báo', href: '/alerts', icon: AlertCircle, badge: openAlerts || undefined },
     { label: 'Chỉ số', href: '/metrics', icon: BarChart3 },
+    { label: 'Mobile', href: '/mobile', icon: Smartphone },
     { label: 'Cài đặt', href: '/settings', icon: Settings },
   ];
 

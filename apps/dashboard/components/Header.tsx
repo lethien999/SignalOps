@@ -5,6 +5,7 @@ import { Menu, Bell, Settings, X, AlertTriangle, Volume2, VolumeX } from 'lucide
 import Link from 'next/link';
 import { useUIStore, useAlertStore } from '@/stores';
 import { DarkModeToggle } from './DarkModeToggle';
+import { PwaInstallPrompt } from './PwaInstallPrompt';
 
 interface HeaderProps {
   unreadAlerts?: number;
@@ -50,6 +51,7 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-30">
+      <PwaInstallPrompt />
       <div className="max-w-full px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button

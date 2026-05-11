@@ -23,6 +23,7 @@ type ChartPoint = {
   label: string;
   latency: number;
   packetLoss: number;
+  anomalyScore: number;
   timestamp: number;
 };
 
@@ -38,6 +39,7 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
         }),
         latency: event.metrics?.latency ?? 0,
         packetLoss: event.metrics?.packetLoss ?? 0,
+        anomalyScore: event.anomalyScore ?? 0,
         timestamp: new Date(event.timestamp).getTime(),
       }));
   }, [events]);
@@ -96,6 +98,27 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
                 <Tooltip />
                 <Area type="monotone" dataKey="packetLoss" stroke="#dc2626" fill="#fee2e2" strokeWidth={2} />
               </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            AI anomaly score
+          </h3>
+          {chartData.length === 0 ? (
+            <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-500">
+              No AI signal yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" domain={[0, 100]} />
+                <Tooltip />
+                <Line type="monotone" dataKey="anomalyScore" stroke="#7c3aed" strokeWidth={3} dot={false} />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </div>

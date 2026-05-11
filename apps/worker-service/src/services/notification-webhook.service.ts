@@ -14,6 +14,9 @@ type AlertPayload = {
   message: string;
   location?: { lat: number; lng: number; name?: string };
   timestamp: string;
+  anomalyScore?: number;
+  anomalyConfidence?: number;
+  anomalyLabel?: 'normal' | 'suspicious' | 'anomalous';
 };
 
 function sleep(ms: number): Promise<void> {
@@ -118,6 +121,11 @@ export class NotificationWebhookService {
           type: alert.type,
           timestamp: alert.timestamp,
           location: alert.location,
+            ai: {
+              anomalyScore: alert.anomalyScore,
+              anomalyConfidence: alert.anomalyConfidence,
+              anomalyLabel: alert.anomalyLabel,
+            },
         },
       };
     }
@@ -132,6 +140,11 @@ export class NotificationWebhookService {
         type: alert.type,
         timestamp: alert.timestamp,
         location: alert.location,
+            ai: {
+              anomalyScore: alert.anomalyScore,
+              anomalyConfidence: alert.anomalyConfidence,
+              anomalyLabel: alert.anomalyLabel,
+            },
       },
     };
   }

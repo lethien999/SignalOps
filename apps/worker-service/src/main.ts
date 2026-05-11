@@ -10,6 +10,7 @@ import { DeviceMaintenanceRepository } from './repositories/device-maintenance.r
 import { NotificationWebhookRepository } from './repositories/notification-webhook.repository';
 import { NotificationWebhookService } from './services/notification-webhook.service';
 import { ThresholdProfileRepository } from './repositories/threshold-profile.repository';
+import { scoreEventAnomaly } from './services/anomaly-scoring';
 import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
@@ -32,6 +33,14 @@ type WorkerAlertResult = {
   type: 'latency' | 'packet_loss' | 'signal';
   severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
   message: string;
+};
+
+type AiAnomalyPayload = {
+  aiModelVersion: string;
+  anomalyScore: number;
+  anomalyConfidence: number;
+  anomalyLabel: 'normal' | 'suspicious' | 'anomalous';
+  anomalyReasons: string[];
 };
 
 type WorkerContext = {
@@ -69,6 +78,7 @@ async function handleAlertCreation(
   eventId: string,
   eventData: WorkerJobPayload,
   detectedAlerts: WorkerAlertResult[],
+  aiAnomaly: AiAnomalyPayload,
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
   pubSubRedis: Redis,
@@ -85,7 +95,15 @@ async function handleAlertCreation(
     }
 
     const alert = buildAlertDocument(eventData, alertType);
-    const savedAlert = await alertRepository.create(alert);
+    const aiTaggedAlert = {
+      ...alert,
+      aiModelVersion: aiAnomaly.aiModelVersion,
+      anomalyScore: aiAnomaly.anomalyScore,
+      anomalyConfidence: aiAnomaly.anomalyConfidence,
+      anomalyLabel: aiAnomaly.anomalyLabel,
+      anomalyReasons: aiAnomaly.anomalyReasons,
+    };
+    const savedAlert = await alertRepository.create(aiTaggedAlert);
 
     // Link the originating event to the newly created alert for traceability.
     await eventRepository.linkAlert(eventId, savedAlert._id.toString());
@@ -111,6 +129,9 @@ async function handleAlertCreation(
       type: savedAlert.type,
       severity: savedAlert.severity,
       message: savedAlert.message,
+        anomalyScore: aiAnomaly.anomalyScore,
+        anomalyConfidence: aiAnomaly.anomalyConfidence,
+        anomalyLabel: aiAnomaly.anomalyLabel,
       location: savedAlert.location
         ? {
             lat: savedAlert.location.lat,
@@ -209,6 +230,7 @@ function createWorker(
           await eventRepository.updateProcessedTime(eventId);
 
           const thresholdProfile = await thresholdProfileRepository.findEffective(eventData.deviceId);
+          const aiAnomaly = scoreEventAnomaly(eventData.metrics, thresholdProfile || undefined);
 
           const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(eventData.deviceId);
           if (activeMaintenance) {
@@ -237,6 +259,7 @@ function createWorker(
             eventId,
             eventData,
             detectedAlerts,
+            aiAnomaly,
             alertRepository,
             eventRepository,
             pubSubRedis,
@@ -263,6 +286,11 @@ function createWorker(
             metrics: eventData.metrics,
             timestamp: new Date().toISOString(),
             alertsCreated: createdCount,
+            aiModelVersion: aiAnomaly.aiModelVersion,
+            anomalyScore: aiAnomaly.anomalyScore,
+            anomalyConfidence: aiAnomaly.anomalyConfidence,
+            anomalyLabel: aiAnomaly.anomalyLabel,
+            anomalyReasons: aiAnomaly.anomalyReasons,
           });
           await pubSubRedis.publish('events:processed', eventProcessedPayload);
 
