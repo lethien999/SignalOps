@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@nestjs/passport": "^11.0.5",
+    "csv": "^6.5.1",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0"

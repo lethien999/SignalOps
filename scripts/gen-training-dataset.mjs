@@ -21,7 +21,37 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
-import { parse } from 'csv/sync';
+import { Schema } from 'mongoose';
+
+// Define Mongoose schemas (since this is standalone script)
+const EventSchema = new Schema(
+  {
+    deviceId: { type: String, required: true },
+    metrics: {
+      latency: { type: Number, default: 0 },
+      packetLoss: { type: Number, default: 0 },
+      signalStrength: { type: Number, default: -100 },
+    },
+    timestamp: { type: Date, required: true },
+    raw: mongoose.Schema.Types.Mixed,
+  },
+  { timestamps: true }
+);
+
+const AlertSchema = new Schema(
+  {
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+    deviceId: { type: String, required: true },
+    type: { type: String, required: true },
+    severity: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
+    acknowledged: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+// Register models
+const EventModel = mongoose.model('Event', EventSchema);
+const AlertModel = mongoose.model('Alert', AlertSchema);
 
 // Import feature extraction (simplified inline for mjs compatibility)
 function normalizeMinMax(value, min, max) {
@@ -94,9 +124,7 @@ async function generateTrainingDataset() {
   console.log(`   Context window: ${contextWindow} events`);
   console.log('-----------------------------------\n');
 
-  // Fetch events
-  const EventModel = mongoose.model('Event');
-  const AlertModel = mongoose.model('Alert');
+  // Models already registered above
   
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - datasetDays);
