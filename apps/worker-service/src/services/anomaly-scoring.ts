@@ -1,3 +1,5 @@
+import * as ort from 'onnxruntime-node';
+
 type Metrics = {
   latency?: number;
   packetLoss?: number;
@@ -21,7 +23,11 @@ type AnomalyScoreResult = {
   anomalyLabel: 'normal' | 'suspicious' | 'anomalous';
 };
 
-const AI_MODEL_VERSION = 'shadow-heuristic-v1';
+const AI_MODEL_VERSION = 'ml-shadow-v2';
+const MODEL_PATH = 'src/assets/anomaly-model.onnx';
+
+let onnxSession: ort.InferenceSession | null = null;
+let onnxInitPromise: Promise<void> | null = null;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -43,10 +49,89 @@ function pushReason(reasons: string[], text: string, scoreBoost: number) {
   return scoreBoost;
 }
 
-export function scoreEventAnomaly(
-  metrics: Metrics | null | undefined,
-  thresholdProfile?: ThresholdProfile,
-): AnomalyScoreResult {
+function softmax(values: number[]): number[] {
+  const maxValue = Math.max(...values);
+  const exps = values.map((value) => Math.exp(value - maxValue));
+  const total = exps.reduce((sum, value) => sum + value, 0);
+  return exps.map((value) => value / total);
+}
+
+function buildFeatureVector(metrics: Metrics) {
+  const latency = Math.min(Math.max(metrics.latency ?? 0, 0), 500);
+  const packetLoss = Math.min(Math.max(metrics.packetLoss ?? 0, 0), 20);
+  const signalStrength = Math.min(Math.max(metrics.signalStrength ?? -80, -120), -40);
+
+  const latencyNorm = latency / 500;
+  const packetLossNorm = packetLoss / 20;
+  const signalStrengthNorm = (signalStrength - (-120)) / 80;
+  const overallQuality = 1 - (latencyNorm + packetLossNorm + signalStrengthNorm) / 3;
+  const now = new Date();
+
+  return [
+    latencyNorm,
+    packetLossNorm,
+    signalStrengthNorm,
+    overallQuality,
+    now.getHours(),
+    now.getDay(),
+  ];
+}
+
+async function ensureOnnxSession() {
+  if (onnxSession) return onnxSession;
+  if (!onnxInitPromise) {
+    onnxInitPromise = (async () => {
+      try {
+        onnxSession = await ort.InferenceSession.create(MODEL_PATH);
+        console.log(`✓ ML model loaded from ${MODEL_PATH}`);
+      } catch (error) {
+        console.warn(`⚠ Unable to load ML model at ${MODEL_PATH}; falling back to deterministic scoring`, error);
+        onnxSession = null;
+      }
+    })();
+  }
+
+  await onnxInitPromise;
+  return onnxSession;
+}
+
+export async function initMLModel(): Promise<void> {
+  await ensureOnnxSession();
+}
+
+async function scoreWithMlModel(metrics: Metrics): Promise<AnomalyScoreResult | null> {
+  const session = await ensureOnnxSession();
+  if (!session) return null;
+
+  const features = buildFeatureVector(metrics);
+  const tensor = new ort.Tensor('float32', Float32Array.from(features), [1, features.length]);
+
+  const inputName = session.inputNames[0];
+  const outputName = session.outputNames.find((name) => name.toLowerCase().includes('prob')) ?? session.outputNames[0];
+  const results = await session.run({ [inputName]: tensor });
+  const rawOutput = results[outputName] as ort.Tensor | undefined;
+
+  if (!rawOutput) return null;
+
+  const outputValues = Array.from(rawOutput.data as Float32Array | Float64Array | Int32Array | Uint32Array).map((value) => Number(value));
+  const anomalyProbability = outputValues.length > 1 ? softmax(outputValues)[1] : Math.min(Math.max(outputValues[0] ?? 0, 0), 1);
+  const anomalyScore = clamp(Math.round(anomalyProbability * 100), 0, 100);
+  const mlDecisionThreshold = parseInt(process.env.ANOMALY_THRESHOLD || process.env.AI_ANOMALY_THRESHOLD || '80', 10);
+  const anomalyLabel = anomalyScore >= mlDecisionThreshold ? 'anomalous' : anomalyScore >= 35 ? 'suspicious' : 'normal';
+
+  return {
+    aiModelVersion: AI_MODEL_VERSION,
+    anomalyScore,
+    anomalyConfidence: anomalyScore,
+    anomalyReasons: [
+      `ML inference score ${anomalyScore}/100`,
+      `Model confidence ${(anomalyProbability * 100).toFixed(1)}%`,
+    ],
+    anomalyLabel,
+  };
+}
+
+function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdProfile: ThresholdProfile): AnomalyScoreResult {
   const thresholds = normalizeThresholdProfile(thresholdProfile);
   const reasons: string[] = [];
   let score = 5;
@@ -118,4 +203,16 @@ export function scoreEventAnomaly(
     anomalyReasons: reasons.slice(0, 4),
     anomalyLabel,
   };
+}
+
+export async function scoreEventAnomaly(
+  metrics: Metrics | null | undefined,
+  thresholdProfile?: ThresholdProfile,
+): Promise<AnomalyScoreResult> {
+  const mlResult = metrics ? await scoreWithMlModel(metrics) : null;
+  if (mlResult) {
+    return mlResult;
+  }
+
+  return scoreWithDeterministic(metrics, thresholdProfile);
 }
