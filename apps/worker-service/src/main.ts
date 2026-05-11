@@ -10,7 +10,7 @@ import { DeviceMaintenanceRepository } from './repositories/device-maintenance.r
 import { NotificationWebhookRepository } from './repositories/notification-webhook.repository';
 import { NotificationWebhookService } from './services/notification-webhook.service';
 import { ThresholdProfileRepository } from './repositories/threshold-profile.repository';
-import { scoreEventAnomaly } from './services/anomaly-scoring';
+import { initMLModel, scoreEventAnomaly } from './services/anomaly-scoring';
 import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
 
 type WorkerJobPayload = {
@@ -230,7 +230,7 @@ function createWorker(
           await eventRepository.updateProcessedTime(eventId);
 
           const thresholdProfile = await thresholdProfileRepository.findEffective(eventData.deviceId);
-          const aiAnomaly = scoreEventAnomaly(eventData.metrics, thresholdProfile || undefined);
+          const aiAnomaly = await scoreEventAnomaly(eventData.metrics, thresholdProfile || undefined);
 
           const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(eventData.deviceId);
           if (activeMaintenance) {
@@ -254,7 +254,44 @@ function createWorker(
             return { success: true, alertsCreated: 0, alertsSuppressed: true };
           }
 
-          const detectedAlerts = ThresholdDetector.detectAnomalies(eventData, thresholdProfile || undefined);
+          let detectedAlerts = ThresholdDetector.detectAnomalies(eventData, thresholdProfile || undefined);
+          // Simple A/B rollout: for a percentage of events, use ML decision as source of truth
+          const rolloutPercent = parseInt(process.env.AI_ROLLOUT_PERCENT || '0', 10);
+          const aiAbTestEnabled = String(process.env.AI_AB_TEST || 'false').toLowerCase() === 'true';
+          const inRollout = aiAbTestEnabled && rolloutPercent > 0 && Math.random() * 100 < rolloutPercent;
+
+          if (inRollout) {
+            // If ML marks anomalous, synthesize alerts based on ML reasons; otherwise treat as no alerts
+            if (aiAnomaly && aiAnomaly.anomalyLabel === 'anomalous') {
+              const reasonsText = (aiAnomaly.anomalyReasons || []).join(' ').toLowerCase();
+              const inferType = () => {
+                if (reasonsText.includes('latency')) return 'latency';
+                if (reasonsText.includes('packet')) return 'packet_loss';
+                if (reasonsText.includes('signal')) return 'signal';
+                return 'latency';
+              };
+              const severityForScore = (score: number) => {
+                if (score >= 90) return 'critical';
+                if (score >= 75) return 'high';
+                if (score >= 55) return 'medium';
+                if (score >= 35) return 'warning';
+                return 'low';
+              };
+
+              detectedAlerts = [
+                {
+                  type: inferType() as 'latency' | 'packet_loss' | 'signal',
+                  severity: severityForScore(aiAnomaly.anomalyScore) as any,
+                  message: `AI-driven alert (A/B) - score ${aiAnomaly.anomalyScore}`,
+                },
+              ];
+              Logger.info('In A/B rollout: using AI decision for alert creation', { deviceId: eventData.deviceId, score: aiAnomaly.anomalyScore });
+            } else {
+              // ML says normal: suppress deterministic alerts for this event in rollout group
+              detectedAlerts = [];
+              Logger.info('In A/B rollout: ML indicates normal, suppressing deterministic alerts', { deviceId: eventData.deviceId });
+            }
+          }
           const createdCount = await handleAlertCreation(
             eventId,
             eventData,
@@ -406,6 +443,7 @@ async function bootstrap() {
     const notificationWebhookRepository = new NotificationWebhookRepository();
     const notificationWebhookService = new NotificationWebhookService(notificationWebhookRepository);
     const thresholdProfileRepository = new ThresholdProfileRepository();
+    await initMLModel();
     const worker = createWorker(
       redis,
       pubSubRedis,
