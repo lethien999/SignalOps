@@ -8,6 +8,7 @@ import {
   useDeviceStore,
   useSystemStore,
 } from '@/stores';
+import { NotificationService } from '../services/notification.service';
 import type { Alert, DeviceStatus, Event } from '@/types';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
@@ -98,6 +99,13 @@ export function useSocket() {
 
         if (typeof window !== 'undefined' && window.localStorage.getItem(ALERT_SOUND_STORAGE_KEY) !== 'off') {
           playAlertSound(data.severity);
+        }
+
+        // M13: Send push notification for critical/high alerts
+        if (['critical', 'high'].includes(data.severity)) {
+          NotificationService.notifyAlert(data.deviceId, data.type, data.severity).catch((err) =>
+            console.warn('Failed to send notification:', err),
+          );
         }
       });
 

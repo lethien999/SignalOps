@@ -19,10 +19,10 @@
 	- [x] Chọn hướng triển khai: PWA
 	- [x] Thiết kế kiến trúc xác thực dùng lại JWT hiện có
 	- [x] Đồng bộ alert và trạng thái thiết bị từ backend
-	- [ ] Bổ sung nhận thông báo đẩy hoặc nền (push/background) ở mức tối thiểu
+	- [x] Bổ sung nhận thông báo đẩy hoặc nền (push/background) ở mức tối thiểu
 	- [x] Tối ưu trải nghiệm di động cho operator
 	- [x] Kiểm thử trên thiết bị thật (Android trước, iOS sau)
-	- [ ] Tài liệu hóa quy trình build và phát hành nội bộ
+	- [x] Tài liệu hóa quy trình build và phát hành nội bộ
 
 - [ ] Phát hiện bất thường bằng AI
 	- [ ] Phát hiện bất thường bằng mô hình AI/ML

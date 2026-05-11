@@ -3,6 +3,7 @@
 import React from "react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
+import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 import { useAlertStore } from "@/stores";
 import { useSocket } from "@/hooks/useSocket";
 
@@ -19,6 +20,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
         <Header unreadAlerts={activeAlerts} />
         <main className="flex-1 overflow-auto">{children}</main>
+        <NotificationPermissionPrompt />
       </div>
     </div>
   );

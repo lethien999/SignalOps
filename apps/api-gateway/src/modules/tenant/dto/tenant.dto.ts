@@ -3,6 +3,7 @@ export class CreateTenantDto {
   eventsPerMonth?: number;
   alertsPerMonth?: number;
   description?: string;
+  aiEnabled?: boolean; // M13: Enable AI anomaly scoring (default true)
 }
 
 export class UpdateTenantDto {
@@ -11,4 +12,5 @@ export class UpdateTenantDto {
   alertsPerMonth?: number;
   status?: 'active' | 'suspended' | 'deleted';
   description?: string;
+  aiEnabled?: boolean; // M13: Toggle AI anomaly scoring per tenant
 }

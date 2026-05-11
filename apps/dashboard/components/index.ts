@@ -6,3 +6,4 @@ export { Map } from './Map';
 export { AlertDetailModal } from './AlertDetailModal';
 export { EventMetricsChart } from './EventMetricsChart';
 export { ToastStack } from './ToastStack';
+export { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
