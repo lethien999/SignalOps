@@ -43,6 +43,9 @@ export class Tenant {
   @Prop({ type: [Types.ObjectId], default: [] })
   adminUserIds: Types.ObjectId[]; // Users who can manage this tenant
 
+  @Prop({ type: Boolean, default: true })
+  aiEnabled: boolean; // Enable/disable AI anomaly scoring for this tenant (M13)
+
   @Prop({ type: Date, default: () => new Date() })
   createdAt: Date;
 

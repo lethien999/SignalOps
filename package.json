@@ -25,6 +25,8 @@
     "perf:load": "node scripts/perf-load.mjs",
     "perf:soak": "node scripts/perf-load.mjs",
     "perf:websocket": "node scripts/perf-websocket.mjs",
+    "eval:ai": "node scripts/eval-ai-scoring.mjs",
+    "gen:training-dataset": "node scripts/gen-training-dataset.mjs",
     "db:migrate": "npm run -w api-gateway db:migrate",
     "db:rollback": "npm run -w api-gateway db:rollback",
     "db:seed": "npm run -w api-gateway db:seed",
@@ -47,6 +49,7 @@
   },
   "dependencies": {
     "@nestjs/passport": "^11.0.5",
+    "csv": "^6.5.1",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0"

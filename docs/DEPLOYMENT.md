@@ -298,6 +298,133 @@ docker compose up -d
 
 ---
 
+## Triển khai Mobile PWA (M13)
+
+### Tổng quan
+
+Dashboard SignalOps được thiết kế như một Progressive Web App (PWA), cho phép cài đặt trên thiết bị di động (Android/iOS) mà không cần app store. Operator có thể truy cập hiện trường với cùng JWT token từ desktop.
+
+### Yêu cầu
+
+- Dashboard (Next.js) build thành công
+- PWA manifest tại `public/manifest.webmanifest`
+- App icons tại `public/icons/` (192x192 & 512x512 px)
+- HTTPS enabled (hoặc localhost cho dev)
+
+### Build & Release
+
+#### 1. Local Testing (Desktop Chrome Dev Tools)
+
+```bash
+cd apps/dashboard
+npm run build
+npm start  # Start production server
+
+# Trên browser: F12 → Application → Manifest
+# Sẽ thấy manifest JSON + install button
+```
+
+#### 2. Cài đặt trên Android (Chrome)
+
+```
+1. Truy cập https://yourdomain.com (hoặc http://localhost:3000 trên LAN)
+2. Chrome menu → "Cài đặt" hoặc "Install app"
+3. Chọn "SignalOps" → "Cài đặt"
+4. App xuất hiện trên home screen + app drawer
+```
+
+**Lưu ý**: Chrome yêu cầu:
+- Manifest hợp lệ (`name`, `start_url`, `display`, `icons`)
+- Service worker đã register (Next.js tự động qua `next/app`)
+- HTTPS (hoặc localhost)
+- Thời gian truy cập ≥ 30 giây (Chrome cacheManifest + tĩnh)
+
+#### 3. Cài đặt trên iOS (Safari 15+)
+
+```
+1. Truy cập https://yourdomain.com tại Safari
+2. Share button → "Thêm vào màn hình chủ"
+3. Nhập tên ứng dụng (mặc định: manifest.name) → "Thêm"
+4. App xuất hiện trên home screen
+```
+
+**Lưu ý**:
+- iOS không hỗ trợ Web Push API (chỉ hỗ trợ đến Safari 15)
+- Installable nếu manifest hợp lệ + điều kiện PWA tối thiểu
+- App name & icon lấy từ manifest
+
+#### 4. Docker Build cho Production
+
+```bash
+# Build image dashboard
+docker build -t signalops-dashboard:latest \
+  -f infrastructure/Dockerfile.dashboard \
+  .
+
+# Verify manifest trong image
+docker run --rm signalops-dashboard:latest \
+  cat /app/.next/public/manifest.webmanifest
+```
+
+#### 5. CORS & Security cho PWA
+
+```bash
+# .env.production
+CORS_ORIGIN=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
+NODE_ENV=production
+
+# Nginx config (hoặc Load Balancer)
+# Thêm header:
+add_header Cache-Control "public, max-age=3600, must-revalidate";  # manifest re-check mỗi giờ
+add_header Service-Worker-Allowed "/";  # cho phép SW tại root scope
+```
+
+### Push Notifications (Optional, M13 Phase 2)
+
+PWA hỗ trợ Web Push API cho background notifications. Chuẩn hóa:
+- **FCM (Firebase Cloud Messaging)**: Recommended cho production (cross-platform)
+- **Web Notifications API**: Fallback for desktop-only (no server-side persistence)
+
+Triển khai trong giai đoạn sau M13 nếu cần.
+
+### Troubleshooting PWA
+
+#### Manifest không load
+
+```bash
+# Check manifest URL
+curl -I https://yourdomain.com/manifest.webmanifest
+# Expected: 200 OK + Content-Type: application/manifest+json
+
+# Debug browser: F12 → Application → Manifest → Errors
+```
+
+#### App không cài đặt (Install prompt không xuất hiện)
+
+```bash
+# Kiểm tra các điều kiện PWA tối thiểu
+1. Manifest hợp lệ: ✅ (name, start_url, display, icons)
+2. HTTPS hoặc localhost: ✅
+3. Service Worker: ✅ (Next.js tự động)
+4. Truy cập ≥ 30 giây: ✅
+
+# Debug: F12 → Application → Service Workers → Errors
+```
+
+#### Icons không hiển thị
+
+```bash
+# Kiểm tra file tồn tại
+ls -la public/icons/
+
+# Kiểm tra manifest reference
+cat public/manifest.webmanifest | grep icon
+
+# Browser cache: Hard refresh (Ctrl+Shift+R) hoặc F12 → Network → Disable cache
+```
+
+---
+
 ## Troubleshooting
 
 ### Vấn đề: "Connection refused" khi API connect MongoDB
