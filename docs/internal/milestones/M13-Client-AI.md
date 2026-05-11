@@ -43,7 +43,7 @@
 - [x] Tích hợp login, danh sách alert, chi tiết thiết bị
 
 ### Giai đoạn 2: AI foundation
-- [ ] Chuẩn hóa pipeline dữ liệu huấn luyện/tính điểm
+- [x] Chuẩn hóa pipeline dữ liệu huấn luyện/tính điểm
 - [x] Tạo service chấm điểm bất thường (shadow mode)
 - [x] Lưu kết quả AI song song với alert rule-based
 
@@ -57,8 +57,8 @@
 ## Theo dõi trạng thái
 
 - **Tổng số hạng mục**: 2 track chính, 3 giai đoạn
-- **Đang thực hiện**: Giai đoạn 3 (A/B testing prep)
-- **Đã hoàn thành**: Mobile track + AI shadow mode + evaluation infrastructure
+- **Đang thực hiện**: Giai đoạn 3 (Production evaluation)
+- **Đã hoàn thành**: All mobile tasks + AI shadow mode + UI display + data pipeline infrastructure
 - **Cập nhật lần cuối**: 11/05/2026
 
 ---
