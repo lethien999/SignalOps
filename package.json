@@ -25,6 +25,7 @@
     "perf:load": "node scripts/perf-load.mjs",
     "perf:soak": "node scripts/perf-load.mjs",
     "perf:websocket": "node scripts/perf-websocket.mjs",
+    "eval:ai": "node scripts/eval-ai-scoring.mjs",
     "db:migrate": "npm run -w api-gateway db:migrate",
     "db:rollback": "npm run -w api-gateway db:rollback",
     "db:seed": "npm run -w api-gateway db:seed",

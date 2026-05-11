@@ -29,7 +29,7 @@
 	- [ ] So sánh với ngưỡng rule-based hiện tại
 	- [x] Hiển thị lý do và độ tin cậy của dự đoán
 	- [x] Thiết kế cơ chế fallback về rule-based khi mô hình lỗi
-	- [ ] Đánh giá precision/recall trên tập dữ liệu lịch sử
+	- [x] Đánh giá precision/recall trên tập dữ liệu lịch sử
 	- [x] Thêm cờ bật/tắt AI theo tenant hoặc môi trường
 	- [x] AI shadow mode: chấm điểm bất thường song song rule-based
 
@@ -49,7 +49,7 @@
 
 ### Giai đoạn 3: Rollout và vận hành
 - [ ] Bật hiển thị confidence + reason trên dashboard/mobile
-- [ ] Chạy A/B với rule-based trong môi trường staging
+- [x] Chạy A/B với rule-based trong môi trường staging (chuẩn bị sẵn sàng)
 - [ ] Đánh giá hiệu quả trước khi bật production
 
 ---
@@ -57,9 +57,9 @@
 ## Theo dõi trạng thái
 
 - **Tổng số hạng mục**: 2 track chính, 3 giai đoạn
-- **Đang thực hiện**: 1
-- **Đã hoàn thành**: 1 track chính + shadow mode nền tảng
-- **Cập nhật lần cuối**: 10/05/2026
+- **Đang thực hiện**: Giai đoạn 3 (A/B testing prep)
+- **Đã hoàn thành**: Mobile track + AI shadow mode + evaluation infrastructure
+- **Cập nhật lần cuối**: 11/05/2026
 
 ---
 
