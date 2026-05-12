@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Worker Service
 # Stage 1: Builder
-FROM node:18-alpine AS builder
+FROM node:18-bullseye AS builder
 
 WORKDIR /app
 
@@ -20,15 +20,17 @@ RUN npm ci
 RUN npm run -w @signalops/models build && npm run -w @signalops/common build && npm run -w worker-service build
 
 # Stage 2: Runtime
-FROM node:18-alpine
+FROM node:18-bullseye-slim
 
 WORKDIR /app
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs -s /bin/bash nodejs
 
-# Install required libraries for onnxruntime-node on Alpine
-RUN apk add --no-cache libstdc++ glibc libgomp
+# Install required libraries for onnxruntime-node (Debian/glibc has this natively)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libstdc++6 libgomp1 ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the worker package.json (avoid root workspaces during runtime)
 COPY --from=builder /app/apps/worker-service/package.json ./package.json
@@ -44,9 +46,13 @@ COPY --from=builder /app/libs/models/package.json /app/node_modules/@signalops/m
 COPY --from=builder /app/libs/models/dist /app/node_modules/@signalops/models/dist
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-service/dist ./dist
+
+# Copy runtime ML assets referenced by the worker
+COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-service/src/assets ./src/assets
 
 # Switch to non-root user
 USER nodejs
 
-CMD ["node", "dist/apps/worker-service/main.js"]
+# Runtime entrypoint: use ENTRYPOINT to make intent explicit
+ENTRYPOINT ["node", "dist/main.js"]

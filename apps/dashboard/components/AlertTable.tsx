@@ -10,12 +10,18 @@ interface AlertTableProps {
   serverSide?: boolean;
 }
 
-const severityConfig = {
+const severityConfig: Record<string, { color: string; badge: string; icon: React.ElementType }> = {
   critical: { color: "bg-red-100 text-red-700", badge: "bg-red-200", icon: AlertTriangle },
   high: { color: "bg-red-50 text-red-700", badge: "bg-red-100", icon: AlertTriangle },
   warning: { color: "bg-orange-50 text-orange-700", badge: "bg-orange-100", icon: AlertCircle },
   medium: { color: "bg-yellow-50 text-yellow-700", badge: "bg-yellow-100", icon: AlertCircle },
   low: { color: "bg-blue-50 text-blue-700", badge: "bg-blue-100", icon: AlertCircle },
+};
+
+const fallbackSeverityConfig = {
+  color: "bg-gray-100 text-gray-700",
+  badge: "bg-gray-200",
+  icon: AlertCircle,
 };
 
 export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertTableProps) {
@@ -171,7 +177,7 @@ export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertT
                     </span>
                   </button>
                   {isExpanded && groupAlerts.map((alert) => {
-                    const config = severityConfig[alert.severity];
+                    const config = severityConfig[String(alert.severity || "").toLowerCase()] || fallbackSeverityConfig;
                     const Icon = config.icon;
                     return (
                       <div key={alert.id} onClick={() => onSelectAlert(alert)}
@@ -251,7 +257,7 @@ export function AlertTable({ alerts, onSelectAlert, serverSide = false }: AlertT
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginatedAlerts.map((alert) => {
-              const config = severityConfig[alert.severity];
+              const config = severityConfig[String(alert.severity || "").toLowerCase()] || fallbackSeverityConfig;
               const Icon = config.icon;
               return (
                 <tr
