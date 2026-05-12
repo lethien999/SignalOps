@@ -1,46 +1,46 @@
-# M13: ML Model Integration Guide
+# M13: Hướng dẫn Tích hợp Mô hình ML
 
-## Status: Model Trained ✅
+## Trạng thái: Mô hình được huấn luyện ✅
 
-### Training Results
+### Kết quả Huấn luyện
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Precision | 83.33% | ≥80% | ✅ PASS |
-| Recall | 71.43% | ≥75% | ⚠️ 0.36% short |
-| F1 Score | 76.92% | ≥77% | ⚠️ 0.08% short |
-| ROC-AUC | 91.90% | ≥85% | ✅ PASS |
+| Chỉ số | Giá trị | Mục tiêu | Trạng thái |
+|--------|--------|---------|-----------|
+| Precision (Độ chính xác) | 83.33% | ≥80% | ✅ ĐẠT |
+| Recall (Tái tìm kiếm) | 71.43% | ≥75% | ⚠️ Kém 0.36% |
+| F1 Score | 76.92% | ≥77% | ⚠️ Kém 0.08% |
+| ROC-AUC | 91.90% | ≥85% | ✅ ĐẠT |
 
-**Model**: scikit-learn Random Forest  
-**Training Data**: 29,305 events (30 days), class_weight='balanced'  
-**Model File**: `anomaly-model.pkl`  
-**Metrics File**: `training-metrics.json`  
-**Location**: Root directory (trained by `python scripts/train-model.py`)
-
----
-
-## Why Recall is Slightly Low
-
-With extreme class imbalance (1:813), Random Forest with balanced class weights is **conservative** - it avoids false positives at the cost of some missed anomalies. This is actually **safer for production** (fewer false alarms).
-
-**Options to improve Recall:**
-- Try XGBoost with hyperparameter tuning
-- Retrain with threshold adjustment (lower decision threshold)
-- Use ensemble of multiple models
+**Mô hình**: scikit-learn Random Forest  
+**Dữ liệu Huấn luyện**: 29.305 sự kiện (30 ngày), class_weight='balanced'  
+**File Mô hình**: `anomaly-model.pkl`  
+**File Metrics**: `training-metrics.json`  
+**Vị trí**: Thư mục gốc (được huấn luyện bằng `python scripts/train-model.py`)
 
 ---
 
-## Phase 5: ML Integration into Worker (PENDING)
+## Tại sao Recall Thấp một chút
 
-### Step 1: Convert Model to ONNX Format
+Với sự mất cân bằng lớp cực đoan (1:813), Random Forest với trọng số lớp cân bằng là **bảo thủ** - nó tránh dương tính giả với chi phí bỏ lỡ một số dị thường. Điều này thực sự **an toàn hơn cho production** (cảnh báo giả ít hơn).
 
-**Why?** Node.js cannot directly load `.pkl` files. ONNX is a cross-platform format that Node.js can execute via `onnxruntime`.
+**Các tùy chọn để cải thiện Recall:**
+- Thử XGBoost với điều chỉnh siêu tham số
+- Huấn luyện lại với điều chỉnh ngưỡng (hạ ngưỡng quyết định)
+- Sử dụng tổng hợp nhiều mô hình
+
+---
+
+## Giai đoạn 5: Tích hợp ML vào Worker (CHỜ XỬ LÝ)
+
+### Bước 1: Chuyển đổi Mô hình sang Định dạng ONNX
+
+**Tại sao?** Node.js không thể trực tiếp tải file `.pkl`. ONNX là định dạng đa nền tảng mà Node.js có thể thực thi thông qua `onnxruntime`.
 
 ```bash
-# Install conversion tools
+# Cài đặt các công cụ chuyển đổi
 pip install skl2onnx onnxruntime
 
-# Convert scikit-learn model to ONNX
+# Chuyển đổi mô hình scikit-learn sang ONNX
 python -c "
 from skl2onnx import convert_sklearn
 from sklearn.ensemble import RandomForestClassifier
@@ -53,210 +53,210 @@ onnx_model = convert_sklearn(model, initial_types=[
 
 from skl2onnx import save_onnx
 save_onnx(onnx_model, 'apps/worker-service/src/assets/anomaly-model.onnx')
-print('✓ Model converted to ONNX')
+print('✓ Mô hình được chuyển đổi sang ONNX')
 "
 ```
 
-### Step 2: Install Node.js Runtime
+### Bước 2: Cài đặt Runtime Node.js
 
 ```bash
 npm install -w worker-service onnxruntime-node
 ```
 
-### Step 3: Update anomaly-scoring.ts
+### Bước 3: Cập nhật anomaly-scoring.ts
 
-Uncomment the ML loading code in `apps/worker-service/src/services/anomaly-scoring.ts`:
+Bỏ comment mã tải ML trong `apps/worker-service/src/services/anomaly-scoring.ts`:
 
 ```typescript
-// In initMLModel():
+// Trong initMLModel():
 import ort from 'onnxruntime-node';
 mlModel = await ort.InferenceSession.create('./src/assets/anomaly-model.onnx');
 mlModelReady = true;
-console.log('✓ ML model loaded (ONNX format)');
+console.log('✓ Mô hình ML được tải (định dạng ONNX)');
 ```
 
-### Step 4: Update worker main.ts
+### Bước 4: Cập nhật worker main.ts
 
-Call `initMLModel()` at startup:
+Gọi `initMLModel()` tại khởi động:
 
 ```typescript
 import { initMLModel } from './services/anomaly-scoring';
 
 async function bootstrap() {
-  // ... existing setup ...
+  // ... setup hiện có ...
   
-  // Initialize ML model (fallback to deterministic if fails)
+  // Khởi tạo mô hình ML (fallback thành deterministic nếu thất bại)
   await initMLModel();
   
-  // ... rest of bootstrap ...
+  // ... phần còn lại của bootstrap ...
 }
 ```
 
-### Step 5: Build and Test
+### Bước 5: Xây dựng và Kiểm thử
 
 ```bash
 npm run -w worker-service build
 npm run -w worker-service dev
 ```
 
-Expected output:
+Đầu ra mong đợi:
 ```
-✓ ML model loaded (ONNX format)
-📊 Worker service started on port 3002
+✓ Mô hình ML được tải (định dạng ONNX)
+📊 Dịch vụ Worker khởi động trên cổng 3002
 AI Model Version: shadow-heuristic-v1 (ML-enabled)
 ```
 
 ---
 
-## Fallback Behavior
+## Hành vi Fallback
 
-If ML model loading fails:
-- Worker falls back to deterministic scoring (heuristic-v1)
-- No interruption to service
-- Both methods return same `AnomalyScoreResult` structure
+Nếu tải mô hình ML thất bại:
+- Worker quay lại điểm tính toán xác định (heuristic-v1)
+- Không có gián đoạn dịch vụ
+- Cả hai phương pháp trả về cùng cấu trúc `AnomalyScoreResult`
 
 ```typescript
 export async function initMLModel() {
   try {
-    // Load ONNX model
+    // Tải mô hình ONNX
     mlModel = await ort.InferenceSession.create('./src/assets/anomaly-model.onnx');
     mlModelReady = true;
   } catch (error) {
-    console.error('Failed to load ML model, using deterministic:', error);
-    mlModelReady = false;  // Fallback to deterministic
+    console.error('Không thể tải mô hình ML, dùng xác định:', error);
+    mlModelReady = false;  // Fallback thành xác định
   }
 }
 ```
 
 ---
 
-## Feature Importance (from Training)
+## Tầm quan trọng của Tính năng (từ Huấn luyện)
 
-These metrics are what the model learned were most important for anomaly detection:
+Đây là những chỉ số mà mô hình học được quan trọng nhất để phát hiện dị thường:
 
-| Feature | Importance | Interpretation |
+| Tính năng | Tầm quan trọng | Diễn giải |
 |---------|-----------|-----------------|
-| packetLoss_norm | ~35% | Packet loss is strongest anomaly indicator |
-| signalStrength_norm | ~30% | Signal strength degradation is important |
-| latency_norm | ~25% | Latency matters but less than loss/signal |
-| overall_quality | ~7% | Composite score has minimal impact |
-| day_of_week | ~2% | Day patterns have minimal effect |
-| hour_of_day | ~1% | Time-of-day patterns minimal |
+| packetLoss_norm | ~35% | Mất gói là chỉ báo dị thường mạnh nhất |
+| signalStrength_norm | ~30% | Suy giảm độ mạnh tín hiệu là quan trọng |
+| latency_norm | ~25% | Độ trễ quan trọng nhưng ít hơn loss/signal |
+| overall_quality | ~7% | Điểm tổng hợp có tác động tối thiểu |
+| day_of_week | ~2% | Mẫu ngày có tác động tối thiểu |
+| hour_of_day | ~1% | Mẫu thời gian trong ngày tối thiểu |
 
-**Insight**: Network connectivity (packet loss + signal strength) drives anomalies more than latency.
+**Nhận xét**: Kết nối mạng (mất gói + độ mạnh tín hiệu) thúc đẩy dị thường nhiều hơn độ trễ.
 
 ---
 
-## Evaluation: Compare ML vs Rule-Based
+## Đánh giá: So sánh ML vs Rule-Based
 
-After integrating ML model, run the evaluation script to compare:
+Sau khi tích hợp mô hình ML, chạy kịch bản đánh giá để so sánh:
 
 ```bash
 npm run eval:ai
 ```
 
-This will show:
-- Precision/Recall/F1 with ML model
-- Precision/Recall/F1 with rule-based thresholds
-- Side-by-side comparison
-- Recommendation for production deployment
+Điều này sẽ hiển thị:
+- Precision/Recall/F1 với mô hình ML
+- Precision/Recall/F1 với ngưỡng rule-based
+- So sánh song song
+- Khuyến nghị cho triển khai production
 
-Expected output:
+Đầu ra mong đợi:
 ```
-📊 AI Model Evaluation Report
+📊 Báo cáo Đánh giá Mô hình AI
 ================================
-Rule-Based (Current):
+Rule-Based (Hiện tại):
   Precision: 78%
   Recall: 82%
   F1: 80%
   
-ML Model (Trained):
+ML Model (Được huấn luyện):
   Precision: 83%
   Recall: 71%
   F1: 77%
 
-Recommendation: ML model has fewer false alarms
-Deploy to staging for A/B testing ✓
+Khuyến nghị: Mô hình ML có ít cảnh báo giả hơn
+Triển khai sang staging để A/B test ✓
 ```
 
 ---
 
-## Production Deployment Checklist
+## Danh sách Kiểm tra Triển khai Production
 
-- [ ] Convert model to ONNX format
-- [ ] Install onnxruntime-node
-- [ ] Uncomment ML loading code in anomaly-scoring.ts
-- [ ] Call initMLModel() in worker main.ts
-- [ ] Build and test locally
-- [ ] Deploy to staging environment
-- [ ] Run A/B test (ML vs Rule-Based)
-- [ ] Monitor metrics in staging for 48-72 hours
-- [ ] If metrics good, deploy to production
-- [ ] Monitor production for 1 week
-- [ ] Keep fallback to rule-based enabled for quick rollback
+- [ ] Chuyển đổi mô hình sang định dạng ONNX
+- [ ] Cài đặt onnxruntime-node
+- [ ] Bỏ comment mã tải ML trong anomaly-scoring.ts
+- [ ] Gọi initMLModel() trong worker main.ts
+- [ ] Xây dựng và kiểm thử tại chỗ
+- [ ] Triển khai tới môi trường staging
+- [ ] Chạy A/B test (ML vs Rule-Based)
+- [ ] Giám sát metrics trong staging trong 48-72 giờ
+- [ ] Nếu metrics tốt, triển khai tới production
+- [ ] Giám sát production trong 1 tuần
+- [ ] Giữ fallback thành rule-based cho rollback nhanh
 
 ---
 
-## Troubleshooting
+## Khắc phục Sự cố
 
-### Issue: ONNX model loading fails
+### Vấn đề: Tải mô hình ONNX thất bại
 
-**Error**: `Failed to load ML model using deterministic scoring`
+**Lỗi**: `Failed to load ML model using deterministic scoring`
 
-**Solutions**:
-1. Verify ONNX file exists: `ls -la apps/worker-service/src/assets/anomaly-model.onnx`
-2. Check permissions: `chmod 644 anomaly-model.onnx`
-3. Verify file size: Should be ~500KB (not corrupted)
-4. Rebuild worker service: `npm run -w worker-service build`
+**Giải pháp**:
+1. Xác minh file ONNX tồn tại: `ls -la apps/worker-service/src/assets/anomaly-model.onnx`
+2. Kiểm tra quyền: `chmod 644 anomaly-model.onnx`
+3. Xác minh kích thước file: Nên khoảng ~500KB (không bị hỏng)
+4. Xây dựng lại dịch vụ worker: `npm run -w worker-service build`
 
-### Issue: Model predictions seem wrong
+### Vấn đề: Dự đoán mô hình dường như sai
 
 **Debug**:
 ```typescript
-// Add logging in anomaly-scoring.ts
-console.log('ML Input features:', features);
-console.log('ML Output:', result);
-console.log('Anomaly confidence:', anomalyConfidence);
+// Thêm logging trong anomaly-scoring.ts
+console.log('Tính năng đầu vào ML:', features);
+console.log('Đầu ra ML:', result);
+console.log('Độ tin cậy dị thường:', anomalyConfidence);
 ```
 
-### Issue: High recall needed, willing to accept false alarms
+### Vấn đề: Cần Recall cao, sẵn sàng chấp nhận cảnh báo giả
 
-**Solution**: Lower decision threshold in scoreWithMLModel():
+**Giải pháp**: Hạ ngưỡng quyết định trong scoreWithMLModel():
 ```typescript
-const threshold = 0.4;  // Default 0.5, lower = more alerts
+const threshold = 0.4;  // Mặc định 0.5, thấp hơn = cảnh báo nhiều hơn
 const anomalyConfidence = confidence > threshold ? 1 : 0;
 ```
 
 ---
 
-## File Reference
+## Tham chiếu File
 
-| File | Purpose | Status |
+| File | Mục đích | Trạng thái |
 |------|---------|--------|
-| `anomaly-model.pkl` | Trained scikit-learn model | Ready |
-| `training-metrics.json` | Training evaluation metrics | Ready |
-| `anomaly-model.onnx` | ONNX format (after conversion) | Pending |
-| `apps/worker-service/src/services/anomaly-scoring.ts` | ML integration code (commented) | Ready |
-| `apps/worker-service/src/main.ts` | Initialize ML at startup | Ready (pending update) |
+| `anomaly-model.pkl` | Mô hình scikit-learn được huấn luyện | Sẵn sàng |
+| `training-metrics.json` | Metrics đánh giá huấn luyện | Sẵn sàng |
+| `anomaly-model.onnx` | Định dạng ONNX (sau chuyển đổi) | Chờ xử lý |
+| `apps/worker-service/src/services/anomaly-scoring.ts` | Mã tích hợp ML (được comment) | Sẵn sàng |
+| `apps/worker-service/src/main.ts` | Khởi tạo ML tại khởi động | Sẵn sàng (chờ cập nhật) |
 
 ---
 
-## Next Steps
+## Các Bước Tiếp theo
 
-**Immediate**:
-1. ✅ Train ML model (DONE - 83% Precision, 72% Recall, 92% ROC-AUC)
-2. ⏳ Convert model to ONNX format
-3. ⏳ Update worker service to load model
-4. ⏳ Build and test integration
-5. ⏳ Run evaluation: `npm run eval:ai`
-6. ⏳ Deploy to staging
+**Ngay lập tức**:
+1. ✅ Huấn luyện mô hình ML (HOÀN THÀNH - 83% Precision, 72% Recall, 92% ROC-AUC)
+2. ⏳ Chuyển đổi mô hình sang định dạng ONNX
+3. ⏳ Cập nhật dịch vụ worker để tải mô hình
+4. ⏳ Xây dựng và kiểm thử tích hợp
+5. ⏳ Chạy đánh giá: `npm run eval:ai`
+6. ⏳ Triển khai sang staging
 7. ⏳ A/B test ML vs Rule-Based
-8. ⏳ Production deployment
+8. ⏳ Triển khai production
 
-**Timeline**: 2-3 hours for conversion + integration + testing
+**Thời gian ước lượng**: 2-3 giờ cho chuyển đổi + tích hợp + kiểm thử
 
 ---
 
-**Created**: 11/05/2026  
-**Model Version**: shadow-heuristic-v1 (ML branch)  
-**Ready For**: Phase 5 (ONNX conversion)
+**Tạo**: 11/05/2026  
+**Phiên bản Mô hình**: shadow-heuristic-v1 (nhánh ML)  
+**Sẵn sàng cho**: Giai đoạn 5 (chuyển đổi ONNX)

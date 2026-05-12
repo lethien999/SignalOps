@@ -1,46 +1,46 @@
-# Authentication & Authorization Documentation
+# Tài liệu Xác thực và Phân quyền
 
-## Overview
+## Tổng quan
 
-SignalOps implements a stateless JWT-based authentication system with role-based access control (RBAC) for multi-tenant isolation.
+SignalOps sử dụng hệ thống xác thực dựa trên JWT (stateless) với kiểm soát truy cập dựa trên vai trò (RBAC) để cách ly đa đối tượng.
 
-## Authentication Architecture
+## Kiến trúc Xác thực
 
 ### JWT (JSON Web Tokens)
 
-- **Format**: Stateless tokens signed with HS256
-- **Expiry**: 7 days (configurable via `JWT_EXPIRES_IN` env var)
-- **Secret**: Configured via `JWT_SECRET` env var (default: 'dev-secret-key-change-in-prod' - MUST be changed in production)
+- **Định dạng**: Token không trạng thái ký bằng HS256
+- **Thời hạn**: 7 ngày (có thể cấu hình qua biến môi trường `JWT_EXPIRES_IN`)
+- **Bí mật**: Cấu hình qua biến môi trường `JWT_SECRET` (mặc định: 'dev-secret-key-change-in-prod' - PHẢI thay đổi trong production)
 
-### JWT Payload
+### Payload JWT
 
 ```typescript
 {
-  userId: ObjectId,           // User ID
-  tenantId: ObjectId,         // Tenant ID (multi-tenant context)
-  email: string,              // User email
-  roleId: 'admin' | 'editor' | 'viewer',  // User role
-  iat: number,                // Issued at (Unix timestamp)
-  exp: number                 // Expiration (Unix timestamp)
+  userId: ObjectId,           // ID người dùng
+  tenantId: ObjectId,         // ID đối tượng (ngữ cảnh đa đối tượng)
+  email: string,              // Email người dùng
+  roleId: 'admin' | 'editor' | 'viewer',  // Vai trò người dùng
+  iat: number,                // Thời gian phát hành (Unix timestamp)
+  exp: number                 // Thời hạn (Unix timestamp)
 }
 ```
 
-### Token Flow
+### Quy trình Token
 
-1. **Client authenticates**: POST `/auth/signup` or `/auth/login`
-2. **Server returns JWT**: Token embedded in response
-3. **Client stores JWT**: In browser localStorage (dashboard)
-4. **Client sends JWT**: In Authorization header for subsequent requests
-5. **Server validates JWT**: On protected routes using `JwtGuard`
+1. **Client xác thực**: POST `/auth/signup` hoặc `/auth/login`
+2. **Server trả về JWT**: Token được nhúng trong phản hồi
+3. **Client lưu trữ JWT**: Trong localStorage của trình duyệt (dashboard)
+4. **Client gửi JWT**: Trong header Authorization cho các yêu cầu tiếp theo
+5. **Server xác thực JWT**: Trên các route được bảo vệ sử dụng `JwtGuard`
 
 ## Endpoints
 
-### Public (No Auth Required)
+### Công khai (Không yêu cầu xác thực)
 
 #### POST /auth/signup
-Register a new user and create a tenant
+Đăng ký người dùng mới và tạo đối tượng
 
-**Request:**
+**Yêu cầu:**
 ```json
 {
   "email": "user@example.com",
@@ -49,7 +49,7 @@ Register a new user and create a tenant
 }
 ```
 
-**Response (201 Created):**
+**Phản hồi (201 Created):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -62,17 +62,17 @@ Register a new user and create a tenant
 }
 ```
 
-**Validation:**
-- Email must be valid and unique
-- Password must be ≥8 characters
-- Tenant must exist
+**Xác thực:**
+- Email phải hợp lệ và duy nhất
+- Mật khẩu phải có ≥8 ký tự
+- Đối tượng phải tồn tại
 
-**Note**: First user in a tenant gets 'admin' role automatically.
+**Lưu ý**: Người dùng đầu tiên trong một đối tượng được gán vai trò 'admin' tự động.
 
 #### POST /auth/login
-Authenticate with email and password
+Xác thực bằng email và mật khẩu
 
-**Request:**
+**Yêu cầu:**
 ```json
 {
   "email": "user@example.com",
@@ -80,7 +80,7 @@ Authenticate with email and password
 }
 ```
 
-**Response (200 OK):**
+**Phản hồi (200 OK):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -93,21 +93,21 @@ Authenticate with email and password
 }
 ```
 
-**Errors:**
-- `401 Unauthorized` - Invalid credentials
-- `400 Bad Request` - Missing/invalid email or password
+**Lỗi:**
+- `401 Unauthorized` - Thông tin xác thực không hợp lệ
+- `400 Bad Request` - Email hoặc mật khẩu bị thiếu/không hợp lệ
 
-### Protected (Require Auth Header)
+### Được bảo vệ (Yêu cầu header Authorization)
 
-All protected endpoints require the Authorization header:
+Tất cả các endpoint được bảo vệ yêu cầu header Authorization:
 ```
 Authorization: Bearer <jwt-token>
 ```
 
 #### GET /auth/me
-Get current authenticated user info
+Lấy thông tin người dùng đã xác thực hiện tại
 
-**Response (200 OK):**
+**Phản hồi (200 OK):**
 ```json
 {
   "userId": "user-id",
@@ -118,15 +118,15 @@ Get current authenticated user info
 ```
 
 #### GET /tenants/:tenantId/users
-List all users in a tenant
+Liệt kê tất cả người dùng trong một đối tượng
 
-**Permissions**: `admin` only
+**Quyền**: Chỉ `admin`
 
-**Query Parameters:**
-- `skip` (default: 0) - Number of records to skip
-- `limit` (default: 50, max: 100) - Records per page
+**Tham số Query:**
+- `skip` (mặc định: 0) - Số bản ghi cần bỏ qua
+- `limit` (mặc định: 50, tối đa: 100) - Bản ghi trên mỗi trang
 
-**Response (200 OK):**
+**Phản hồi (200 OK):**
 ```json
 [
   {
@@ -141,19 +141,19 @@ List all users in a tenant
 ```
 
 #### POST /tenants/:tenantId/users
-Add a user to a tenant
+Thêm người dùng vào đối tượng
 
-**Permissions**: `admin` only
+**Quyền**: Chỉ `admin`
 
-**Request:**
+**Yêu cầu:**
 ```json
 {
   "email": "newuser@example.com",
-  "roleId": "editor"  // optional, defaults to 'viewer'
+  "roleId": "editor"  // tùy chọn, mặc định 'viewer'
 }
 ```
 
-**Response (201 Created):**
+**Phản hồi (201 Created):**
 ```json
 {
   "id": "user-id",
@@ -164,11 +164,11 @@ Add a user to a tenant
 ```
 
 #### DELETE /tenants/:tenantId/users/:userId
-Remove user from tenant (soft delete - sets isActive=false)
+Xóa người dùng khỏi đối tượng (xóa mềm - đặt isActive=false)
 
-**Permissions**: `admin` only
+**Quyền**: Chỉ `admin`
 
-**Response (200 OK):**
+**Phản hồi (200 OK):**
 ```json
 {
   "id": "user-id",
@@ -178,18 +178,18 @@ Remove user from tenant (soft delete - sets isActive=false)
 ```
 
 #### PATCH /tenants/:tenantId/users/:userId/role
-Update a user's role
+Cập nhật vai trò của người dùng
 
-**Permissions**: `admin` only
+**Quyền**: Chỉ `admin`
 
-**Request:**
+**Yêu cầu:**
 ```json
 {
-  "roleId": "admin"  // 'admin', 'editor', or 'viewer'
+  "roleId": "admin"  // 'admin', 'editor', hoặc 'viewer'
 }
 ```
 
-**Response (200 OK):**
+**Phản hồi (200 OK):**
 ```json
 {
   "id": "user-id",
@@ -198,159 +198,159 @@ Update a user's role
 }
 ```
 
-## Roles & Permissions
+## Vai trò và Quyền
 
-### Role Definitions
+### Định nghĩa Vai trò
 
-SignalOps uses three fixed roles:
+SignalOps sử dụng ba vai trò cố định:
 
 #### admin
-- Full access to all features
-- Can manage users and roles
-- Can view all metrics and SLA data
-- Can configure alerts and thresholds
+- Truy cập đầy đủ vào tất cả các tính năng
+- Có thể quản lý người dùng và vai trò
+- Có thể xem tất cả các metrics và dữ liệu SLA
+- Có thể cấu hình cảnh báo và ngưỡng
 
-**Permissions:**
-- `read:events` - Read event data
-- `write:events` - Create/write events
-- `manage:users` - User management
-- `view:metrics` - View infrastructure metrics
-- `manage:alerts` - Configure alerts
+**Quyền:**
+- `read:events` - Đọc dữ liệu sự kiện
+- `write:events` - Tạo/ghi sự kiện
+- `manage:users` - Quản lý người dùng
+- `view:metrics` - Xem metrics cơ sở hạ tầng
+- `manage:alerts` - Cấu hình cảnh báo
 
 #### editor
-- Can read and write event data
-- Can view metrics
-- Cannot manage users or configuration
+- Có thể đọc và ghi dữ liệu sự kiện
+- Có thể xem metrics
+- Không thể quản lý người dùng hoặc cấu hình
 
-**Permissions:**
+**Quyền:**
 - `read:events`
 - `write:events`
 - `view:metrics`
 
 #### viewer
-- Read-only access to events and metrics
-- No write or management capabilities
+- Chỉ có quyền đọc sự kiện và metrics
+- Không có khả năng ghi hoặc quản lý
 
-**Permissions:**
+**Quyền:**
 - `read:events`
 - `view:metrics`
 
-### Permission Checking
+### Kiểm tra Quyền
 
-Server validates user permissions using `@Authorize(role)` decorator:
+Server xác thực quyền của người dùng sử dụng decorator `@Authorize(role)`:
 
 ```typescript
 @Get('/sensitive-data')
 @UseGuards(JwtGuard, RoleGuard)
-@Authorize('admin')  // Only admin can access
+@Authorize('admin')  // Chỉ admin có thể truy cập
 async getSensitiveData() {
   // ...
 }
 ```
 
-## Multi-Tenant Isolation
+## Cách ly Đa đối tượng
 
-### Tenant Context
+### Ngữ cảnh Đối tượng
 
-Every user belongs to exactly one tenant:
-- User.tenantId = tenant's MongoDB ObjectId
-- JWT payload includes tenantId
-- `TenantContextMiddleware` extracts tenantId from JWT and attaches to request
+Mỗi người dùng chỉ thuộc về một đối tượng:
+- User.tenantId = MongoDB ObjectId của đối tượng
+- JWT payload bao gồm tenantId
+- `TenantContextMiddleware` trích xuất tenantId từ JWT và gắn vào yêu cầu
 
-### Tenant Validation
+### Xác thực Đối tượng
 
-Before accessing tenant resources:
+Trước khi truy cập tài nguyên của đối tượng:
 
-1. **Extract user's tenantId from JWT**
-2. **Compare with requested tenantId in URL**
-3. **Reject if mismatch** (403 Forbidden)
+1. **Trích xuất tenantId của người dùng từ JWT**
+2. **So sánh với tenantId được yêu cầu trong URL**
+3. **Từ chối nếu không khớp** (403 Forbidden)
 
-Example:
+Ví dụ:
 ```typescript
 if (!validateTenantAccess(req.user.tenantId, requestedTenantId)) {
-  throw new ForbiddenException('You do not have access to this tenant');
+  throw new ForbiddenException('Bạn không có quyền truy cập đối tượng này');
 }
 ```
 
-### Data Filtering
+### Lọc Dữ liệu
 
-All queries should filter by tenantId:
+Tất cả các truy vấn nên lọc theo tenantId:
 
 ```typescript
-// Good - filters by tenant
+// Tốt - lọc theo đối tượng
 const alerts = await alertModel.find({ tenantId: userTenantId });
 
-// Bad - no tenant filtering (data leak)
+// Xấu - không lọc theo đối tượng (rò rỉ dữ liệu)
 const alerts = await alertModel.find({});
 ```
 
-Use `buildTenantFilter()` utility:
+Sử dụng tiện ích `buildTenantFilter()`:
 ```typescript
 const filter = buildTenantFilter(userTenantId, { status: 'open' });
 const alerts = await alertModel.find(filter);
-// Equivalent to: { tenantId: userTenantId, status: 'open' }
+// Tương đương với: { tenantId: userTenantId, status: 'open' }
 ```
 
-## Security Best Practices
+## Các Thực hành Bảo mật Tốt nhất
 
-### Password Security
+### Bảo mật Mật khẩu
 
-- Hashed with bcrypt (12 rounds)
-- Minimum 8 characters
-- Never logged or exposed in responses
+- Được mã hóa bằng bcrypt (12 vòng)
+- Tối thiểu 8 ký tự
+- Không bao giờ được ghi log hoặc hiển thị trong phản hồi
 
-### Token Security
+### Bảo mật Token
 
-1. **Transmission**: Always use HTTPS in production
-2. **Storage (Browser)**: localStorage + httpOnly cookies
-   - localStorage: For client-side access
-   - cookies: For middleware access
-3. **Expiry**: 7-day tokens to limit exposure window
-4. **Revocation**: Not implemented (stateless); use logout on client to clear tokens
+1. **Truyền tải**: Luôn sử dụng HTTPS trong production
+2. **Lưu trữ (Trình duyệt)**: localStorage + httpOnly cookies
+   - localStorage: Để truy cập từ phía client
+   - cookies: Để truy cập từ middleware
+3. **Thời hạn**: Token 7 ngày để hạn chế cửa sổ tiếp xúc
+4. **Thu hồi**: Chưa được triển khai (stateless); sử dụng logout trên client để xóa token
 
-### Environment Variables (Production)
+### Biến môi trường (Production)
 
 ```bash
-# Must be configured in production
-JWT_SECRET=<long-random-string>  # Min 32 chars, use openssl rand -base64 32
+# Phải được cấu hình trong production
+JWT_SECRET=<long-random-string>  # Tối thiểu 32 ký tự, sử dụng openssl rand -base64 32
 JWT_EXPIRES_IN=7d
 MONGODB_URI=mongodb+srv://...
 ```
 
 ### CORS & CSRF
 
-- Configure CORS for dashboard domain
-- CSRF tokens optional (JWT provides inherent CSRF protection)
+- Cấu hình CORS cho domain dashboard
+- Token CSRF tùy chọn (JWT cung cấp bảo vệ CSRF vốn có)
 
-## Dashboard Integration
+## Tích hợp Dashboard
 
-### Login Flow
+### Quy trình Đăng nhập
 
-1. User navigates to `/login`
-2. Enters email and password
-3. POST `/auth/login` request
-4. Store token in localStorage and cookies (see `lib/auth.ts`)
-5. Redirect to `/` (dashboard)
-6. Middleware validates token presence
-7. API interceptor adds Bearer token to all requests
+1. Người dùng điều hướng đến `/login`
+2. Nhập email và mật khẩu
+3. Yêu cầu POST `/auth/login`
+4. Lưu token trong localStorage và cookies (xem `lib/auth.ts`)
+5. Chuyển hướng đến `/` (dashboard)
+6. Middleware xác thực sự có mặt của token
+7. Interceptor API thêm token Bearer vào tất cả các yêu cầu
 
-### Token Storage
+### Lưu trữ Token
 
 ```typescript
 // apps/dashboard/lib/auth.ts
-setAuthToken({ token, user });  // Stores in localStorage + cookies
+setAuthToken({ token, user });  // Lưu trong localStorage + cookies
 
-// Retrieval
+// Truy xuất
 const token = getAuthToken();
 const user = getAuthUser();
 
-// Logout
+// Đăng xuất
 clearAuthToken();
 ```
 
-### API Integration
+### Tích hợp API
 
-All axios requests automatically include Authorization header:
+Tất cả các yêu cầu axios tự động bao gồm header Authorization:
 
 ```typescript
 // apps/dashboard/lib/api.ts
@@ -363,65 +363,65 @@ api.interceptors.request.use((config) => {
 });
 ```
 
-## Testing
+## Kiểm thử
 
-### Unit Tests
+### Kiểm thử Đơn vị
 
-Test auth service, guards, and utilities:
+Kiểm thử dịch vụ xác thực, guards, và tiện ích:
 ```bash
 npm run -w api-gateway test -- auth.service.spec.ts
 npm run -w api-gateway test -- guards.spec.ts
 ```
 
-### E2E Tests
+### Kiểm thử E2E
 
-Test complete auth flows including tenant isolation:
+Kiểm thử các quy trình xác thực hoàn chỉnh bao gồm cách ly đa đối tượng:
 ```bash
 npm run -w api-gateway test:e2e -- auth.e2e-spec.ts
 ```
 
-Covers:
-- Signup and login
-- JWT validation
-- Cross-tenant isolation
-- Permission checks
+Bao gồm:
+- Đăng ký và đăng nhập
+- Xác thực JWT
+- Cách ly đa đối tượng
+- Kiểm tra quyền
 
-## Troubleshooting
+## Khắc phục Sự cố
 
-### "Invalid or expired token" Error
+### Lỗi "Invalid or expired token" (Token không hợp lệ hoặc đã hết hạn)
 
-**Causes:**
-- Token expired (7 days old)
-- Token tampered with
-- Wrong JWT_SECRET on server
+**Nguyên nhân:**
+- Token đã hết hạn (7 ngày)
+- Token bị giả mạo
+- JWT_SECRET trên server sai
 
-**Solution:**
-- Re-login to get new token
-- Verify JWT_SECRET matches on server
+**Giải pháp:**
+- Đăng nhập lại để lấy token mới
+- Kiểm tra JWT_SECRET khớp trên server
 
-### "You do not have access to this tenant" Error
+### Lỗi "You do not have access to this tenant" (Bạn không có quyền truy cập đối tượng này)
 
-**Causes:**
-- User's tenantId doesn't match URL tenantId
-- User trying to access another tenant's resources
+**Nguyên nhân:**
+- tenantId của người dùng không khớp với tenantId trong URL
+- Người dùng cố gắng truy cập tài nguyên của đối tượng khác
 
-**Solution:**
-- Verify user is in the correct tenant
-- Check URL parameters
+**Giải pháp:**
+- Xác minh người dùng ở trong đối tượng chính xác
+- Kiểm tra tham số URL
 
-### "Insufficient permissions" Error
+### Lỗi "Insufficient permissions" (Quyền không đủ)
 
-**Causes:**
-- User role lacks required permission
-- Route requires role not assigned to user
+**Nguyên nhân:**
+- Vai trò của người dùng thiếu quyền yêu cầu
+- Route yêu cầu vai trò không được gán cho người dùng
 
-**Solution:**
-- Admin must upgrade user role
-- User requests admin to grant access
+**Giải pháp:**
+- Admin phải nâng cấp vai trò của người dùng
+- Người dùng yêu cầu admin cấp quyền truy cập
 
-## Migration Notes
+## Ghi chú Chuyển đổi
 
-- Auth system added in M12 (Milestone 12)
-- Previous endpoints without auth guards are now protected
-- Existing API keys (for event ingestion) remain separate from JWT auth
-- All dashboard operations now require JWT authentication
+- Hệ thống xác thực được thêm vào M12 (Milestone 12)
+- Các endpoint trước đó không có auth guards hiện được bảo vệ
+- Các khóa API hiện có (để nhập sự kiện) vẫn riêng biệt với xác thực JWT
+- Tất cả các hoạt động dashboard hiện yêu cầu xác thực JWT

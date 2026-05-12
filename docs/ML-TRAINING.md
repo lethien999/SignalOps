@@ -1,24 +1,24 @@
-# M13: Machine Learning Training Pipeline
+# M13: Đường ống Huấn luyện Machine Learning
 
-## Overview
+## Tổng quan
 
-This guide covers preparing historical data for machine learning model training and implementing ML-based anomaly detection to replace/complement the current deterministic scoring.
+Hướng dẫn này bao gồm chuẩn bị dữ liệu lịch sử cho huấn luyện mô hình machine learning và triển khai phát hiện dị thường dựa trên ML để thay thế/bổ sung cho điểm tính xác định hiện tại.
 
 ---
 
-## Phase 1: Training Data Preparation
+## Giai đoạn 1: Chuẩn bị Dữ liệu Huấn luyện
 
-### Data Normalization
+### Chuẩn hóa Dữ liệu
 
-All metrics are normalized to 0-1 range for ML training:
+Tất cả các chỉ số được chuẩn hóa thành phạm vi 0-1 cho huấn luyện ML:
 
-| Metric | Scale | Normalized Range |
-|--------|-------|------------------|
-| Latency | 0-500ms | 0.0 (perfect) to 1.0 (worst) |
-| Packet Loss | 0-20% | 0.0 (perfect) to 1.0 (worst) |
-| Signal Strength | -40 to -120 dBm | 0.0 (best) to 1.0 (worst) |
+| Chỉ số | Tỷ lệ | Phạm vi Chuẩn hóa |
+|--------|--------|------------------|
+| Độ trễ | 0-500ms | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
+| Mất gói | 0-20% | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
+| Độ mạnh tín hiệu | -40 đến -120 dBm | 0.0 (tốt nhất) đến 1.0 (xấu nhất) |
 
-**Normalization Functions** (in `apps/worker-service/src/common/data-normalization.ts`):
+**Hàm Chuẩn hóa** (trong `apps/worker-service/src/common/data-normalization.ts`):
 ```typescript
 normalizeLatency(500) // = 1.0
 normalizeLatency(250) // = 0.5
@@ -27,80 +27,80 @@ normalizeLatency(0)   // = 0.0
 normalizePacketLoss(20) // = 1.0
 normalizePacketLoss(10) // = 0.5
 
-normalizeSignalStrength(-120) // = 1.0 (worst)
+normalizeSignalStrength(-120) // = 1.0 (xấu nhất)
 normalizeSignalStrength(-80)  // = 0.5
-normalizeSignalStrength(-40)  // = 0.0 (best)
+normalizeSignalStrength(-40)  // = 0.0 (tốt nhất)
 ```
 
-### Feature Extraction
+### Trích xuất Tính năng
 
-Features extracted for each event:
+Tính năng được trích xuất cho mỗi sự kiện:
 
-**Normalized Metrics:**
-- `latency_norm`: 0-1 (latency normalization)
-- `packetLoss_norm`: 0-1 (packet loss normalization)
-- `signalStrength_norm`: 0-1 (signal strength normalization)
-- `overall_quality`: 0-1 (inverse of average degradation)
+**Chỉ số Chuẩn hóa:**
+- `latency_norm`: 0-1 (chuẩn hóa độ trễ)
+- `packetLoss_norm`: 0-1 (chuẩn hóa mất gói)
+- `signalStrength_norm`: 0-1 (chuẩn hóa độ mạnh tín hiệu)
+- `overall_quality`: 0-1 (nghịch đảo của suy giảm trung bình)
 
-**Time-Based Features:**
-- `hour_of_day`: 0-23 (anomalies may vary by time)
-- `day_of_week`: 0-6 (different patterns on weekdays vs weekends)
+**Tính năng Dựa trên Thời gian:**
+- `hour_of_day`: 0-23 (dị thường có thể khác nhau theo thời gian)
+- `day_of_week`: 0-6 (mẫu khác nhau vào ngày làm việc so với cuối tuần)
 
-**Change Detection Features** (optional, computed from context):
-- `metric_volatility`: Standard deviation of recent metrics
-- `change_magnitude`: Absolute change between consecutive events
+**Tính năng Phát hiện Thay đổi** (tùy chọn, được tính toán từ ngữ cảnh):
+- `metric_volatility`: Độ lệch chuẩn của các chỉ số gần đây
+- `change_magnitude`: Thay đổi tuyệt đối giữa các sự kiện liên tiếp
 
-**Label:**
-- `anomalous`: 0 (normal, no alert) or 1 (anomalous, alert created)
+**Nhãn:**
+- `anomalous`: 0 (bình thường, không có cảnh báo) hoặc 1 (dị thường, tạo cảnh báo)
 
-### Generate Training Dataset
+### Tạo Bộ dữ liệu Huấn luyện
 
-#### Step 1: Generate CSV from Historical Data
+#### Bước 1: Tạo CSV từ Dữ liệu Lịch sử
 
 ```bash
-# Generate 30 days of training data (default)
+# Tạo 30 ngày dữ liệu huấn luyện (mặc định)
 npm run gen:training-dataset
 
-# Generate 60 days with custom output
+# Tạo 60 ngày với output tùy chỉnh
 DATASET_DAYS=60 OUTPUT_FILE=dataset-60d.csv npm run gen:training-dataset
 
-# Generate with specific window for volatility calculation
+# Tạo với cửa sổ cụ thể cho tính toán volatility
 DATASET_DAYS=30 CONTEXT_WINDOW=10 npm run gen:training-dataset
 ```
 
-#### Expected Output
+#### Đầu ra Mong đợi
 
 ```
-📊 M13 Training Dataset Generation
-   Period: Last 30 days
-   Output: training-dataset.csv
-   Context window: 5 events
+📊 Tạo Bộ dữ liệu Huấn luyện M13
+   Giai đoạn: 30 ngày vừa qua
+   Đầu ra: training-dataset.csv
+   Cửa sổ ngữ cảnh: 5 sự kiện
 -----------------------------------
 
-Fetching events from 2026-04-11T10:30:00Z to now...
-✓ Fetched 4250 events
-Fetching alerts...
-✓ Fetched 450 alerts (425 unique events)
+Đang tìm nạp sự kiện từ 2026-04-11T10:30:00Z đến hiện tại...
+✓ Đã tìm nạp 4250 sự kiện
+Đang tìm nạp cảnh báo...
+✓ Đã tìm nạp 450 cảnh báo (425 sự kiện duy nhất)
 
-Extracting features...
-  Processed 100/4250 events...
-  Processed 200/4250 events...
-✓ Extracted features from 4250 events
+Trích xuất tính năng...
+  Đã xử lý 100/4250 sự kiện...
+  Đã xử lý 200/4250 sự kiện...
+✓ Đã trích xuất tính năng từ 4250 sự kiện
 
-Dataset Statistics:
-  Normal events: 3825 (90.0%)
-  Anomalous events: 425 (10.0%)
-  Class imbalance ratio: 1:9.0
+Thống kê Bộ dữ liệu:
+  Sự kiện bình thường: 3825 (90.0%)
+  Sự kiện dị thường: 425 (10.0%)
+  Tỷ lệ mất cân bằng lớp: 1:9.0
 
-Exporting to CSV...
-✓ Dataset exported to: training-dataset.csv
-  File size: 512.3 KB
-  Total samples: 4250
+Xuất sang CSV...
+✓ Bộ dữ liệu được xuất sang: training-dataset.csv
+  Kích thước file: 512.3 KB
+  Tổng mẫu: 4250
 
-Ready for ML training with 4250 samples
+Sẵn sàng cho huấn luyện ML với 4250 mẫu
 ```
 
-#### CSV Format
+#### Định dạng CSV
 
 ```csv
 eventId,deviceId,timestamp,latency_norm,packetLoss_norm,signalStrength_norm,overall_quality,hour_of_day,day_of_week,anomalous
@@ -111,26 +111,26 @@ eventId,deviceId,timestamp,latency_norm,packetLoss_norm,signalStrength_norm,over
 
 ---
 
-## Phase 2: Train ML Model
+## Giai đoạn 2: Huấn luyện Mô hình ML
 
-### Recommended Approaches
+### Các Cách tiếp cận Được khuyến nghị
 
-#### Option A: Scikit-Learn (Quickstart)
+#### Tùy chọn A: Scikit-Learn (Khởi động nhanh)
 
-Simple, battery-included Python option for testing:
+Tùy chọn Python đơn giản, được bao gồm đầy đủ để kiểm thử:
 
 ```bash
-# Create virtual environment
+# Tạo môi trường ảo
 python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
+source venv/bin/activate  # hoặc venv\Scripts\activate trên Windows
 
-# Install dependencies
+# Cài đặt phụ thuộc
 pip install scikit-learn pandas numpy
 
-# Create training script: scripts/train-model.py
+# Tạo kịch bản huấn luyện: scripts/train-model.py
 ```
 
-**Training Script** (`scripts/train-model.py`):
+**Kịch bản Huấn luyện** (`scripts/train-model.py`):
 
 ```python
 import pandas as pd
@@ -139,37 +139,37 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 
-# Load training data
+# Tải dữ liệu huấn luyện
 df = pd.read_csv('training-dataset.csv')
 X = df[['latency_norm', 'packetLoss_norm', 'signalStrength_norm', 'overall_quality', 'hour_of_day', 'day_of_week']]
 y = df['anomalous']
 
-# Split data (80/20 train/test)
+# Chia dữ liệu (80/20 train/test)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
+# Huấn luyện mô hình
 model = RandomForestClassifier(
     n_estimators=100,
     max_depth=10,
     random_state=42,
-    class_weight='balanced'  # Handle imbalanced data
+    class_weight='balanced'  # Xử lý dữ liệu mất cân bằng
 )
 model.fit(X_train, y_train)
 
-# Evaluate
+# Đánh giá
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
-print("Confusion Matrix:")
+print("Ma trận Nhầm lẫn:")
 print(confusion_matrix(y_test, y_pred))
 
-# Save model
+# Lưu mô hình
 joblib.dump(model, 'anomaly-model.pkl')
-print("Model saved to anomaly-model.pkl")
+print("Mô hình được lưu vào anomaly-model.pkl")
 ```
 
-#### Option B: TensorFlow/Keras (Advanced)
+#### Tùy chọn B: TensorFlow/Keras (Nâng cao)
 
-Neural network approach for better accuracy:
+Cách tiếp cận mạng nơ-ron để có độ chính xác tốt hơn:
 
 ```python
 import pandas as pd
@@ -185,7 +185,7 @@ y = df['anomalous'].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Build neural network
+# Xây dựng mạng nơ-ron
 model = Sequential([
     Dense(64, activation='relu', input_shape=(X.shape[1],)),
     BatchNormalization(),
@@ -201,7 +201,7 @@ model.compile(
     metrics=['accuracy', 'precision', 'recall']
 )
 
-# Train
+# Huấn luyện
 model.fit(
     X_train, y_train,
     validation_data=(X_test, y_test),
@@ -209,13 +209,13 @@ model.fit(
     batch_size=32
 )
 
-# Save
+# Lưu
 model.save('anomaly-model.h5')
 ```
 
-#### Option C: XGBoost (Best Performance)
+#### Tùy chọn C: XGBoost (Hiệu suất Tốt nhất)
 
-Gradient boosting for best accuracy:
+Gradient boosting để có độ chính xác tốt nhất:
 
 ```bash
 pip install xgboost
@@ -238,7 +238,7 @@ model = XGBClassifier(
     max_depth=5,
     learning_rate=0.1,
     n_estimators=100,
-    scale_pos_weight=9  # Imbalance ratio (normal:anomalous)
+    scale_pos_weight=9  # Tỷ lệ mất cân bằng (bình thường:dị thường)
 )
 model.fit(X_train, y_train)
 
@@ -248,18 +248,18 @@ print(classification_report(y_test, y_pred))
 joblib.dump(model, 'anomaly-model-xgb.pkl')
 ```
 
-### Training Success Criteria
+### Tiêu chí Thành công Huấn luyện
 
-After training, evaluate on test set:
+Sau khi huấn luyện, đánh giá trên tập kiểm thử:
 
-| Metric | Target | Purpose |
-|--------|--------|---------|
-| **Precision** | ≥ 80% | Minimize false alarms |
-| **Recall** | ≥ 75% | Catch most anomalies |
-| **F1 Score** | ≥ 77 | Balanced performance |
-| **ROC-AUC** | ≥ 0.85 | Discrimination ability |
+| Chỉ số | Mục tiêu | Mục đích |
+|--------|---------|---------|
+| **Precision (Độ chính xác)** | ≥ 80% | Giảm thiểu cảnh báo giả |
+| **Recall (Tái tìm kiếm)** | ≥ 75% | Bắt được hầu hết dị thường |
+| **F1 Score** | ≥ 77 | Hiệu suất cân bằng |
+| **ROC-AUC** | ≥ 0.85 | Khả năng phân biệt |
 
-**Example Output:**
+**Ví dụ Đầu ra:**
 ```
               precision    recall  f1-score   support
 
@@ -273,38 +273,38 @@ weighted avg       0.88      0.88      0.88       935
 
 ---
 
-## Phase 3: Integrate ML Model into Worker
+## Giai đoạn 3: Tích hợp Mô hình ML vào Worker
 
-### Option A: Load Pre-trained Model (Recommended for MVP)
+### Tùy chọn A: Tải Mô hình Được huấn luyện trước (Được khuyến nghị cho MVP)
 
-Update `apps/worker-service/src/services/anomaly-scoring.ts`:
+Cập nhật `apps/worker-service/src/services/anomaly-scoring.ts`:
 
 ```typescript
 import * as tf from '@tensorflow/tfjs';
-import * as ort from 'onnxruntime-node'; // or joblib equivalent
+import * as ort from 'onnxruntime-node'; // hoặc joblib tương đương
 
 let mlModel: any = null;
 
 /**
- * Load ML model on startup
+ * Tải mô hình ML tại khởi động
  */
 export async function initMLModel() {
   try {
-    // Option 1: TensorFlow
+    // Tùy chọn 1: TensorFlow
     mlModel = await tf.loadLayersModel('file://./anomaly-model.h5');
     
-    // Option 2: ONNX
+    // Tùy chọn 2: ONNX
     // mlModel = await ort.InferenceSession.create('./anomaly-model.onnx');
     
-    console.log('✓ ML model loaded');
+    console.log('✓ Mô hình ML được tải');
   } catch (error) {
-    console.error('Failed to load ML model, using deterministic scoring:', error);
+    console.error('Không thể tải mô hình ML, dùng điểm tính xác định:', error);
     mlModel = null;
   }
 }
 
 /**
- * Score using ML model if available, fallback to deterministic
+ * Điểm tính sử dụng mô hình ML nếu có sẵn, fallback thành xác định
  */
 export function scoreEventAnomaly(
   metrics: { latency: number; packetLoss: number; signalStrength: number },
@@ -318,10 +318,10 @@ export function scoreEventAnomaly(
 }
 
 function scoreWithMLModel(metrics: any) {
-  // Normalize input features
+  // Chuẩn hóa tính năng đầu vào
   const features = normalizeMetricsForML(metrics);
   
-  // Run inference
+  // Chạy suy diễn
   const input = tf.tensor2d([
     [
       features.latency_norm,
@@ -343,14 +343,14 @@ function scoreWithMLModel(metrics: any) {
     score: Math.round(anomalyConfidence),
     anomalyConfidence: Math.round(anomalyConfidence),
     label: anomalyConfidence > 65 ? 'anomalous' : 'normal',
-    reason: `ML model confidence: ${anomalyConfidence}%`,
+    reason: `Độ tin cậy mô hình ML: ${anomalyConfidence}%`,
   };
 }
 ```
 
-### Option B: Cloud ML Service (Production)
+### Tùy chọn B: Dịch vụ ML Cloud (Production)
 
-Deploy model to cloud service:
+Triển khai mô hình cho dịch vụ cloud:
 
 ```typescript
 import axios from 'axios';
@@ -378,10 +378,10 @@ export async function scoreEventAnomaly(metrics: any) {
       score: anomalyScore,
       anomalyConfidence: confidence,
       label: confidence > 65 ? 'anomalous' : 'normal',
-      reason: `ML inference: ${confidence}% confidence`,
+      reason: `Suy diễn ML: ${confidence}% độ tin cậy`,
     };
   } catch (error) {
-    // Fallback to deterministic
+    // Fallback thành xác định
     return scoreWithDeterministic(metrics);
   }
 }
@@ -389,19 +389,19 @@ export async function scoreEventAnomaly(metrics: any) {
 
 ---
 
-## Phase 4: Continuous Improvement
+## Giai đoạn 4: Cải thiện Liên tục
 
-### Monitor Model Performance
+### Giám sát Hiệu suất Mô hình
 
-Track metrics in production:
+Theo dõi metrics trong production:
 
 ```typescript
-// Log prediction accuracy for model evaluation
+// Ghi lại độ chính xác dự đoán để đánh giá mô hình
 function logPredictionForEvaluation(event: any, prediction: any, actualAlert: boolean) {
   const timestamp = new Date().toISOString();
   const correct = (prediction.score > 65) === actualAlert ? 1 : 0;
   
-  // Log for later analysis
+  // Ghi cho phân tích sau
   fs.appendFileSync('ml-predictions.jsonl', 
     JSON.stringify({
       timestamp,
@@ -414,82 +414,82 @@ function logPredictionForEvaluation(event: any, prediction: any, actualAlert: bo
 }
 ```
 
-### Retrain Periodically
+### Huấn luyện lại Định kỳ
 
-Run monthly retraining:
+Chạy huấn luyện lại hàng tháng:
 
 ```bash
-# Generate fresh training data
+# Tạo dữ liệu huấn luyện mới
 DATASET_DAYS=90 npm run gen:training-dataset
 
-# Run training pipeline
+# Chạy đường ống huấn luyện
 python scripts/train-model.py
 
-# Evaluate on current month's data
+# Đánh giá trên dữ liệu tháng hiện tại
 npm run eval:ai
 
-# If metrics improved, deploy new model
+# Nếu metrics cải thiện, triển khai mô hình mới
 ```
 
 ---
 
-## File Reference
+## Tham chiếu File
 
-| File | Purpose |
+| File | Mục đích |
 |------|---------|
-| `apps/worker-service/src/common/data-normalization.ts` | Metric normalization utilities |
-| `apps/worker-service/src/common/feature-extraction.ts` | Feature extraction for ML |
-| `scripts/gen-training-dataset.mjs` | Generate CSV training data |
-| `scripts/train-model.py` | Train ML model (to create) |
-| `apps/worker-service/src/services/anomaly-scoring.ts` | Integration point for ML model |
+| `apps/worker-service/src/common/data-normalization.ts` | Tiện ích chuẩn hóa chỉ số |
+| `apps/worker-service/src/common/feature-extraction.ts` | Trích xuất tính năng cho ML |
+| `scripts/gen-training-dataset.mjs` | Tạo dữ liệu huấn luyện CSV |
+| `scripts/train-model.py` | Huấn luyện mô hình ML (để tạo) |
+| `apps/worker-service/src/services/anomaly-scoring.ts` | Điểm tích hợp cho mô hình ML |
 
 ---
 
-## Troubleshooting
+## Khắc phục Sự cố
 
-### Training dataset is imbalanced (too few anomalies)
+### Bộ dữ liệu huấn luyện mất cân bằng (quá ít dị thường)
 
-**Problem**: Class imbalance ratio > 1:20 makes training difficult
+**Vấn đề**: Tỷ lệ mất cân bằng lớp > 1:20 khiến huấn luyện khó
 
-**Solution**:
-- Use `class_weight='balanced'` in scikit-learn
-- Use `scale_pos_weight` in XGBoost
-- Consider oversampling anomalies or undersampling normal events
-- Use stratified k-fold cross-validation
+**Giải pháp**:
+- Dùng `class_weight='balanced'` trong scikit-learn
+- Dùng `scale_pos_weight` trong XGBoost
+- Cân nhắc oversampling dị thường hoặc undersampling sự kiện bình thường
+- Dùng stratified k-fold cross-validation
 
-### Model performance on test set is different from training
+### Hiệu suất mô hình trên tập kiểm thử khác với huấn luyện
 
-**Problem**: Overfitting or data drift
+**Vấn đề**: Overfitting hoặc data drift
 
-**Solution**:
-- Reduce model complexity (fewer features, smaller trees)
-- Add regularization (L1/L2, dropout)
-- Collect more recent training data
-- Validate on different time periods
+**Giải pháp**:
+- Giảm độ phức tạp mô hình (tính năng ít hơn, cây nhỏ hơn)
+- Thêm regularization (L1/L2, dropout)
+- Thu thập dữ liệu huấn luyện gần đây hơn
+- Xác thực trên các thời kỳ khác nhau
 
-### ML model predictions are poor quality
+### Dự đoán mô hình ML có chất lượng kém
 
-**Problem**: Model not capturing patterns
+**Vấn đề**: Mô hình không nắm bắt được mẫu
 
-**Solution**:
-- Check feature distributions (ensure no skew)
-- Try different algorithms (Random Forest → XGBoost → Neural Networks)
-- Add more features (volatility, time-based interactions)
-- Collect more diverse training data
-- Tune hyperparameters via grid search
-
----
-
-## Next Steps
-
-1. ✅ Create data normalization & feature extraction (this commit)
-2. ⏳ Generate training dataset: `npm run gen:training-dataset`
-3. ⏳ Train ML model (choose scikit-learn, TensorFlow, or XGBoost)
-4. ⏳ Integrate into worker service
-5. ⏳ A/B test ML vs deterministic in staging
-6. ⏳ Deploy to production with monitoring
+**Giải pháp**:
+- Kiểm tra phân phối tính năng (đảm bảo không bị lệch)
+- Thử các thuật toán khác (Random Forest → XGBoost → Neural Networks)
+- Thêm nhiều tính năng hơn (volatility, time-based interactions)
+- Thu thập dữ liệu huấn luyện đa dạng hơn
+- Điều chỉnh siêu tham số via grid search
 
 ---
 
-**Updated**: 11/05/2026  
-**Status**: Phase 1 infrastructure ready (data normalization + feature extraction)
+## Các Bước Tiếp theo
+
+1. ✅ Tạo chuẩn hóa dữ liệu & trích xuất tính năng (commit này)
+2. ⏳ Tạo bộ dữ liệu huấn luyện: `npm run gen:training-dataset`
+3. ⏳ Huấn luyện mô hình ML (chọn scikit-learn, TensorFlow, hoặc XGBoost)
+4. ⏳ Tích hợp vào dịch vụ worker
+5. ⏳ A/B test ML vs xác định trong staging
+6. ⏳ Triển khai tới production với giám sát
+
+---
+
+**Cập nhật**: 11/05/2026  
+**Trạng thái**: Cơ sở hạ tầng Giai đoạn 1 sẵn sàng (chuẩn hóa dữ liệu + trích xuất tính năng)
