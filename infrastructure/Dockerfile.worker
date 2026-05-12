@@ -27,6 +27,9 @@ WORKDIR /app
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
+# Install required libraries for onnxruntime-node on Alpine
+RUN apk add --no-cache libstdc++ glibc libgomp
+
 # Copy the worker package.json (avoid root workspaces during runtime)
 COPY --from=builder /app/apps/worker-service/package.json ./package.json
 
