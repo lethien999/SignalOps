@@ -15,6 +15,11 @@ type AlertRecord = {
   createdAt: Date;
   updatedAt: Date;
   eventId: string;
+  aiModelVersion?: string;
+  anomalyScore?: number;
+  anomalyConfidence?: number;
+  anomalyLabel?: 'normal' | 'suspicious' | 'anomalous';
+  anomalyReasons?: string[];
 };
 
 type AlertUpdateRecord = Partial<{
@@ -43,6 +48,11 @@ const alertSchema = new mongoose.Schema(
     resolvedBy: String,
     resolutionNote: String,
     eventId: { type: String },
+    aiModelVersion: { type: String },
+    anomalyScore: { type: Number, min: 0, max: 100 },
+    anomalyConfidence: { type: Number, min: 0, max: 100 },
+    anomalyLabel: { type: String, enum: ['normal', 'suspicious', 'anomalous'] },
+    anomalyReasons: { type: [String], default: [] },
   },
   { timestamps: true, strict: 'throw', minimize: false },
 );

@@ -1,0 +1,110 @@
+{
+  "timestamp": "2026-05-11T02:58:46.921Z",
+  "period": {
+    "daysBack": 30,
+    "startDate": "2026-04-11T02:58:46.921Z"
+  },
+  "threshold": 80,
+  "summary": {
+    "totalEvents": 29305,
+    "errors": 0
+  },
+  "classification": {
+    "tp": 33,
+    "fp": 4,
+    "fn": 3,
+    "tn": 29265
+  },
+  "metrics": {
+    "precision": 89.19,
+    "recall": 91.67,
+    "f1": 90.41,
+    "accuracy": 99.98
+  },
+  "sampleMisclassifications": [
+    {
+      "eventId": "69f1caed89e1f4ca8501384f",
+      "deviceId": "device-10",
+      "aiScore": 79,
+      "alertExists": true,
+      "metrics": {
+        "latency": 480,
+        "packetLoss": 17,
+        "signalStrength": -92,
+        "_id": "69f1caed89e1f4ca85013851"
+      }
+    },
+    {
+      "eventId": "69f1caf789e1f4ca8501388f",
+      "deviceId": "device-06",
+      "aiScore": 59,
+      "alertExists": true,
+      "metrics": {
+        "latency": 385,
+        "packetLoss": 14,
+        "signalStrength": -103,
+        "_id": "69f1caf789e1f4ca85013891"
+      }
+    },
+    {
+      "eventId": "69f1cb1c89e1f4ca850139b3",
+      "deviceId": "device-08",
+      "aiScore": 58,
+      "alertExists": true,
+      "metrics": {
+        "latency": 348,
+        "packetLoss": 14,
+        "signalStrength": -91,
+        "_id": "69f1cb1c89e1f4ca850139b5"
+      }
+    },
+    {
+      "eventId": "69f1cedd89e1f4ca850156c7",
+      "deviceId": "device-09",
+      "aiScore": 80,
+      "alertExists": false,
+      "metrics": {
+        "latency": 221,
+        "packetLoss": 6,
+        "signalStrength": -105,
+        "_id": "69f1cedd89e1f4ca850156c9"
+      }
+    },
+    {
+      "eventId": "69f1def189e1f4ca8501d27b",
+      "deviceId": "device-06",
+      "aiScore": 84,
+      "alertExists": false,
+      "metrics": {
+        "latency": 221,
+        "packetLoss": 6,
+        "signalStrength": -94,
+        "_id": "69f1def189e1f4ca8501d27d"
+      }
+    },
+    {
+      "eventId": "69f1ee8489e1f4ca85024a37",
+      "deviceId": "device-09",
+      "aiScore": 80,
+      "alertExists": false,
+      "metrics": {
+        "latency": 211,
+        "packetLoss": 6,
+        "signalStrength": -94,
+        "_id": "69f1ee8489e1f4ca85024a39"
+      }
+    },
+    {
+      "eventId": "69f2046e89e1f4ca8502f2a8",
+      "deviceId": "device-05",
+      "aiScore": 88,
+      "alertExists": false,
+      "metrics": {
+        "latency": 227,
+        "packetLoss": 6,
+        "signalStrength": -95,
+        "_id": "69f2046e89e1f4ca8502f2aa"
+      }
+    }
+  ]
+}

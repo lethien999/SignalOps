@@ -21,6 +21,83 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
+import * as ort from 'onnxruntime-node';
+
+const { Schema } = mongoose;
+
+const EventSchema = new Schema(
+  {
+    deviceId: { type: String, required: true },
+    metrics: {
+      latency: { type: Number, default: 0 },
+      packetLoss: { type: Number, default: 0 },
+      signalStrength: { type: Number, default: -100 },
+    },
+    timestamp: { type: Date, required: true },
+    createdAt: { type: Date, default: Date.now },
+    alertId: { type: Schema.Types.ObjectId, ref: 'Alert' },
+  },
+  { timestamps: true },
+);
+
+const AlertSchema = new Schema(
+  {
+    eventId: { type: Schema.Types.ObjectId, ref: 'Event' },
+    deviceId: { type: String, required: true },
+    type: { type: String, required: true },
+    severity: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true },
+);
+
+mongoose.model('Event', EventSchema);
+mongoose.model('Alert', AlertSchema);
+
+const MODEL_PATH = path.join(process.cwd(), 'apps/worker-service/src/assets/anomaly-model.onnx');
+
+function softmax(values) {
+  const maxValue = Math.max(...values);
+  const exps = values.map((value) => Math.exp(value - maxValue));
+  const total = exps.reduce((sum, value) => sum + value, 0);
+  return exps.map((value) => value / total);
+}
+
+function normalizeMetric(value, min, max) {
+  if (max === min) return 0.5;
+  const clamped = Math.min(Math.max(value ?? min, min), max);
+  return (clamped - min) / (max - min);
+}
+
+function buildFeatureVector(metrics) {
+  const latencyNorm = normalizeMetric(metrics?.latency ?? 0, 0, 500);
+  const packetLossNorm = normalizeMetric(metrics?.packetLoss ?? 0, 0, 20);
+  const signalStrengthNorm = normalizeMetric(metrics?.signalStrength ?? -80, -120, -40);
+  const overallQuality = 1 - (latencyNorm + packetLossNorm + signalStrengthNorm) / 3;
+  const now = new Date();
+
+  return [
+    latencyNorm,
+    packetLossNorm,
+    signalStrengthNorm,
+    overallQuality,
+    now.getHours(),
+    now.getDay(),
+  ];
+}
+
+let sessionPromise = null;
+
+async function ensureSession() {
+  if (!sessionPromise) {
+    sessionPromise = ort.InferenceSession.create(MODEL_PATH).catch((error) => {
+      console.warn(`⚠ Unable to load ONNX model at ${MODEL_PATH}; falling back to heuristic scoring`, error.message);
+      return null;
+    });
+  }
+
+  return sessionPromise;
+}
 
 // Connect to MongoDB
 async function connectDB() {
@@ -36,30 +113,41 @@ async function connectDB() {
   }
 }
 
-// Anomaly scoring function (mirror from worker-service)
-function scoreEventAnomaly(metrics) {
-  const latency = Math.min(Math.max(metrics.latency, 0), 500); // 0-500ms scale
-  const packetLoss = Math.min(Math.max(metrics.packetLoss, 0), 20); // 0-20% scale
-  const signalStrength = Math.min(Math.max(metrics.signalStrength, -120), -40); // -120 to -40 dBm scale
+// AI scoring function backed by the trained ONNX model, with heuristic fallback.
+async function scoreEventAnomaly(metrics) {
+  const session = await ensureSession();
 
-  // Weighted scoring: latency 5%, packet_loss 50%, signal_strength 45%
-  const latencyScore = (latency / 500) * 100;
-  const packetLossScore = (packetLoss / 20) * 100;
-  const signalScore = ((Math.abs(signalStrength) - 40) / 80) * 100; // Invert: worse signal = higher score
+  if (!session) {
+    const latency = Math.min(Math.max(metrics.latency, 0), 500);
+    const packetLoss = Math.min(Math.max(metrics.packetLoss, 0), 20);
+    const signalStrength = Math.min(Math.max(metrics.signalStrength, -120), -40);
 
-  const weightedScore = latencyScore * 0.05 + packetLossScore * 0.5 + signalScore * 0.45;
-  const anomalyScore = Math.round(Math.min(Math.max(weightedScore, 0), 100));
+    const latencyScore = (latency / 500) * 100;
+    const packetLossScore = (packetLoss / 20) * 100;
+    const signalScore = ((Math.abs(signalStrength) - 40) / 80) * 100;
 
-  let anomalyLabel = 'normal';
-  if (anomalyScore > 75) {
-    anomalyLabel = 'anomalous';
-  } else if (anomalyScore > 50) {
-    anomalyLabel = 'suspicious';
+    const weightedScore = latencyScore * 0.05 + packetLossScore * 0.5 + signalScore * 0.45;
+    const anomalyScore = Math.round(Math.min(Math.max(weightedScore, 0), 100));
+    return {
+      score: anomalyScore,
+      label: anomalyScore > 75 ? 'anomalous' : anomalyScore > 50 ? 'suspicious' : 'normal',
+    };
   }
+
+  const features = buildFeatureVector(metrics);
+  const input = new ort.Tensor('float32', Float32Array.from(features), [1, 6]);
+  const inputName = session.inputNames[0];
+  const outputName = session.outputNames.find((name) => name.toLowerCase().includes('prob')) ?? session.outputNames[0];
+  const output = await session.run({ [inputName]: input });
+  const raw = output[outputName];
+
+  const values = Array.from(raw.data).map((value) => Number(value));
+  const probability = values.length > 1 ? softmax(values)[1] : Math.min(Math.max(values[0] ?? 0, 0), 1);
+  const anomalyScore = Math.round(probability * 100);
 
   return {
     score: anomalyScore,
-    label: anomalyLabel,
+    label: anomalyScore > 75 ? 'anomalous' : anomalyScore > 50 ? 'suspicious' : 'normal',
   };
 }
 
@@ -137,7 +225,7 @@ async function evaluateAnomalyScoring() {
 
   for (const event of events) {
     try {
-      const aiScore = scoreEventAnomaly(event.metrics);
+      const aiScore = await scoreEventAnomaly(event.metrics);
       const isAnomalous = aiScore.score >= anomalyThreshold;
       const alertExists = alertMap.has(event._id.toString());
 

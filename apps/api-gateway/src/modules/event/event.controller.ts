@@ -88,4 +88,18 @@ export class EventController {
   async getEvent(@Param('id') id: string) {
     return this.eventService.getEvent(id);
   }
+
+  @ApiOperation({ summary: '[TEST] Create event without API key (development only)' })
+  @ApiAcceptedResponse({
+    description: 'Event accepted and queued',
+    schema: {
+      example: { id: '662a7ed9a6b4f9838b0c9f45', status: 'queued', jobId: 'device-001-662a7ed9a6b4f9838b0c9f45' },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid event payload' })
+  @Post('test/create')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async createEventTest(@Body() createEventDto: CreateEventDto) {
+    return this.eventService.createEvent(createEventDto);
+  }
 }
