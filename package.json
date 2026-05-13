@@ -39,7 +39,7 @@
     "docker:logs": "docker compose --env-file .env -f infrastructure/docker-compose.yml logs -f"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^25.7.0",
     "@types/passport-github2": "^1.2.9",
     "@types/passport-google-oauth20": "^2.0.17",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
