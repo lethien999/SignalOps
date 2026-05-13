@@ -9,6 +9,7 @@
 ## Bước 1: Kiểm tra trước triển khai
 
 ### Pre-flight Checklist
+
 - [x] Staging A/B test chạy thành công (worker healthy)
 - [x] Docker image built (`infrastructure-worker:latest`)
 - [x] ONNX model file ready: `apps/worker-service/src/assets/anomaly-model.onnx`
@@ -91,6 +92,7 @@ WEBSOCKET_NAMESPACE=/socket.io
 ## Bước 3: Docker Compose Production Deployment
 
 **Option A: Single-node (Recommended for start)**
+
 ```bash
 # Load production env
 export $(cat .env.production | grep -v '^#' | xargs)
@@ -107,6 +109,7 @@ docker compose -f infrastructure/docker-compose.yml logs --tail=50 worker
 ```
 
 **Option B: Multi-node (K8s / advanced)**
+
 - Use infrastructure/k8s/ manifests (if available)
 - Or scale with: `docker compose --scale worker=3`
 
@@ -115,6 +118,7 @@ docker compose -f infrastructure/docker-compose.yml logs --tail=50 worker
 ## Bước 4: Verify Deployment
 
 ### Health Checks
+
 ```bash
 # API Gateway health
 curl http://localhost:3000/api/health
@@ -130,6 +134,7 @@ redis-cli -h redis-prod INFO stats
 ```
 
 ### Verify AI Shadow Mode
+
 ```bash
 # Check logs for ML scoring (should be present even with 0% rollout)
 docker compose logs worker | grep -i "ai\|ml\|anomaly"
@@ -142,6 +147,7 @@ docker compose logs worker | grep -i "rollout\|a/b"
 ```
 
 ### Sample event test
+
 ```bash
 # Send test event to trigger alert creation
 curl -X POST http://localhost:3000/api/events \
@@ -170,6 +176,7 @@ curl -X POST http://localhost:3000/api/events \
 ## Bước 5: Monitoring & Logging
 
 ### Real-time Monitoring
+
 ```bash
 # Watch worker logs
 docker compose logs -f worker
@@ -182,6 +189,7 @@ watch -n 5 'redis-cli -h redis-prod LLEN event-processing'
 ```
 
 ### Prometheus Scrape Setup
+
 ```bash
 # Metrics exposed at: http://localhost:9090/api/v1/targets
 # Key metrics to monitor:
@@ -192,6 +200,7 @@ watch -n 5 'redis-cli -h redis-prod LLEN event-processing'
 ```
 
 ### Application Logs
+
 All logs stored in: `/var/log/signalops/` (or configure in docker-compose)
 
 ---
@@ -201,21 +210,24 @@ All logs stored in: `/var/log/signalops/` (or configure in docker-compose)
 **Hàng ngày (tối thiểu):**
 
 1. **Check Alert Volume**
+
    ```javascript
    // MongoDB query
-   db.alerts.countDocuments({ 
+   db.alerts.countDocuments({
      createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 1)) },
-     source: "rule-based"
-   })
+     source: 'rule-based',
+   });
    ```
 
 2. **Verify ML Scoring Happening**
+
    ```javascript
    // Check ML scores are computed (even if not used for alerts)
-   db.alerts.find({ anomalyScore: { $exists: true } }).count()
+   db.alerts.find({ anomalyScore: { $exists: true } }).count();
    ```
 
 3. **Check Error Rate**
+
    ```bash
    docker compose logs worker | grep -i "error\|exception" | wc -l
    # Should be < 10 errors/hour
@@ -233,13 +245,13 @@ All logs stored in: `/var/log/signalops/` (or configure in docker-compose)
 
 **After 1 week in Shadow Mode, check:**
 
-| Metric | Target | Action |
-|--------|--------|--------|
-| **Worker Uptime** | > 99.9% | ✅ Go / ❌ Debug |
-| **Error Rate** | < 0.1% | ✅ Go / ❌ Debug |
-| **ML Scoring Latency** | < 150ms p99 | ✅ Go / ❌ Optimize |
-| **False Positive (rule-based)** | < 5% | ✅ Go / ⚠️ Monitor |
-| **Alert Latency (p95)** | < 100ms | ✅ Go / ⚠️ Monitor |
+| Metric                          | Target      | Action              |
+| ------------------------------- | ----------- | ------------------- |
+| **Worker Uptime**               | > 99.9%     | ✅ Go / ❌ Debug    |
+| **Error Rate**                  | < 0.1%      | ✅ Go / ❌ Debug    |
+| **ML Scoring Latency**          | < 150ms p99 | ✅ Go / ❌ Optimize |
+| **False Positive (rule-based)** | < 5%        | ✅ Go / ⚠️ Monitor  |
+| **Alert Latency (p95)**         | < 100ms     | ✅ Go / ⚠️ Monitor  |
 
 **If all GO: Proceed to Giai đoạn 2 (Early Adopter: 5% AI rollout)**
 
@@ -271,6 +283,7 @@ docker compose up -d
 ## Bước 9: Deployment Notification
 
 **Gửi thông báo:**
+
 - [ ] Notify Operations team (deployment complete, shadow mode active)
 - [ ] Notify Support (no changes to alert behavior, for now)
 - [ ] Notify Engineering (ready for Giai đoạn 2 after 1 week)
@@ -280,13 +293,13 @@ docker compose up -d
 
 ## Artifacts & References
 
-| Item | Location | Status |
-|------|----------|--------|
-| ML Model (ONNX) | `apps/worker-service/src/assets/anomaly-model.onnx` | ✅ Ready |
-| Docker Image | `infrastructure-worker:latest` | ✅ Built |
-| Env Config | `.env.production` | 📋 Create before deploy |
-| PR | [#27](https://github.com/lethien999/SignalOps/pull/27) | ✅ Merged |
-| Docs | [PRODUCTION-ROLLOUT-PLAN.md](PRODUCTION-ROLLOUT-PLAN.md) | ✅ Complete |
+| Item            | Location                                                 | Status                  |
+| --------------- | -------------------------------------------------------- | ----------------------- |
+| ML Model (ONNX) | `apps/worker-service/src/assets/anomaly-model.onnx`      | ✅ Ready                |
+| Docker Image    | `infrastructure-worker:latest`                           | ✅ Built                |
+| Env Config      | `.env.production`                                        | 📋 Create before deploy |
+| PR              | [#27](https://github.com/lethien999/SignalOps/pull/27)   | ✅ Merged               |
+| Docs            | [PRODUCTION-ROLLOUT-PLAN.md](PRODUCTION-ROLLOUT-PLAN.md) | ✅ Complete             |
 
 ---
 
@@ -299,4 +312,4 @@ docker compose up -d
 
 ---
 
-*Created: 12/05/2026 | Status: Ready for Shadow Mode Deployment*
+_Created: 12/05/2026 | Status: Ready for Shadow Mode Deployment_

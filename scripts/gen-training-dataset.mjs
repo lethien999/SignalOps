@@ -2,15 +2,15 @@
 
 /**
  * M13: Generate Training Dataset for ML Model
- * 
+ *
  * This script:
  * 1. Queries historical events from MongoDB
  * 2. Extracts normalized features
  * 3. Labels data based on whether alerts were created
  * 4. Exports as training dataset (CSV)
- * 
+ *
  * Usage: node gen-training-dataset.mjs
- * 
+ *
  * Environment variables:
  *  - MONGODB_URI: MongoDB connection string
  *  - DATASET_DAYS: Days of historical data (default: 30)
@@ -101,7 +101,8 @@ function extractEventFeatures(event) {
 }
 
 async function connectDB() {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://user:password@localhost:27017/signalops-db';
+  const mongoUri =
+    process.env.MONGODB_URI || 'mongodb://user:password@localhost:27017/signalops-db';
   console.log(`Connecting to MongoDB...`);
 
   try {
@@ -125,7 +126,7 @@ async function generateTrainingDataset() {
   console.log('-----------------------------------\n');
 
   // Models already registered above
-  
+
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - datasetDays);
 
@@ -147,9 +148,7 @@ async function generateTrainingDataset() {
     .select('_id eventId createdAt')
     .lean();
 
-  const alertEventIds = new Set(
-    alerts.map((a) => a.eventId?.toString()).filter(Boolean),
-  );
+  const alertEventIds = new Set(alerts.map((a) => a.eventId?.toString()).filter(Boolean));
   console.log(`✓ Fetched ${alerts.length} alerts (${alertEventIds.size} unique events)`);
 
   // Extract features
@@ -184,12 +183,14 @@ async function generateTrainingDataset() {
   // Generate statistics
   const normalCount = features.filter((f) => f.anomalous === 0).length;
   const anomalousCount = features.filter((f) => f.anomalous === 1).length;
-  const ratio = anomalousCount > 0 ? (anomalousCount / features.length * 100).toFixed(1) : 0;
+  const ratio = anomalousCount > 0 ? ((anomalousCount / features.length) * 100).toFixed(1) : 0;
 
   console.log(`Dataset Statistics:`);
-  console.log(`  Normal events: ${normalCount} (${(100 - ratio)}%)`);
+  console.log(`  Normal events: ${normalCount} (${100 - ratio}%)`);
   console.log(`  Anomalous events: ${anomalousCount} (${ratio}%)`);
-  console.log(`  Class imbalance ratio: 1:${(normalCount / Math.max(anomalousCount, 1)).toFixed(1)}\n`);
+  console.log(
+    `  Class imbalance ratio: 1:${(normalCount / Math.max(anomalousCount, 1)).toFixed(1)}\n`
+  );
 
   // Export to CSV
   console.log(`Exporting to CSV...`);

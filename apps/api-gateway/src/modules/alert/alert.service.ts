@@ -2,7 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Alert } from './schemas/alert.schema';
 import { Logger } from '../../common/logger';
 import { randomUUID } from 'crypto';
-import { AlertFindFilters, AlertHistoryFilters, AlertRepository, AlertSlaFilters, AlertSlaSnapshot, AlertStatusUpdate } from './repositories/alert.repository';
+import {
+  AlertFindFilters,
+  AlertHistoryFilters,
+  AlertRepository,
+  AlertSlaFilters,
+  AlertSlaSnapshot,
+  AlertStatusUpdate,
+} from './repositories/alert.repository';
 import { AlertsGateway, AlertEmissionPayload } from '../websocket/alerts.gateway';
 import { BusinessMetrics } from '../health/business-metrics';
 
@@ -49,11 +56,14 @@ export type BatchUpdateResult = {
 @Injectable()
 export class AlertService {
   private readonly slaCache = new Map<string, { value: AlertSlaSnapshot; expiresAt: number }>();
-  private readonly slaCacheTtlSeconds = Math.max(10, Number(process.env.SLA_CACHE_TTL_SECONDS || '60'));
+  private readonly slaCacheTtlSeconds = Math.max(
+    10,
+    Number(process.env.SLA_CACHE_TTL_SECONDS || '60')
+  );
 
   constructor(
     private readonly alertRepository: AlertRepository,
-    private readonly alertsGateway: AlertsGateway,
+    private readonly alertsGateway: AlertsGateway
   ) {}
 
   async createAlert(alertData: CreateAlertInput): Promise<Alert> {
@@ -63,10 +73,10 @@ export class AlertService {
         ...alertData,
       };
       const savedAlert = await this.alertRepository.save(alert);
-      
+
       // Record metrics
       BusinessMetrics.recordAlertCreated(savedAlert.type, savedAlert.severity);
-      
+
       Logger.info(`Alert created: ${savedAlert._id}`);
 
       // Emit alert:new to WebSocket clients
@@ -138,9 +148,13 @@ export class AlertService {
         throw new NotFoundException(`Alert ${id} not found`);
       }
 
-      const nextStatus = updateData.status || (current.status as 'open' | 'acknowledged' | 'resolved');
+      const nextStatus =
+        updateData.status || (current.status as 'open' | 'acknowledged' | 'resolved');
 
-      this.assertTransitionAllowed(current.status as 'open' | 'acknowledged' | 'resolved', nextStatus);
+      this.assertTransitionAllowed(
+        current.status as 'open' | 'acknowledged' | 'resolved',
+        nextStatus
+      );
 
       const normalizedUpdate = this.buildUpdatePayload(nextStatus, updateData);
       const alert = await this.alertRepository.updateStatus(id, normalizedUpdate);
@@ -180,13 +194,16 @@ export class AlertService {
 
   private assertTransitionAllowed(
     current: 'open' | 'acknowledged' | 'resolved',
-    next: 'open' | 'acknowledged' | 'resolved',
+    next: 'open' | 'acknowledged' | 'resolved'
   ): void {
     if (current === next) {
       return;
     }
 
-    const allowedTransitions: Record<'open' | 'acknowledged' | 'resolved', Array<'open' | 'acknowledged' | 'resolved'>> = {
+    const allowedTransitions: Record<
+      'open' | 'acknowledged' | 'resolved',
+      Array<'open' | 'acknowledged' | 'resolved'>
+    > = {
       open: ['acknowledged'],
       acknowledged: ['resolved'],
       resolved: [],
@@ -199,7 +216,7 @@ export class AlertService {
 
   private buildUpdatePayload(
     status: 'open' | 'acknowledged' | 'resolved',
-    updateData: UpdateAlertInput,
+    updateData: UpdateAlertInput
   ): AlertStatusUpdate {
     const payload: AlertStatusUpdate = { status };
 
@@ -227,7 +244,13 @@ export class AlertService {
   }
 
   async getSlaSnapshot(filters: AlertSlaFilters = {}): Promise<AlertSlaSnapshot> {
-    const key = JSON.stringify({ days: filters.days || 7, severity: filters.severity || null, type: filters.type || null, from: filters.from?.toISOString?.() || null, to: filters.to?.toISOString?.() || null });
+    const key = JSON.stringify({
+      days: filters.days || 7,
+      severity: filters.severity || null,
+      type: filters.type || null,
+      from: filters.from?.toISOString?.() || null,
+      to: filters.to?.toISOString?.() || null,
+    });
     const now = Date.now();
 
     const cached = this.slaCache.get(key);
@@ -261,7 +284,11 @@ export class AlertService {
     });
   }
 
-  async batchResolve(ids: string[], resolvedBy?: string, resolutionNote?: string): Promise<BatchUpdateResult> {
+  async batchResolve(
+    ids: string[],
+    resolvedBy?: string,
+    resolutionNote?: string
+  ): Promise<BatchUpdateResult> {
     return this.batchUpdate(ids, {
       status: 'resolved',
       resolvedBy,

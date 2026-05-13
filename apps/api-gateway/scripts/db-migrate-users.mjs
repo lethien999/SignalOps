@@ -96,12 +96,7 @@ async function up(db) {
     {
       _id: 'viewer',
       name: 'Viewer',
-      permissions: [
-        'read:events',
-        'read:alerts',
-        'read:config',
-        'view:metrics',
-      ],
+      permissions: ['read:events', 'read:alerts', 'read:config', 'view:metrics'],
       createdAt: new Date(),
     },
   ];
@@ -115,9 +110,11 @@ async function up(db) {
   const tenants = db.collection('tenants');
   const result = await tenants.updateMany(
     { adminUserIds: { $exists: false } },
-    { $set: { adminUserIds: [] } },
+    { $set: { adminUserIds: [] } }
   );
-  console.log(`✓ Extended tenants schema: updated ${result.modifiedCount} documents with adminUserIds`);
+  console.log(
+    `✓ Extended tenants schema: updated ${result.modifiedCount} documents with adminUserIds`
+  );
 
   console.log('\n✅ Migration completed successfully!');
 }
@@ -149,10 +146,7 @@ async function down(db) {
 
   // Remove adminUserIds from tenants
   const tenants = db.collection('tenants');
-  const result = await tenants.updateMany(
-    {},
-    { $unset: { adminUserIds: '' } },
-  );
+  const result = await tenants.updateMany({}, { $unset: { adminUserIds: '' } });
   console.log(`✓ Removed adminUserIds from ${result.modifiedCount} tenants`);
 
   console.log('\n✅ Rollback completed successfully!');

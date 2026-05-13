@@ -5,11 +5,14 @@ module.exports = {
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      diagnostics: {
-        ignoreCodes: [151002],
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        diagnostics: {
+          ignoreCodes: [151002],
+        },
       },
-    }],
+    ],
   },
   collectCoverageFrom: [
     'src/common/guards/api-key.guard.ts',

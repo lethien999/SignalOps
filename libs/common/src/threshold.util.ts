@@ -53,7 +53,8 @@ export function areMetricsNormal(metrics: EventMetrics | undefined): boolean {
   // All metrics must be within normal range
   const latencyOk = latency === null || latency <= thresholds.latencyThreshold;
   const packetLossOk = packetLoss === null || packetLoss <= thresholds.packetLossThreshold;
-  const signalStrengthOk = signalStrength === null || signalStrength >= thresholds.signalStrengthThreshold;
+  const signalStrengthOk =
+    signalStrength === null || signalStrength >= thresholds.signalStrengthThreshold;
 
   return latencyOk && packetLossOk && signalStrengthOk;
 }

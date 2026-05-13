@@ -50,7 +50,8 @@ export function OAuthProviderManager() {
       const providers = await getLinkedProviders();
       const enhanced = providers.map((p) => ({
         ...p,
-        displayName: providerConfig[p.provider as keyof typeof providerConfig]?.displayName || p.provider,
+        displayName:
+          providerConfig[p.provider as keyof typeof providerConfig]?.displayName || p.provider,
         icon: providerConfig[p.provider as keyof typeof providerConfig]?.icon,
       }));
       setLinkedProviders(enhanced);
@@ -113,7 +114,9 @@ export function OAuthProviderManager() {
                 <div className="flex items-center gap-3">
                   <div className="text-gray-600 dark:text-gray-400">{provider.icon}</div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{provider.displayName}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {provider.displayName}
+                    </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{provider.email}</p>
                   </div>
                 </div>

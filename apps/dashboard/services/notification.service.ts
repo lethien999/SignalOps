@@ -1,10 +1,10 @@
 /**
  * Notification Service for PWA - M13
- * 
+ *
  * Supports:
  * 1. Browser Notification API (desktop + mobile background notifications)
  * 2. In-app toast notifications (UI component)
- * 
+ *
  * Flow:
  * 1. Request permission (shown once)
  * 2. WebSocket receives alert event

@@ -1,0 +1,41 @@
+name: Lint Autofix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run prettier write
+        run: npm run format
+
+      - name: Run eslint autofix
+        run: npm run lint:fix
+
+      - name: Capture diff
+        run: git status --short
+
+      - name: Commit autofixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: apply lint and format autofixes'
+          branch: ${{ github.ref_name }}

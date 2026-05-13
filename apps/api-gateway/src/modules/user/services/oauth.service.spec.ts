@@ -79,7 +79,7 @@ describe('OAuthService', () => {
         'google',
         '123',
         'user@example.com',
-        'John Doe',
+        'John Doe'
       );
 
       expect(result.oauthProviders).toHaveLength(1);
@@ -98,9 +98,7 @@ describe('OAuthService', () => {
         save: jest.fn().mockResolvedValue({
           _id: new Types.ObjectId(),
           email: 'newuser@example.com',
-          oauthProviders: [
-            { provider: 'google', providerId: '123', email: 'newuser@example.com' },
-          ],
+          oauthProviders: [{ provider: 'google', providerId: '123', email: 'newuser@example.com' }],
         }),
       };
 
@@ -110,7 +108,7 @@ describe('OAuthService', () => {
         'google',
         '123',
         'newuser@example.com',
-        'New User',
+        'New User'
       );
 
       expect(result.email).toBe('newuser@example.com');
@@ -120,14 +118,14 @@ describe('OAuthService', () => {
 
     it('should throw error for invalid provider', async () => {
       await expect(
-        service.findOrCreateUserViaOAuth('invalid', '123', 'user@example.com'),
+        service.findOrCreateUserViaOAuth('invalid', '123', 'user@example.com')
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw error if providerId is missing', async () => {
-      await expect(service.findOrCreateUserViaOAuth('google', '', 'user@example.com')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.findOrCreateUserViaOAuth('google', '', 'user@example.com')
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException if provider already linked to this user', async () => {
@@ -142,7 +140,7 @@ describe('OAuthService', () => {
         .mockResolvedValueOnce(existingUser); // Check for email
 
       await expect(
-        service.findOrCreateUserViaOAuth('google', '456', 'user@example.com'),
+        service.findOrCreateUserViaOAuth('google', '456', 'user@example.com')
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -172,7 +170,7 @@ describe('OAuthService', () => {
             }),
           }),
         }),
-        { new: true },
+        { new: true }
       );
     });
 
@@ -185,13 +183,13 @@ describe('OAuthService', () => {
       mockUserModel.findOne.mockResolvedValueOnce(anotherUser);
 
       await expect(
-        service.linkOAuthProvider(userId, 'google', '123', 'user@example.com'),
+        service.linkOAuthProvider(userId, 'google', '123', 'user@example.com')
       ).rejects.toThrow(ConflictException);
     });
 
     it('should throw error for invalid provider', async () => {
       await expect(
-        service.linkOAuthProvider(userId, 'invalid', '123', 'user@example.com'),
+        service.linkOAuthProvider(userId, 'invalid', '123', 'user@example.com')
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -200,7 +198,7 @@ describe('OAuthService', () => {
       mockUserModel.findByIdAndUpdate.mockResolvedValueOnce(null); // User not found
 
       await expect(
-        service.linkOAuthProvider(userId, 'google', '123', 'user@example.com'),
+        service.linkOAuthProvider(userId, 'google', '123', 'user@example.com')
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -230,7 +228,7 @@ describe('OAuthService', () => {
         expect.objectContaining({
           $pull: { oauthProviders: { provider: 'google' } },
         }),
-        { new: true },
+        { new: true }
       );
     });
 
@@ -262,7 +260,7 @@ describe('OAuthService', () => {
       mockUserModel.findById.mockResolvedValueOnce(user);
 
       await expect(service.unlinkOAuthProvider(userId, 'google')).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
     });
 
@@ -276,7 +274,7 @@ describe('OAuthService', () => {
       mockUserModel.findById.mockResolvedValueOnce(user);
 
       await expect(service.unlinkOAuthProvider(userId, 'invalid')).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
     });
 
@@ -284,7 +282,7 @@ describe('OAuthService', () => {
       mockUserModel.findById.mockResolvedValueOnce(null);
 
       await expect(service.unlinkOAuthProvider(userId, 'google')).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
     });
   });

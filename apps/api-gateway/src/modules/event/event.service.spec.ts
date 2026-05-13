@@ -40,7 +40,7 @@ describe('EventService', () => {
       expect.objectContaining({
         _id: 'event-1',
         deviceId: 'device-1',
-      }),
+      })
     );
     expect(result).toEqual({
       id: 'event-1',
@@ -70,7 +70,7 @@ describe('EventService', () => {
         deviceId: 'device-1',
         location: { lat: 10.7, lng: 106.6 },
         metrics: { latency: Number.NaN, packetLoss: 1, signalStrength: -70 },
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
 
     expect(eventBrokerService.queueEvent).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('EventService', () => {
         skip: 0,
         limit: 10,
         startDate: 'invalid-date',
-      }),
+      })
     ).toThrow(BadRequestException);
   });
 

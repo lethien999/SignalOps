@@ -30,4 +30,3 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     }).catch(next);
   }
 }
-

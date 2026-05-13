@@ -5,7 +5,7 @@ export function errorHandlingMiddleware(
   err: unknown,
   req: Request,
   res: Response,
-  _next: NextFunction,
+  _next: NextFunction
 ): void {
   const message = err instanceof Error ? err.message : 'Unhandled middleware error';
 

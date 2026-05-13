@@ -55,7 +55,7 @@ export class AlertController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip?: number,
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number
   ) {
     const fromDate = from ? new Date(from) : undefined;
     const toDate = to ? new Date(to) : undefined;
@@ -92,7 +92,14 @@ export class AlertController {
   @ApiOkResponse({ description: 'Batch result with success/failure counts' })
   @Post('batch')
   async batchUpdateAlerts(
-    @Body() body: { ids: string[]; status: 'acknowledged' | 'resolved'; acknowledgedBy?: string; resolvedBy?: string; resolutionNote?: string },
+    @Body()
+    body: {
+      ids: string[];
+      status: 'acknowledged' | 'resolved';
+      acknowledgedBy?: string;
+      resolvedBy?: string;
+      resolutionNote?: string;
+    }
   ) {
     if (body.status === 'acknowledged') {
       return this.alertService.batchAcknowledge(body.ids || [], body.acknowledgedBy);
@@ -116,7 +123,7 @@ export class AlertController {
     @Query('status') status?: string,
     @Query('deviceId') deviceId?: string,
     @Query('from') from?: string,
-    @Query('to') to?: string,
+    @Query('to') to?: string
   ) {
     return this.alertService.getAlertHistory({
       days,
@@ -141,7 +148,7 @@ export class AlertController {
     @Query('severity') severity?: string,
     @Query('type') type?: 'latency' | 'packet_loss' | 'signal',
     @Query('from') from?: string,
-    @Query('to') to?: string,
+    @Query('to') to?: string
   ) {
     const fromDate = from ? new Date(from) : undefined;
     const toDate = to ? new Date(to) : undefined;
@@ -171,7 +178,7 @@ export class AlertController {
     @Query('severity') severity?: string,
     @Query('type') type?: 'latency' | 'packet_loss' | 'signal',
     @Query('from') from?: string,
-    @Query('to') to?: string,
+    @Query('to') to?: string
   ) {
     const fromDate = from ? new Date(from) : undefined;
     const toDate = to ? new Date(to) : undefined;
@@ -204,7 +211,7 @@ export class AlertController {
     @Query('status') status?: string,
     @Query('deviceId') deviceId?: string,
     @Query('from') from?: string,
-    @Query('to') to?: string,
+    @Query('to') to?: string
   ) {
     return this.alertService.exportAlertHistoryCsv({
       days,
@@ -230,10 +237,7 @@ export class AlertController {
   @ApiBadRequestResponse({ description: 'Invalid status transition or request body' })
   @ApiNotFoundResponse({ description: 'Alert not found' })
   @Patch(':id')
-  async updateAlert(
-    @Param('id') id: string,
-    @Body() updateData: UpdateAlertDto,
-  ) {
+  async updateAlert(@Param('id') id: string, @Body() updateData: UpdateAlertDto) {
     const normalizedInput = {
       status: updateData.status,
       acknowledgedBy: updateData.acknowledgedBy,

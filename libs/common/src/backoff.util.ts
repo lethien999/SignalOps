@@ -10,7 +10,7 @@
 export function calculateBackoffWithJitter(
   attempt: number,
   baseDelay: number = 2000,
-  jitterFactor: number = 0.1, // 10% jitter
+  jitterFactor: number = 0.1 // 10% jitter
 ): number {
   // Exponential backoff: 2^attempt
   const exponentialDelay = baseDelay * Math.pow(2, Math.min(attempt, 5)); // Cap at 2^5 to avoid overflow
@@ -26,7 +26,7 @@ export function calculateBackoffWithJitter(
 export function calculateLinearBackoffWithJitter(
   attempt: number,
   baseDelay: number = 1000,
-  jitterFactor: number = 0.1,
+  jitterFactor: number = 0.1
 ): number {
   const linearDelay = baseDelay * attempt;
   const jitter = Math.random() * baseDelay * jitterFactor;
@@ -41,7 +41,7 @@ export function calculateLinearBackoffWithJitter(
 export function calculateFullJitterBackoff(
   attempt: number,
   baseDelay: number = 2000,
-  maxDelay: number = 32000,
+  maxDelay: number = 32000
 ): number {
   const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
   return Math.random() * exponentialDelay;

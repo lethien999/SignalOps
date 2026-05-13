@@ -11,7 +11,7 @@ if (-not $ApiKey) {
 
 $headers = @{ 'x-api-key' = $ApiKey; 'Content-Type' = 'application/json' }
 
-function Post-Event {
+function Send-EventSample {
     param(
         [string]$DeviceId,
         [int]$Latency,
@@ -35,9 +35,9 @@ $profiles = @(
 )
 
 Write-Host "Sending events for $DeviceId..."
-foreach ($profile in $profiles) {
-    1..$profile.Count | ForEach-Object {
-        Post-Event -DeviceId $DeviceId -Latency $profile.Latency -PacketLoss $profile.PacketLoss -SignalStrength $profile.SignalStrength | Out-Null
+foreach ($eventProfile in $profiles) {
+    1..$eventProfile.Count | ForEach-Object {
+        Send-EventSample -DeviceId $DeviceId -Latency $eventProfile.Latency -PacketLoss $eventProfile.PacketLoss -SignalStrength $eventProfile.SignalStrength | Out-Null
     }
 }
 

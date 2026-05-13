@@ -21,7 +21,9 @@ describe('EventRepository', () => {
     jest.useFakeTimers().setSystemTime(now);
 
     const updateResult = { _id: 'event-2' };
-    const updateSpy = jest.spyOn(EventModel, 'findByIdAndUpdate').mockReturnValue(updateResult as never);
+    const updateSpy = jest
+      .spyOn(EventModel, 'findByIdAndUpdate')
+      .mockReturnValue(updateResult as never);
 
     const repository = new EventRepository();
     await expect(repository.updateProcessedTime('event-2')).resolves.toBe(updateResult);
@@ -29,7 +31,7 @@ describe('EventRepository', () => {
     expect(updateSpy).toHaveBeenCalledWith(
       'event-2',
       { processedAt: now },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   });
 
@@ -38,7 +40,9 @@ describe('EventRepository', () => {
     jest.useFakeTimers().setSystemTime(now);
 
     const updateResult = { _id: 'event-3' };
-    const updateSpy = jest.spyOn(EventModel, 'findByIdAndUpdate').mockReturnValue(updateResult as never);
+    const updateSpy = jest
+      .spyOn(EventModel, 'findByIdAndUpdate')
+      .mockReturnValue(updateResult as never);
 
     const repository = new EventRepository();
     await expect(repository.linkAlert('event-3', 'alert-3')).resolves.toBe(updateResult);
@@ -46,7 +50,7 @@ describe('EventRepository', () => {
     expect(updateSpy).toHaveBeenCalledWith(
       'event-3',
       { alertId: 'alert-3', processedAt: now },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   });
 });

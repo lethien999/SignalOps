@@ -8,7 +8,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { errorHandlingMiddleware } from './common/middleware/error-handling.middleware';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { validateEnvironment } from './common/env-validator';
-import { initializeTracing } from '@signalops/common';
+import { initializeTracing, shutdownTracing } from '@signalops/common';
 
 function resolveCorsOrigins(): string[] {
   const raw = process.env.CORS_ORIGIN;
@@ -24,20 +24,20 @@ function resolveCorsOrigins(): string[] {
 
 async function bootstrap() {
   // Initialize OpenTelemetry tracing first
-  initializeTracing();
+  await initializeTracing('signalops-api-gateway');
 
   // E5: Kiểm tra biến môi trường trước khi khởi động
   validateEnvironment();
 
   const app = await NestFactory.create(AppModule);
-  
+
   // Setup validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    }),
+    })
   );
 
   app.useGlobalInterceptors(new RequestResponseInterceptor());
@@ -66,7 +66,7 @@ async function bootstrap() {
         name: 'x-api-key',
         description: 'API key for protected ingestion endpoints',
       },
-      'api-key',
+      'api-key'
     )
     .addApiKey(
       {
@@ -75,7 +75,7 @@ async function bootstrap() {
         name: 'x-admin-api-key',
         description: 'Admin API key for managing stored api keys',
       },
-      'admin-api-key',
+      'admin-api-key'
     )
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
@@ -83,6 +83,14 @@ async function bootstrap() {
 
   const port = process.env.API_GATEWAY_PORT || 3000;
   await app.listen(port);
+
+  process.once('SIGTERM', () => {
+    void shutdownTracing().finally(() => process.exit(0));
+  });
+
+  process.once('SIGINT', () => {
+    void shutdownTracing().finally(() => process.exit(0));
+  });
 
   Logger.info(`API Gateway đang lắng nghe tại cổng ${port}`);
 }

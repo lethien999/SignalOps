@@ -4,7 +4,10 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { register } from 'prom-client';
 import { AdminApiKeyGuard } from './admin-api-key.guard';
-import { InfrastructureObservability, type CostPeriod } from '../health/infrastructure-observability';
+import {
+  InfrastructureObservability,
+  type CostPeriod,
+} from '../health/infrastructure-observability';
 
 @ApiTags('admin')
 @ApiSecurity('admin-api-key')
@@ -28,7 +31,9 @@ export class MetricsAdminController {
     if (!pipeline) return m;
 
     // filter by label value
-    const filtered = (m?.values || []).filter((v: any) => v.labels && v.labels.pipeline === pipeline);
+    const filtered = (m?.values || []).filter(
+      (v: any) => v.labels && v.labels.pipeline === pipeline
+    );
     return { metric: m, filtered };
   }
 

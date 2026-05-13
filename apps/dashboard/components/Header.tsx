@@ -41,11 +41,16 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
 
   const severityColor = (s: string) => {
     switch (s) {
-      case 'critical': return 'bg-red-100 text-red-700 border-red-300';
-      case 'high': return 'bg-red-100 text-red-700 border-red-200';
-      case 'warning': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'critical':
+        return 'bg-red-100 text-red-700 border-red-300';
+      case 'high':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'warning':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      default:
+        return 'bg-blue-100 text-blue-700 border-blue-200';
     }
   };
 
@@ -63,7 +68,9 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
           </button>
           <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-dot" />
-            <span>Realtime • {alerts.filter(a => a.status === 'open').length} cảnh báo đang mở</span>
+            <span>
+              Realtime • {alerts.filter((a) => a.status === 'open').length} cảnh báo đang mở
+            </span>
           </div>
         </div>
 
@@ -87,7 +94,10 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
               <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl border border-gray-200 shadow-2xl z-50 animate-fade-in">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
                   <h3 className="text-sm font-bold text-gray-900">Thông báo</h3>
-                  <button onClick={() => setShowNotif(false)} className="p-1 rounded-full hover:bg-gray-100 text-gray-400">
+                  <button
+                    onClick={() => setShowNotif(false)}
+                    className="p-1 rounded-full hover:bg-gray-100 text-gray-400"
+                  >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -99,24 +109,37 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
                     </div>
                   ) : (
                     recentAlerts.map((alert) => (
-                      <div key={alert.id} className="px-5 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <div
+                        key={alert.id}
+                        className="px-5 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                      >
                         <div className="flex items-start gap-3">
-                          <div className={`flex-shrink-0 mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center ${
-                            alert.severity === 'high' ? 'bg-red-100' : 'bg-yellow-100'
-                          }`}>
-                            <AlertTriangle className={`w-4 h-4 ${
-                              alert.severity === 'high' ? 'text-red-600' : 'text-yellow-600'
-                            }`} />
+                          <div
+                            className={`flex-shrink-0 mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center ${
+                              alert.severity === 'high' ? 'bg-red-100' : 'bg-yellow-100'
+                            }`}
+                          >
+                            <AlertTriangle
+                              className={`w-4 h-4 ${
+                                alert.severity === 'high' ? 'text-red-600' : 'text-yellow-600'
+                              }`}
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-gray-900 truncate">{alert.type}</p>
-                              <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${severityColor(alert.severity)}`}>
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {alert.type}
+                              </p>
+                              <span
+                                className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${severityColor(alert.severity)}`}
+                              >
                                 {alert.severity.toUpperCase()}
                               </span>
                             </div>
                             <p className="text-xs text-gray-500 truncate mt-0.5">{alert.message}</p>
-                            <p className="text-[10px] text-gray-400 mt-1">{new Date(alert.createdAt).toLocaleString('vi-VN')}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              {new Date(alert.createdAt).toLocaleString('vi-VN')}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -142,10 +165,18 @@ export function Header({ unreadAlerts = 0 }: HeaderProps) {
             aria-label={soundEnabled ? 'Tắt âm cảnh báo' : 'Bật âm cảnh báo'}
             title={soundEnabled ? 'Âm cảnh báo đang bật' : 'Âm cảnh báo đang tắt'}
           >
-            {soundEnabled ? <Volume2 className="w-5 h-5 text-gray-600" /> : <VolumeX className="w-5 h-5 text-gray-400" />}
+            {soundEnabled ? (
+              <Volume2 className="w-5 h-5 text-gray-600" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-gray-400" />
+            )}
           </button>
 
-          <Link href="/settings" className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors" aria-label="Cài đặt">
+          <Link
+            href="/settings"
+            className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
+            aria-label="Cài đặt"
+          >
             <Settings className="w-5 h-5 text-gray-600" />
           </Link>
         </div>

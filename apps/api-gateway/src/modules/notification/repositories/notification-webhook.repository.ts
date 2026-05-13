@@ -20,7 +20,7 @@ export type NotificationWebhookUpdateInput = Partial<NotificationWebhookCreateIn
 export class NotificationWebhookRepository {
   constructor(
     @InjectModel(NotificationWebhook.name)
-    private readonly notificationWebhookModel: Model<NotificationWebhook>,
+    private readonly notificationWebhookModel: Model<NotificationWebhook>
   ) {}
 
   async findAll(): Promise<NotificationWebhook[]> {
@@ -45,7 +45,10 @@ export class NotificationWebhookRepository {
     return row.save();
   }
 
-  async updateById(id: string, input: NotificationWebhookUpdateInput): Promise<NotificationWebhook | null> {
+  async updateById(
+    id: string,
+    input: NotificationWebhookUpdateInput
+  ): Promise<NotificationWebhook | null> {
     return this.notificationWebhookModel
       .findByIdAndUpdate(
         id,
@@ -61,7 +64,7 @@ export class NotificationWebhookRepository {
             ...(input.updatedBy !== undefined ? { updatedBy: input.updatedBy } : {}),
           },
         },
-        { new: true, runValidators: true },
+        { new: true, runValidators: true }
       )
       .exec();
   }

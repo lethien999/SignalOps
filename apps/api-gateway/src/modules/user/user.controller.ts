@@ -10,12 +10,12 @@ import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Enable2FaDto, Disable2FaDto } from './dtos/verify-2fa.dto';
 
-@Controller('auth')
+@Controller('api/auth')
 export class UserController {
   constructor(
     private readonly authService: AuthService,
     private readonly passwordResetService: PasswordResetService,
-    private readonly twoFactorService: TwoFactorService,
+    private readonly twoFactorService: TwoFactorService
   ) {}
 
   /**
@@ -104,21 +104,15 @@ export class UserController {
   @Post('2fa/verify-setup')
   @UseGuards(JwtGuard)
   @HttpCode(200)
-  async verifyTwoFaSetup(
-    @Request() req: any,
-    @Body() dto: Enable2FaDto & { secret: string },
-  ) {
+  async verifyTwoFaSetup(@Request() req: any, @Body() dto: Enable2FaDto & { secret: string }) {
     const userId = req.user.userId;
-    const backupCodes = await this.twoFactorService.enableTotp(
-      userId,
-      dto.secret,
-      dto.code,
-    );
+    const backupCodes = await this.twoFactorService.enableTotp(userId, dto.secret, dto.code);
 
     return {
       message: '2FA được bật thành công',
       backupCodes,
-      warning: 'Lưu các mã backup ở nơi an toàn. Bạn sẽ cần chúng nếu mất quyền truy cập Authenticator',
+      warning:
+        'Lưu các mã backup ở nơi an toàn. Bạn sẽ cần chúng nếu mất quyền truy cập Authenticator',
     };
   }
 
@@ -140,7 +134,7 @@ export class UserController {
     // Verify password
     const isPasswordValid = await this.authService.validatePassword(
       dto.password,
-      user.passwordHash,
+      user.passwordHash
     );
     if (!isPasswordValid) {
       throw new Error('Mật khẩu không chính xác');

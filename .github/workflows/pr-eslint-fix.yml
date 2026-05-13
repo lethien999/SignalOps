@@ -1,0 +1,65 @@
+name: PR ESLint Fix
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  fix:
+    name: Fix changed files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect changed JavaScript and TypeScript files
+        id: changed
+        shell: bash
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.js' '*.jsx' '*.ts' '*.tsx')
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          printf '%s\n' "${files[@]}" > changed-files.txt
+          {
+            echo 'files<<EOF'
+            printf '%s\n' "${files[@]}"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          echo "count=${#files[@]}" >> "$GITHUB_OUTPUT"
+
+      - name: Run ESLint autofix on changed files
+        if: steps.changed.outputs.count != '0'
+        shell: bash
+        run: |
+          xargs -a changed-files.txt npx eslint --fix
+
+      - name: Show fix diff
+        if: steps.changed.outputs.count != '0'
+        shell: bash
+        run: |
+          git diff --stat
+
+      - name: Upload fix summary
+        if: steps.changed.outputs.count == '0'
+        run: echo "No JS/TS files changed in this PR."

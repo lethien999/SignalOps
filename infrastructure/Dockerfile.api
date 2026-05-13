@@ -31,15 +31,11 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 # Use the built package.json from the builder stage so npm doesn't try to resolve workspaces
 COPY --from=builder /app/apps/api-gateway/package.json ./package.json
 
-# Install production dependencies only for the api package
-RUN npm install --production --no-audit --omit=dev && npm cache clean --force
+# Reuse the full dependency tree from the builder to keep runtime deterministic
+COPY --from=builder /app/node_modules ./node_modules
 
-# Provide internal workspace libs in runtime image for Node module resolution
-RUN mkdir -p /app/node_modules/@signalops/common /app/node_modules/@signalops/models
-COPY --from=builder /app/libs/common/package.json /app/node_modules/@signalops/common/package.json
-COPY --from=builder /app/libs/common/dist /app/node_modules/@signalops/common/dist
-COPY --from=builder /app/libs/models/package.json /app/node_modules/@signalops/models/package.json
-COPY --from=builder /app/libs/models/dist /app/node_modules/@signalops/models/dist
+# Copy workspace libraries so npm workspace symlinks continue to resolve in runtime
+COPY --from=builder /app/libs ./libs
 
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist

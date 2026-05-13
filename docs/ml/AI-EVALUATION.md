@@ -11,6 +11,7 @@ SignalOps M13 introduces AI-powered anomaly detection in **shadow mode** - scori
 ### Why Evaluate?
 
 Before deploying AI, we need to validate it works correctly by:
+
 - Comparing AI scores against real alerts that were created historically
 - Calculating precision, recall, and F1 scores
 - Identifying if thresholds need tuning
@@ -79,14 +80,17 @@ Interpretation:
 #### Interpreting Results
 
 **Precision = TP / (TP + FP)** — "Of the anomalies we predicted, how many were correct?"
+
 - **High precision** (>80%): Few false alarms, operator trust increases
 - **Low precision** (<60%): Many false alarms, operators may ignore alerts
 
 **Recall = TP / (TP + FN)** — "Of the actual anomalies, how many did we catch?"
+
 - **High recall** (>80%): Few missed anomalies, good detection coverage
 - **Low recall** (<60%): Missing many anomalies, real issues go unnoticed
 
 **F1 Score** — Harmonic mean of precision and recall (0-100, higher is better)
+
 - **F1 > 80**: Model is well-balanced
 - **F1 < 60**: Model needs tuning
 
@@ -151,6 +155,7 @@ The evaluation saves a detailed JSON report:
 ### Why A/B Test?
 
 After validation on historical data, A/B testing in staging allows us to:
+
 - Compare AI alerts vs rule-based alerts in real-time
 - Measure operator response time differences
 - Validate that AI doesn't create false positives in production-like environment
@@ -240,14 +245,14 @@ db.alerts.aggregate([
 
 After A/B test, decide to proceed based on:
 
-| Criteria | Pass Threshold | Action |
-|----------|---|---------|
-| **Precision** | ≥ 80% | Validates AI doesn't create false alarms |
-| **Recall** | ≥ 75% | Ensures AI catches most real anomalies |
-| **F1 Score** | ≥ 78 | Balanced performance |
-| **Response Time** | ≤ 50ms per event | AI scoring doesn't slow down system |
-| **Error Rate** | < 0.1% | AI service is stable |
-| **Operator Feedback** | Net positive | Operators find AI alerts useful |
+| Criteria              | Pass Threshold   | Action                                   |
+| --------------------- | ---------------- | ---------------------------------------- |
+| **Precision**         | ≥ 80%            | Validates AI doesn't create false alarms |
+| **Recall**            | ≥ 75%            | Ensures AI catches most real anomalies   |
+| **F1 Score**          | ≥ 78             | Balanced performance                     |
+| **Response Time**     | ≤ 50ms per event | AI scoring doesn't slow down system      |
+| **Error Rate**        | < 0.1%           | AI service is stable                     |
+| **Operator Feedback** | Net positive     | Operators find AI alerts useful          |
 
 **Decision Table:**
 
@@ -270,12 +275,12 @@ Once A/B test passes, production deployment:
 
 ## File Reference
 
-| File | Purpose |
-|------|---------|
-| `scripts/eval-ai-scoring.mjs` | Evaluation script (precision/recall calculation) |
+| File                                                           | Purpose                                           |
+| -------------------------------------------------------------- | ------------------------------------------------- |
+| `scripts/eval-ai-scoring.mjs`                                  | Evaluation script (precision/recall calculation)  |
 | `apps/api-gateway/src/modules/tenant/schemas/tenant.schema.ts` | Tenant.aiEnabled flag (enable/disable per tenant) |
-| `apps/dashboard/services/notification.service.ts` | Push notifications for high-confidence AI alerts |
-| `apps/worker-service/src/services/anomaly-scoring.ts` | AI anomaly scoring function |
+| `apps/dashboard/services/notification.service.ts`              | Push notifications for high-confidence AI alerts  |
+| `apps/worker-service/src/services/anomaly-scoring.ts`          | AI anomaly scoring function                       |
 
 ---
 

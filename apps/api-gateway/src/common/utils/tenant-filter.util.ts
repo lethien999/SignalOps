@@ -6,13 +6,14 @@ import { Types } from 'mongoose';
  */
 export function buildTenantFilter(
   tenantId: string | Types.ObjectId | null | undefined,
-  additionalFilter: Record<string, any> = {},
+  additionalFilter: Record<string, any> = {}
 ): Record<string, any> {
   if (!tenantId) {
     return additionalFilter;
   }
 
-  const tenantObjectId = tenantId instanceof Types.ObjectId ? tenantId : new Types.ObjectId(tenantId);
+  const tenantObjectId =
+    tenantId instanceof Types.ObjectId ? tenantId : new Types.ObjectId(tenantId);
 
   return {
     ...additionalFilter,
@@ -25,10 +26,12 @@ export function buildTenantFilter(
  */
 export function validateTenantAccess(
   userTenantId: string | Types.ObjectId,
-  requestedTenantId: string | Types.ObjectId,
+  requestedTenantId: string | Types.ObjectId
 ): boolean {
-  const userTenant = userTenantId instanceof Types.ObjectId ? userTenantId.toString() : userTenantId;
-  const requestedTenant = requestedTenantId instanceof Types.ObjectId ? requestedTenantId.toString() : requestedTenantId;
+  const userTenant =
+    userTenantId instanceof Types.ObjectId ? userTenantId.toString() : userTenantId;
+  const requestedTenant =
+    requestedTenantId instanceof Types.ObjectId ? requestedTenantId.toString() : requestedTenantId;
 
   return userTenant === requestedTenant;
 }

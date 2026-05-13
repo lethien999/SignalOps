@@ -38,9 +38,11 @@ SignalOps sử dụng hệ thống xác thực dựa trên JWT (stateless) với
 ### Công khai (Không yêu cầu xác thực)
 
 #### POST /auth/signup
+
 Đăng ký người dùng mới và tạo đối tượng
 
 **Yêu cầu:**
+
 ```json
 {
   "email": "user@example.com",
@@ -50,6 +52,7 @@ SignalOps sử dụng hệ thống xác thực dựa trên JWT (stateless) với
 ```
 
 **Phản hồi (201 Created):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -63,6 +66,7 @@ SignalOps sử dụng hệ thống xác thực dựa trên JWT (stateless) với
 ```
 
 **Xác thực:**
+
 - Email phải hợp lệ và duy nhất
 - Mật khẩu phải có ≥8 ký tự
 - Đối tượng phải tồn tại
@@ -70,9 +74,11 @@ SignalOps sử dụng hệ thống xác thực dựa trên JWT (stateless) với
 **Lưu ý**: Người dùng đầu tiên trong một đối tượng được gán vai trò 'admin' tự động.
 
 #### POST /auth/login
+
 Xác thực bằng email và mật khẩu
 
 **Yêu cầu:**
+
 ```json
 {
   "email": "user@example.com",
@@ -81,6 +87,7 @@ Xác thực bằng email và mật khẩu
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -94,20 +101,24 @@ Xác thực bằng email và mật khẩu
 ```
 
 **Lỗi:**
+
 - `401 Unauthorized` - Thông tin xác thực không hợp lệ
 - `400 Bad Request` - Email hoặc mật khẩu bị thiếu/không hợp lệ
 
 ### Được bảo vệ (Yêu cầu header Authorization)
 
 Tất cả các endpoint được bảo vệ yêu cầu header Authorization:
+
 ```
 Authorization: Bearer <jwt-token>
 ```
 
 #### GET /auth/me
+
 Lấy thông tin người dùng đã xác thực hiện tại
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "userId": "user-id",
@@ -118,15 +129,18 @@ Lấy thông tin người dùng đã xác thực hiện tại
 ```
 
 #### GET /tenants/:tenantId/users
+
 Liệt kê tất cả người dùng trong một đối tượng
 
 **Quyền**: Chỉ `admin`
 
 **Tham số Query:**
+
 - `skip` (mặc định: 0) - Số bản ghi cần bỏ qua
 - `limit` (mặc định: 50, tối đa: 100) - Bản ghi trên mỗi trang
 
 **Phản hồi (200 OK):**
+
 ```json
 [
   {
@@ -141,19 +155,22 @@ Liệt kê tất cả người dùng trong một đối tượng
 ```
 
 #### POST /tenants/:tenantId/users
+
 Thêm người dùng vào đối tượng
 
 **Quyền**: Chỉ `admin`
 
 **Yêu cầu:**
+
 ```json
 {
   "email": "newuser@example.com",
-  "roleId": "editor"  // tùy chọn, mặc định 'viewer'
+  "roleId": "editor" // tùy chọn, mặc định 'viewer'
 }
 ```
 
 **Phản hồi (201 Created):**
+
 ```json
 {
   "id": "user-id",
@@ -164,11 +181,13 @@ Thêm người dùng vào đối tượng
 ```
 
 #### DELETE /tenants/:tenantId/users/:userId
+
 Xóa người dùng khỏi đối tượng (xóa mềm - đặt isActive=false)
 
 **Quyền**: Chỉ `admin`
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "id": "user-id",
@@ -178,18 +197,21 @@ Xóa người dùng khỏi đối tượng (xóa mềm - đặt isActive=false)
 ```
 
 #### PATCH /tenants/:tenantId/users/:userId/role
+
 Cập nhật vai trò của người dùng
 
 **Quyền**: Chỉ `admin`
 
 **Yêu cầu:**
+
 ```json
 {
-  "roleId": "admin"  // 'admin', 'editor', hoặc 'viewer'
+  "roleId": "admin" // 'admin', 'editor', hoặc 'viewer'
 }
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "id": "user-id",
@@ -205,12 +227,14 @@ Cập nhật vai trò của người dùng
 SignalOps sử dụng ba vai trò cố định:
 
 #### admin
+
 - Truy cập đầy đủ vào tất cả các tính năng
 - Có thể quản lý người dùng và vai trò
 - Có thể xem tất cả các metrics và dữ liệu SLA
 - Có thể cấu hình cảnh báo và ngưỡng
 
 **Quyền:**
+
 - `read:events` - Đọc dữ liệu sự kiện
 - `write:events` - Tạo/ghi sự kiện
 - `manage:users` - Quản lý người dùng
@@ -218,20 +242,24 @@ SignalOps sử dụng ba vai trò cố định:
 - `manage:alerts` - Cấu hình cảnh báo
 
 #### editor
+
 - Có thể đọc và ghi dữ liệu sự kiện
 - Có thể xem metrics
 - Không thể quản lý người dùng hoặc cấu hình
 
 **Quyền:**
+
 - `read:events`
 - `write:events`
 - `view:metrics`
 
 #### viewer
+
 - Chỉ có quyền đọc sự kiện và metrics
 - Không có khả năng ghi hoặc quản lý
 
 **Quyền:**
+
 - `read:events`
 - `view:metrics`
 
@@ -253,6 +281,7 @@ async getSensitiveData() {
 ### Ngữ cảnh Đối tượng
 
 Mỗi người dùng chỉ thuộc về một đối tượng:
+
 - User.tenantId = MongoDB ObjectId của đối tượng
 - JWT payload bao gồm tenantId
 - `TenantContextMiddleware` trích xuất tenantId từ JWT và gắn vào yêu cầu
@@ -266,6 +295,7 @@ Trước khi truy cập tài nguyên của đối tượng:
 3. **Từ chối nếu không khớp** (403 Forbidden)
 
 Ví dụ:
+
 ```typescript
 if (!validateTenantAccess(req.user.tenantId, requestedTenantId)) {
   throw new ForbiddenException('Bạn không có quyền truy cập đối tượng này');
@@ -285,6 +315,7 @@ const alerts = await alertModel.find({});
 ```
 
 Sử dụng tiện ích `buildTenantFilter()`:
+
 ```typescript
 const filter = buildTenantFilter(userTenantId, { status: 'open' });
 const alerts = await alertModel.find(filter);
@@ -338,7 +369,7 @@ MONGODB_URI=mongodb+srv://...
 
 ```typescript
 // apps/dashboard/lib/auth.ts
-setAuthToken({ token, user });  // Lưu trong localStorage + cookies
+setAuthToken({ token, user }); // Lưu trong localStorage + cookies
 
 // Truy xuất
 const token = getAuthToken();
@@ -368,6 +399,7 @@ api.interceptors.request.use((config) => {
 ### Kiểm thử Đơn vị
 
 Kiểm thử dịch vụ xác thực, guards, và tiện ích:
+
 ```bash
 npm run -w api-gateway test -- auth.service.spec.ts
 npm run -w api-gateway test -- guards.spec.ts
@@ -376,11 +408,13 @@ npm run -w api-gateway test -- guards.spec.ts
 ### Kiểm thử E2E
 
 Kiểm thử các quy trình xác thực hoàn chỉnh bao gồm cách ly đa đối tượng:
+
 ```bash
 npm run -w api-gateway test:e2e -- auth.e2e-spec.ts
 ```
 
 Bao gồm:
+
 - Đăng ký và đăng nhập
 - Xác thực JWT
 - Cách ly đa đối tượng
@@ -391,31 +425,37 @@ Bao gồm:
 ### Lỗi "Invalid or expired token" (Token không hợp lệ hoặc đã hết hạn)
 
 **Nguyên nhân:**
+
 - Token đã hết hạn (7 ngày)
 - Token bị giả mạo
 - JWT_SECRET trên server sai
 
 **Giải pháp:**
+
 - Đăng nhập lại để lấy token mới
 - Kiểm tra JWT_SECRET khớp trên server
 
 ### Lỗi "You do not have access to this tenant" (Bạn không có quyền truy cập đối tượng này)
 
 **Nguyên nhân:**
+
 - tenantId của người dùng không khớp với tenantId trong URL
 - Người dùng cố gắng truy cập tài nguyên của đối tượng khác
 
 **Giải pháp:**
+
 - Xác minh người dùng ở trong đối tượng chính xác
 - Kiểm tra tham số URL
 
 ### Lỗi "Insufficient permissions" (Quyền không đủ)
 
 **Nguyên nhân:**
+
 - Vai trò của người dùng thiếu quyền yêu cầu
 - Route yêu cầu vai trò không được gán cho người dùng
 
 **Giải pháp:**
+
 - Admin phải nâng cấp vai trò của người dùng
 - Người dùng yêu cầu admin cấp quyền truy cập
 

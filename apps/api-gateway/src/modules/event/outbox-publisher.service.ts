@@ -15,11 +15,12 @@ import { EventBrokerService, TelemetryEventPayload } from './event-broker.servic
 export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
   private isPublishing = false;
-  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+  private readonly redisEnabled =
+    String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(
     private readonly outboxRepository: OutboxRepository,
-    private readonly eventBrokerService: EventBrokerService,
+    private readonly eventBrokerService: EventBrokerService
   ) {}
 
   async onModuleInit() {
@@ -70,7 +71,9 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
       for (const event of events) {
         try {
           if (event.publishAttempts >= maxAttempts) {
-            Logger.warn(`Outbox event ${event._id} exceeded max attempts (${maxAttempts}). Skipping.`);
+            Logger.warn(
+              `Outbox event ${event._id} exceeded max attempts (${maxAttempts}). Skipping.`
+            );
             continue;
           }
 
@@ -86,7 +89,10 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           await this.outboxRepository.recordPublishAttempt(event._id.toString(), errorMsg);
-          Logger.warn(`Failed to publish outbox event ${event._id}. Attempt ${event.publishAttempts + 1}`, { error: errorMsg });
+          Logger.warn(
+            `Failed to publish outbox event ${event._id}. Attempt ${event.publishAttempts + 1}`,
+            { error: errorMsg }
+          );
         }
       }
 

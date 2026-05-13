@@ -13,7 +13,7 @@ import * as bcrypt from 'bcrypt';
 export class TwoFactorService {
   constructor(
     @InjectModel(User.name)
-    private userModel: Model<UserDocument>,
+    private userModel: Model<UserDocument>
   ) {}
 
   /**
@@ -75,11 +75,7 @@ export class TwoFactorService {
   /**
    * Enable TOTP for user
    */
-  async enableTotp(
-    userId: string,
-    secret: string,
-    code: string,
-  ): Promise<string[]> {
+  async enableTotp(userId: string, secret: string, code: string): Promise<string[]> {
     if (!this.verifyTotpCode(secret, code)) {
       throw new BadRequestException('Mã OTP không hợp lệ');
     }
@@ -110,11 +106,7 @@ export class TwoFactorService {
   /**
    * Verify login with TOTP
    */
-  async verifyLoginTotp(
-    userId: string,
-    code: string,
-    backupCodes?: string[],
-  ): Promise<boolean> {
+  async verifyLoginTotp(userId: string, code: string, backupCodes?: string[]): Promise<boolean> {
     const user = await this.userModel.findById(userId);
     if (!user || !user.totpEnabled || !user.totpSecret) {
       return false;

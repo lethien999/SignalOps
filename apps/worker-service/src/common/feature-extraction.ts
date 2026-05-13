@@ -1,6 +1,6 @@
 /**
  * Feature Extraction for ML Training
- * 
+ *
  * Extracts features from raw events for machine learning models
  */
 
@@ -28,7 +28,7 @@ export interface TrainingFeatures {
   // Time-based features
   hour_of_day: number; // 0-23
   day_of_week: number; // 0-6 (Sunday-Saturday)
-  
+
   // Change detection features (requires context)
   metric_volatility?: number; // Standard deviation of recent metrics
   change_magnitude?: number; // Magnitude of recent change
@@ -75,7 +75,7 @@ export function extractEventFeatures(event: RawEvent): TrainingFeatures {
  */
 export function calculateMetricVolatility(
   recentEvents: RawEvent[],
-  metricKey: 'latency' | 'packetLoss' | 'signalStrength',
+  metricKey: 'latency' | 'packetLoss' | 'signalStrength'
 ): number {
   if (recentEvents.length < 2) return 0;
 
@@ -90,7 +90,7 @@ export function calculateMetricVolatility(
  */
 export function calculateChangeMagnitude(
   recentEvents: RawEvent[],
-  metricKey: 'latency' | 'packetLoss' | 'signalStrength',
+  metricKey: 'latency' | 'packetLoss' | 'signalStrength'
 ): number {
   if (recentEvents.length < 2) return 0;
 
@@ -104,7 +104,7 @@ export function calculateChangeMagnitude(
  */
 export function extractEventFeaturesWithContext(
   event: RawEvent,
-  contextEvents: RawEvent[] = [],
+  contextEvents: RawEvent[] = []
 ): TrainingFeatures {
   const baseFeatures = extractEventFeatures(event);
 
@@ -136,9 +136,7 @@ export interface FeatureVector extends TrainingFeatures {
 /**
  * Convert features to CSV row
  */
-export function featuresToCSVRow(
-  vector: FeatureVector,
-): Record<string, string | number> {
+export function featuresToCSVRow(vector: FeatureVector): Record<string, string | number> {
   return {
     eventId: vector.eventId,
     deviceId: vector.deviceId,

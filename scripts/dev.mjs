@@ -34,9 +34,10 @@ function parseDockerPortLine(line) {
 
 function findDockerContainersUsingPorts(ports) {
   return new Promise((resolve) => {
-    const command = process.platform === 'win32'
-      ? 'docker ps --format "{{.ID}}\t{{.Names}}\t{{.Ports}}"'
-      : 'docker ps --format "{{.ID}}\t{{.Names}}\t{{.Ports}}"';
+    const command =
+      process.platform === 'win32'
+        ? 'docker ps --format "{{.ID}}\t{{.Names}}\t{{.Ports}}"'
+        : 'docker ps --format "{{.ID}}\t{{.Names}}\t{{.Ports}}"';
     const child = spawn(command, {
       cwd: path.resolve(process.cwd()),
       shell: true,
@@ -60,7 +61,11 @@ function findDockerContainersUsingPorts(ports) {
           continue;
         }
 
-        if (ports.some((port) => parsed.ports.includes(`:${port}->`) || parsed.ports.includes(`:${port}/tcp`))) {
+        if (
+          ports.some(
+            (port) => parsed.ports.includes(`:${port}->`) || parsed.ports.includes(`:${port}/tcp`)
+          )
+        ) {
           matches.push(parsed);
         }
       }
@@ -71,9 +76,7 @@ function findDockerContainersUsingPorts(ports) {
 }
 
 function findLocalPortOwners(ports) {
-  const command = process.platform === 'win32'
-    ? 'netstat -ano -p tcp'
-    : 'netstat -anp tcp';
+  const command = process.platform === 'win32' ? 'netstat -ano -p tcp' : 'netstat -anp tcp';
 
   const child = spawn(command, {
     cwd: path.resolve(process.cwd()),
@@ -153,7 +156,9 @@ async function preflightPorts() {
     console.log(`Blocked ports: ${blockedPorts.join(', ')}`);
   }
 
-  console.log('Stop the Docker stack with `npm run docker:down` before running `npm run dev` locally.');
+  console.log(
+    'Stop the Docker stack with `npm run docker:down` before running `npm run dev` locally.'
+  );
   return false;
 }
 
@@ -191,7 +196,9 @@ function startService(service) {
     if (code === 0) {
       console.log(`[${service.name}] exited cleanly`);
     } else {
-      console.error(`[${service.name}] exited with code ${code ?? 'null'}${signal ? ` signal ${signal}` : ''}`);
+      console.error(
+        `[${service.name}] exited with code ${code ?? 'null'}${signal ? ` signal ${signal}` : ''}`
+      );
     }
 
     if (children.size === 0 && !shuttingDown) {

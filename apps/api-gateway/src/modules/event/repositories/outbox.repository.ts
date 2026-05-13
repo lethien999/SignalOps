@@ -18,11 +18,7 @@ export class OutboxRepository {
   }
 
   async findPendingEvents(limit: number = 100): Promise<OutboxEvent[]> {
-    return this.model
-      .find({ status: 'pending' })
-      .sort({ createdAt: 1 })
-      .limit(limit)
-      .exec();
+    return this.model.find({ status: 'pending' }).sort({ createdAt: 1 }).limit(limit).exec();
   }
 
   async markAsPublished(id: string): Promise<void> {

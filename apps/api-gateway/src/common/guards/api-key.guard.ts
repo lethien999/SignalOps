@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Logger } from '../logger';
 import { ApiKeyAdminService } from '../../modules/admin/api-key-admin.service';
 
@@ -35,8 +41,11 @@ export class ApiKeyGuard implements CanActivate {
         path: request.path,
       });
       throw new HttpException(
-        { statusCode: HttpStatus.FORBIDDEN, message: 'API key không hợp lệ hoặc thiếu. Gửi header x-api-key.' },
-        HttpStatus.FORBIDDEN,
+        {
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'API key không hợp lệ hoặc thiếu. Gửi header x-api-key.',
+        },
+        HttpStatus.FORBIDDEN
       );
     }
 

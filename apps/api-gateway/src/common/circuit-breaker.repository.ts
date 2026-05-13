@@ -20,10 +20,7 @@ export abstract class CircuitBreakerRepository {
   /**
    * Wrap MongoDB operations with circuit breaker
    */
-  protected async withCircuitBreaker<T>(
-    operation: string,
-    fn: () => Promise<T>,
-  ): Promise<T> {
+  protected async withCircuitBreaker<T>(operation: string, fn: () => Promise<T>): Promise<T> {
     try {
       return await this.mongoBreaker.execute(fn);
     } catch (error) {

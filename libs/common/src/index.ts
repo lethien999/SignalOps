@@ -7,3 +7,4 @@ export * from './backoff.util';
 export { default as CorrelationContextManager } from './correlation-context';
 export type { CorrelationContext } from './correlation-context';
 export { initializeTracing } from './tracing.config';
+export { shutdownTracing } from './tracing.config';

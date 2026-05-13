@@ -6,9 +6,7 @@ import { UpdateNotificationWebhookDto } from './dto/update-notification-webhook.
 
 @Injectable()
 export class NotificationService {
-  constructor(
-    private readonly notificationWebhookRepository: NotificationWebhookRepository,
-  ) {}
+  constructor(private readonly notificationWebhookRepository: NotificationWebhookRepository) {}
 
   async listWebhooks() {
     return this.notificationWebhookRepository.findAll();

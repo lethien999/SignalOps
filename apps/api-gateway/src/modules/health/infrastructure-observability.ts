@@ -73,7 +73,13 @@ function getPeriodHours(period: CostPeriod): number {
 }
 
 async function getQueueSnapshot(): Promise<{ queueName: string; queueDepth: number }> {
-  const metric = register.getSingleMetric('signalops_queue_depth') as { get?: () => Promise<{ values?: Array<{ labels?: Record<string, unknown>; value?: number }> }> } | undefined;
+  const metric = register.getSingleMetric('signalops_queue_depth') as
+    | {
+        get?: () => Promise<{
+          values?: Array<{ labels?: Record<string, unknown>; value?: number }>;
+        }>;
+      }
+    | undefined;
 
   if (!metric?.get) {
     return { queueName: 'default', queueDepth: 0 };
@@ -89,7 +95,8 @@ async function getQueueSnapshot(): Promise<{ queueName: string; queueDepth: numb
     const depth = typeof value.value === 'number' ? value.value : Number(value.value ?? 0);
     if (depth >= queueDepth) {
       queueDepth = depth;
-      queueName = typeof value.labels?.queue_name === 'string' ? value.labels.queue_name : queueName;
+      queueName =
+        typeof value.labels?.queue_name === 'string' ? value.labels.queue_name : queueName;
     }
   }
 
@@ -166,14 +173,20 @@ async function collectInfrastructureSnapshot(connection: Connection) {
 }
 
 export class InfrastructureObservability {
-  static async getCostSnapshot(connection: Connection, period: CostPeriod = 'day'): Promise<CostMetricsSnapshot> {
+  static async getCostSnapshot(
+    connection: Connection,
+    period: CostPeriod = 'day'
+  ): Promise<CostMetricsSnapshot> {
     const hours = getPeriodHours(period);
     const factors = getCostFactors();
     const snapshot = await collectInfrastructureSnapshot(connection);
 
     const memoryGb = snapshot.memoryBytes / BYTES_PER_GB;
     const storageGb = snapshot.storageBytes / BYTES_PER_GB;
-    const hourlyCostUsd = (snapshot.cpuPercent / 100) * factors.cpuHourlyUsd + memoryGb * factors.memoryGbHourlyUsd + storageGb * (factors.storageGbMonthlyUsd / (24 * 30));
+    const hourlyCostUsd =
+      (snapshot.cpuPercent / 100) * factors.cpuHourlyUsd +
+      memoryGb * factors.memoryGbHourlyUsd +
+      storageGb * (factors.storageGbMonthlyUsd / (24 * 30));
     const periodCostUsd = hourlyCostUsd * hours;
     const breakdown: CostBreakdownItem[] = [
       {
@@ -225,7 +238,10 @@ export class InfrastructureObservability {
       hourlyCostUsd,
       periodCostUsd,
       breakdown,
-      warning: hourlyCostUsd >= factors.alertThresholdUsdPerHour ? `Estimated hourly cost ${hourlyCostUsd.toFixed(2)} USD exceeds threshold` : undefined,
+      warning:
+        hourlyCostUsd >= factors.alertThresholdUsdPerHour
+          ? `Estimated hourly cost ${hourlyCostUsd.toFixed(2)} USD exceeds threshold`
+          : undefined,
       timestamp: new Date().toISOString(),
     };
   }
@@ -240,7 +256,9 @@ export class InfrastructureObservability {
     }
 
     if (snapshot.memoryPercent >= thresholds.scaleUpMemoryPercent) {
-      reasons.push(`Memory ${snapshot.memoryPercent.toFixed(1)}% >= ${thresholds.scaleUpMemoryPercent}%`);
+      reasons.push(
+        `Memory ${snapshot.memoryPercent.toFixed(1)}% >= ${thresholds.scaleUpMemoryPercent}%`
+      );
     }
 
     if (snapshot.queueDepth >= thresholds.scaleUpQueueDepth) {
@@ -248,7 +266,11 @@ export class InfrastructureObservability {
     }
 
     let recommendation: ScaleRecommendation = 'stable';
-    if (snapshot.cpuPercent >= thresholds.scaleUpCpuPercent || snapshot.memoryPercent >= thresholds.scaleUpMemoryPercent || snapshot.queueDepth >= thresholds.scaleUpQueueDepth) {
+    if (
+      snapshot.cpuPercent >= thresholds.scaleUpCpuPercent ||
+      snapshot.memoryPercent >= thresholds.scaleUpMemoryPercent ||
+      snapshot.queueDepth >= thresholds.scaleUpQueueDepth
+    ) {
       recommendation = 'scale_up';
     } else if (
       snapshot.cpuPercent <= thresholds.scaleDownCpuPercent &&
@@ -256,13 +278,27 @@ export class InfrastructureObservability {
       snapshot.queueDepth <= thresholds.scaleDownQueueDepth
     ) {
       recommendation = 'scale_down';
-      reasons.push(`CPU ${snapshot.cpuPercent.toFixed(1)}%, memory ${snapshot.memoryPercent.toFixed(1)}%, queue ${snapshot.queueDepth} are below scale-down thresholds`);
+      reasons.push(
+        `CPU ${snapshot.cpuPercent.toFixed(1)}%, memory ${snapshot.memoryPercent.toFixed(1)}%, queue ${snapshot.queueDepth} are below scale-down thresholds`
+      );
     } else {
       reasons.push('System is within normal operating range');
     }
 
-    const score = Math.max(0, Math.min(100, Math.round((snapshot.cpuPercent * 0.45) + (snapshot.memoryPercent * 0.35) + Math.min(snapshot.queueDepth / Math.max(thresholds.scaleUpQueueDepth, 1) * 100, 100) * 0.2)));
-    const recommendationValue: -1 | 0 | 1 = recommendation === 'scale_up' ? 1 : recommendation === 'scale_down' ? -1 : 0;
+    const score = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          snapshot.cpuPercent * 0.45 +
+            snapshot.memoryPercent * 0.35 +
+            Math.min((snapshot.queueDepth / Math.max(thresholds.scaleUpQueueDepth, 1)) * 100, 100) *
+              0.2
+        )
+      )
+    );
+    const recommendationValue: -1 | 0 | 1 =
+      recommendation === 'scale_up' ? 1 : recommendation === 'scale_down' ? -1 : 0;
 
     BusinessMetrics.recordScaleRecommendation('api-gateway', recommendationValue);
 

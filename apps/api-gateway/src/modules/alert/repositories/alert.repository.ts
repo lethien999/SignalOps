@@ -14,7 +14,10 @@ export type AlertFindFilters = {
   limit: number;
 };
 
-export type AlertHistoryFilters = Pick<AlertFindFilters, 'severity' | 'status' | 'deviceId' | 'from' | 'to'> & {
+export type AlertHistoryFilters = Pick<
+  AlertFindFilters,
+  'severity' | 'status' | 'deviceId' | 'from' | 'to'
+> & {
   days?: number;
 };
 
@@ -77,7 +80,11 @@ export class AlertRepository {
     return this.alertModel.findById(id).exec();
   }
 
-  async find(filters: AlertFindFilters): Promise<{ data: Alert[]; total: number; summary: { open: number; acknowledged: number; resolved: number; highOpen: number } }> {
+  async find(filters: AlertFindFilters): Promise<{
+    data: Alert[];
+    total: number;
+    summary: { open: number; acknowledged: number; resolved: number; highOpen: number };
+  }> {
     const query = this.buildQuery(filters);
 
     const data = await this.alertModel
@@ -105,7 +112,11 @@ export class AlertRepository {
           },
           highOpen: {
             $sum: {
-              $cond: [{ $and: [{ $eq: ['$status', 'open'] }, { $eq: ['$severity', 'high'] }] }, 1, 0],
+              $cond: [
+                { $and: [{ $eq: ['$status', 'open'] }, { $eq: ['$severity', 'high'] }] },
+                1,
+                0,
+              ],
             },
           },
         },
@@ -127,7 +138,11 @@ export class AlertRepository {
     return this.alertModel.countDocuments({ status: { $ne: 'resolved' } });
   }
 
-  async alertHistory(filters: AlertHistoryFilters = {}): Promise<{ date: string; open: number; acknowledged: number; resolved: number; total: number }[]> {
+  async alertHistory(
+    filters: AlertHistoryFilters = {}
+  ): Promise<
+    { date: string; open: number; acknowledged: number; resolved: number; total: number }[]
+  > {
     const query = this.buildQuery(filters);
     const pipeline: PipelineStage[] = [];
 
@@ -138,7 +153,7 @@ export class AlertRepository {
       pipeline.push({
         $match: {
           ...query,
-          createdAt: { ...(query.createdAt as Record<string, unknown> || {}), $gte: since },
+          createdAt: { ...((query.createdAt as Record<string, unknown>) || {}), $gte: since },
         },
       });
     } else {
@@ -159,7 +174,10 @@ export class AlertRepository {
       { $sort: { '_id.date': 1 } },
     ]);
 
-    const dayMap = new Map<string, { open: number; acknowledged: number; resolved: number; total: number }>();
+    const dayMap = new Map<
+      string,
+      { open: number; acknowledged: number; resolved: number; total: number }
+    >();
     for (const row of results) {
       const date = row._id.date;
       if (!dayMap.has(date)) {
@@ -178,8 +196,12 @@ export class AlertRepository {
     const now = new Date();
     const periodTo = filters.to || now;
     const safeDays = Math.min(Math.max(filters.days ?? 7, 1), 90);
-    const periodFrom = filters.from || new Date(periodTo.getTime() - safeDays * 24 * 60 * 60 * 1000);
-    const actualDays = Math.max(1, Math.ceil((periodTo.getTime() - periodFrom.getTime()) / (24 * 60 * 60 * 1000)));
+    const periodFrom =
+      filters.from || new Date(periodTo.getTime() - safeDays * 24 * 60 * 60 * 1000);
+    const actualDays = Math.max(
+      1,
+      Math.ceil((periodTo.getTime() - periodFrom.getTime()) / (24 * 60 * 60 * 1000))
+    );
 
     const match: FilterQuery<Alert> = {
       createdAt: {
@@ -331,14 +353,22 @@ export class AlertRepository {
     const totals = totalsRows[0] || { total: 0, open: 0, acknowledged: 0, resolved: 0 };
     const mttrMinutes = Number((mttrRows[0]?.avgMinutes || 0).toFixed(2));
 
-    const periodHours = Math.max(1 / 60, (periodTo.getTime() - periodFrom.getTime()) / (1000 * 60 * 60));
+    const periodHours = Math.max(
+      1 / 60,
+      (periodTo.getTime() - periodFrom.getTime()) / (1000 * 60 * 60)
+    );
     const alertRatePerHour = Number(((totals.total || 0) / periodHours).toFixed(2));
 
     const totalPeriodMs = Math.max(1, periodTo.getTime() - periodFrom.getTime());
     const downtimeMs = Number(downtimeRows[0]?.totalDurationMs || 0);
-    const uptimePercent = Number(Math.max(0, 100 - Math.min(100, (downtimeMs / totalPeriodMs) * 100)).toFixed(2));
+    const uptimePercent = Number(
+      Math.max(0, 100 - Math.min(100, (downtimeMs / totalPeriodMs) * 100)).toFixed(2)
+    );
 
-    const byDayMap = new Map<string, { total: number; open: number; acknowledged: number; resolved: number; mttrMinutes: number }>();
+    const byDayMap = new Map<
+      string,
+      { total: number; open: number; acknowledged: number; resolved: number; mttrMinutes: number }
+    >();
 
     for (const row of byDayStatusRows) {
       const date = String(row._id.date);
@@ -394,7 +424,8 @@ export class AlertRepository {
     const now = new Date();
     const periodTo = filters.to || now;
     const safeDays = Math.min(Math.max(filters.days ?? 7, 1), 90);
-    const periodFrom = filters.from || new Date(periodTo.getTime() - safeDays * 24 * 60 * 60 * 1000);
+    const periodFrom =
+      filters.from || new Date(periodTo.getTime() - safeDays * 24 * 60 * 60 * 1000);
 
     const match: FilterQuery<Alert> = {
       createdAt: {
@@ -428,25 +459,69 @@ export class AlertRepository {
           },
         },
         { $project: { createdAt: 1, resolvedAt: 1 } },
-        { $project: { durationMinutes: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] } } },
+        {
+          $project: {
+            durationMinutes: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] },
+          },
+        },
         { $group: { _id: null, avgMinutes: { $avg: '$durationMinutes' } } },
       ],
       downtime: [
         { $match: match },
         { $project: { createdAt: 1, resolvedAt: 1 } },
-        { $project: { durationMs: { $max: [0, { $subtract: [{ $cond: [{ $and: [{ $ifNull: ['$resolvedAt', false] }, { $lt: ['$resolvedAt', periodTo] }] }, '$resolvedAt', periodTo] }, '$createdAt'] }] } } },
+        {
+          $project: {
+            durationMs: {
+              $max: [
+                0,
+                {
+                  $subtract: [
+                    {
+                      $cond: [
+                        {
+                          $and: [
+                            { $ifNull: ['$resolvedAt', false] },
+                            { $lt: ['$resolvedAt', periodTo] },
+                          ],
+                        },
+                        '$resolvedAt',
+                        periodTo,
+                      ],
+                    },
+                    '$createdAt',
+                  ],
+                },
+              ],
+            },
+          },
+        },
         { $group: { _id: null, totalDurationMs: { $sum: '$durationMs' } } },
       ],
       byDayStatus: [
         { $match: match },
         { $project: { createdAt: 1, status: 1 } },
-        { $group: { _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, status: '$status' }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: {
+              date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              status: '$status',
+            },
+            count: { $sum: 1 },
+          },
+        },
         { $sort: { '_id.date': 1 } },
       ],
       byDayMttr: [
         { $match: { ...match, status: 'resolved', resolvedAt: { $exists: true } } },
         { $project: { createdAt: 1, resolvedAt: 1 } },
-        { $group: { _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } } }, avgMinutes: { $avg: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] } } } },
+        {
+          $group: {
+            _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } } },
+            avgMinutes: {
+              $avg: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] },
+            },
+          },
+        },
       ],
     };
 
@@ -464,7 +539,9 @@ export class AlertRepository {
     return explains;
   }
 
-  buildAlertHistoryCsv(rows: { date: string; open: number; acknowledged: number; resolved: number; total: number }[]): string {
+  buildAlertHistoryCsv(
+    rows: { date: string; open: number; acknowledged: number; resolved: number; total: number }[]
+  ): string {
     const header = ['date', 'open', 'acknowledged', 'resolved', 'total'];
     const escapeCsvValue = (value: string | number): string => {
       const text = String(value);
@@ -478,19 +555,23 @@ export class AlertRepository {
     const lines = [header.join(',')];
 
     for (const row of rows) {
-      lines.push([
-        escapeCsvValue(row.date),
-        escapeCsvValue(row.open),
-        escapeCsvValue(row.acknowledged),
-        escapeCsvValue(row.resolved),
-        escapeCsvValue(row.total),
-      ].join(','));
+      lines.push(
+        [
+          escapeCsvValue(row.date),
+          escapeCsvValue(row.open),
+          escapeCsvValue(row.acknowledged),
+          escapeCsvValue(row.resolved),
+          escapeCsvValue(row.total),
+        ].join(',')
+      );
     }
 
     return lines.join('\n');
   }
 
-  private buildQuery(filters: Pick<AlertFindFilters, 'severity' | 'status' | 'deviceId' | 'from' | 'to'>): FilterQuery<Alert> {
+  private buildQuery(
+    filters: Pick<AlertFindFilters, 'severity' | 'status' | 'deviceId' | 'from' | 'to'>
+  ): FilterQuery<Alert> {
     const query: FilterQuery<Alert> = {};
 
     if (filters.severity) {

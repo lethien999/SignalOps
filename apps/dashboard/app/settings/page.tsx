@@ -1,10 +1,19 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  Settings as SettingsIcon, Server, Wifi, Bell, Shield, Activity,
-  CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send,
-} from "lucide-react";
+  Settings as SettingsIcon,
+  Server,
+  Wifi,
+  Bell,
+  Shield,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Send,
+} from 'lucide-react';
 import {
   createNotificationWebhook,
   fetchEffectiveThresholdProfile,
@@ -15,18 +24,26 @@ import {
   rollbackThresholdProfile,
   saveThresholdProfile,
   updateNotificationWebhook,
-} from "@/lib/api";
-import type { DlqJob, NotificationWebhook, Severity, ThresholdProfile } from "@/types";
+} from '@/lib/api';
+import type { DlqJob, NotificationWebhook, Severity, ThresholdProfile } from '@/types';
 
-function InfoRow({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" | "error" }) {
+function InfoRow({
+  label,
+  value,
+  status,
+}: {
+  label: string;
+  value: string;
+  status?: 'ok' | 'warn' | 'error';
+}) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
       <span className="text-sm text-gray-600">{label}</span>
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-gray-900">{value}</span>
-        {status === "ok" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-        {status === "warn" && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
-        {status === "error" && <XCircle className="w-4 h-4 text-red-500" />}
+        {status === 'ok' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        {status === 'warn' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
+        {status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
       </div>
     </div>
   );
@@ -44,8 +61,8 @@ export default function SettingsPage() {
   const [thresholdProfiles, setThresholdProfiles] = useState<ThresholdProfile[]>([]);
   const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [savingThreshold, setSavingThreshold] = useState(false);
-  const [thresholdScopeType, setThresholdScopeType] = useState<"global" | "device">("global");
-  const [thresholdScopeId, setThresholdScopeId] = useState("global");
+  const [thresholdScopeType, setThresholdScopeType] = useState<'global' | 'device'>('global');
+  const [thresholdScopeId, setThresholdScopeId] = useState('global');
   const [thresholdDraft, setThresholdDraft] = useState({
     latencyWarningMs: 150,
     latencyCriticalMs: 300,
@@ -58,31 +75,30 @@ export default function SettingsPage() {
 
   const [newWebhook, setNewWebhook] = useState<{
     name: string;
-    channel: "slack" | "telegram";
+    channel: 'slack' | 'telegram';
     webhookUrl: string;
     severities: Severity[];
   }>({
-    name: "",
-    channel: "slack",
-    webhookUrl: "",
-    severities: ["high", "critical"],
+    name: '',
+    channel: 'slack',
+    webhookUrl: '',
+    severities: ['high', 'critical'],
   });
 
   // Test event
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testLoading, setTestLoading] = useState(false);
 
-  const apiUrl = typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api")
-    : "";
-  const socketUrl = typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3000")
-    : "";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
   const loadHealth = () => {
     setRefreshing(true);
     fetchHealth()
-      .then((data) => { setHealth(data); setHealthError(false); })
+      .then((data) => {
+        setHealth(data);
+        setHealthError(false);
+      })
       .catch(() => setHealthError(true))
       .finally(() => setRefreshing(false));
   };
@@ -105,7 +121,7 @@ export default function SettingsPage() {
         setWebhookError(null);
       })
       .catch((error) => {
-        setWebhookError(error instanceof Error ? error.message : "Không thể tải cấu hình webhook");
+        setWebhookError(error instanceof Error ? error.message : 'Không thể tải cấu hình webhook');
       });
   };
 
@@ -131,7 +147,7 @@ export default function SettingsPage() {
         }
       })
       .catch((error) => {
-        setThresholdError(error instanceof Error ? error.message : "Không thể tải cấu hình ngưỡng");
+        setThresholdError(error instanceof Error ? error.message : 'Không thể tải cấu hình ngưỡng');
       });
   };
 
@@ -147,11 +163,11 @@ export default function SettingsPage() {
       setSavingWebhookId(item._id);
       const updated = await updateNotificationWebhook(item._id, {
         enabled: !item.enabled,
-        updatedBy: "dashboard-user",
+        updatedBy: 'dashboard-user',
       });
       setWebhooks((prev) => prev.map((w) => (w._id === updated._id ? updated : w)));
     } catch (error) {
-      setWebhookError(error instanceof Error ? error.message : "Không thể cập nhật webhook");
+      setWebhookError(error instanceof Error ? error.message : 'Không thể cập nhật webhook');
     } finally {
       setSavingWebhookId(null);
     }
@@ -160,7 +176,7 @@ export default function SettingsPage() {
   const submitNewWebhook = async () => {
     try {
       if (!newWebhook.name.trim() || !newWebhook.webhookUrl.trim()) {
-        setWebhookError("Tên và webhook URL là bắt buộc");
+        setWebhookError('Tên và webhook URL là bắt buộc');
         return;
       }
 
@@ -172,14 +188,19 @@ export default function SettingsPage() {
         enabled: true,
         retryMax: 3,
         retryBackoffMs: 1000,
-        updatedBy: "dashboard-user",
+        updatedBy: 'dashboard-user',
       });
 
       setWebhooks((prev) => [created, ...prev]);
       setWebhookError(null);
-      setNewWebhook({ name: "", channel: "slack", webhookUrl: "", severities: ["high", "critical"] });
+      setNewWebhook({
+        name: '',
+        channel: 'slack',
+        webhookUrl: '',
+        severities: ['high', 'critical'],
+      });
     } catch (error) {
-      setWebhookError(error instanceof Error ? error.message : "Không thể tạo webhook");
+      setWebhookError(error instanceof Error ? error.message : 'Không thể tạo webhook');
     }
   };
 
@@ -198,17 +219,19 @@ export default function SettingsPage() {
       setSavingThreshold(true);
       const saved = await saveThresholdProfile({
         scopeType: thresholdScopeType,
-        scopeId: thresholdScopeType === "global" ? "global" : thresholdScopeId.trim(),
+        scopeId: thresholdScopeType === 'global' ? 'global' : thresholdScopeId.trim(),
         ...thresholdDraft,
-        updatedBy: "dashboard-user",
+        updatedBy: 'dashboard-user',
       });
       setThresholdProfiles((prev) => {
-        const filtered = prev.filter((item) => !(item.scopeType === saved.scopeType && item.scopeId === saved.scopeId));
+        const filtered = prev.filter(
+          (item) => !(item.scopeType === saved.scopeType && item.scopeId === saved.scopeId)
+        );
         return [saved, ...filtered];
       });
       setThresholdError(null);
     } catch (error) {
-      setThresholdError(error instanceof Error ? error.message : "Không thể lưu ngưỡng");
+      setThresholdError(error instanceof Error ? error.message : 'Không thể lưu ngưỡng');
     } finally {
       setSavingThreshold(false);
     }
@@ -218,12 +241,16 @@ export default function SettingsPage() {
     try {
       setSavingThreshold(true);
       await rollbackThresholdProfile(profile.scopeType, profile.scopeId);
-      setThresholdProfiles((prev) => prev.filter((item) => !(item.scopeType === profile.scopeType && item.scopeId === profile.scopeId)));
+      setThresholdProfiles((prev) =>
+        prev.filter(
+          (item) => !(item.scopeType === profile.scopeType && item.scopeId === profile.scopeId)
+        )
+      );
       if (thresholdScopeType === profile.scopeType && thresholdScopeId === profile.scopeId) {
         loadThresholds();
       }
     } catch (error) {
-      setThresholdError(error instanceof Error ? error.message : "Không thể rollback ngưỡng");
+      setThresholdError(error instanceof Error ? error.message : 'Không thể rollback ngưỡng');
     } finally {
       setSavingThreshold(false);
     }
@@ -242,22 +269,26 @@ export default function SettingsPage() {
     setTestLoading(true);
     setTestResult(null);
     try {
-      const res = await fetch(`${apiUrl}/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(`${apiUrl}/events/test/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          deviceId: "test-device-manual",
-          location: { lat: 10.77, lng: 106.70, name: "Test thủ công" },
+          deviceId: 'test-device-manual',
+          location: { lat: 10.77, lng: 106.7, name: 'Test thủ công' },
           metrics: { latency: 250, packetLoss: 8, signalStrength: -95 },
         }),
       });
       if (res.ok) {
-        setTestResult("✅ Gửi thành công! Event đã được tiếp nhận (latency=250ms, loss=8% → sẽ tạo cảnh báo).");
+        setTestResult(
+          '✅ Gửi thành công! Event đã được tiếp nhận (latency=250ms, loss=8% → sẽ tạo cảnh báo).'
+        );
       } else {
         setTestResult(`❌ Lỗi: ${res.status} ${res.statusText}`);
       }
     } catch (err) {
-      setTestResult(`❌ Không thể kết nối tới API: ${err instanceof Error ? err.message : "Unknown"}`);
+      setTestResult(
+        `❌ Không thể kết nối tới API: ${err instanceof Error ? err.message : 'Unknown'}`
+      );
     } finally {
       setTestLoading(false);
     }
@@ -270,7 +301,9 @@ export default function SettingsPage() {
           <SettingsIcon className="w-7 h-7 text-gray-600" />
           Cài đặt hệ thống
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Cấu hình hệ thống, trạng thái kết nối và các ngưỡng cảnh báo.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Cấu hình hệ thống, trạng thái kết nối và các ngưỡng cảnh báo.
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -286,19 +319,26 @@ export default function SettingsPage() {
               disabled={refreshing}
               className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               Làm mới
             </button>
           </div>
           <div className="px-6 py-2">
-            <InfoRow label="API Gateway" value={apiUrl} status={health ? "ok" : healthError ? "error" : undefined} />
+            <InfoRow
+              label="API Gateway"
+              value={apiUrl}
+              status={health ? 'ok' : healthError ? 'error' : undefined}
+            />
             <InfoRow label="WebSocket" value={socketUrl} />
             <InfoRow
               label="Trạng thái API"
-              value={health ? "Hoạt động" : healthError ? "Không thể kết nối" : "Đang kiểm tra..."}
-              status={health ? "ok" : healthError ? "error" : undefined}
+              value={health ? 'Hoạt động' : healthError ? 'Không thể kết nối' : 'Đang kiểm tra...'}
+              status={health ? 'ok' : healthError ? 'error' : undefined}
             />
-            <InfoRow label="Thời gian hoạt động" value={health ? formatUptime(health.uptime) : "—"} />
+            <InfoRow
+              label="Thời gian hoạt động"
+              value={health ? formatUptime(health.uptime) : '—'}
+            />
           </div>
         </div>
 
@@ -309,7 +349,10 @@ export default function SettingsPage() {
               <Bell className="w-5 h-5 text-yellow-600" />
               <h2 className="text-lg font-semibold text-gray-900">Ngưỡng cảnh báo động</h2>
             </div>
-            <button onClick={loadThresholds} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700">
+            <button
+              onClick={loadThresholds}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+            >
               <RefreshCw className="w-4 h-4" />
               Làm mới
             </button>
@@ -320,7 +363,9 @@ export default function SettingsPage() {
                 Phạm vi
                 <select
                   value={thresholdScopeType}
-                  onChange={(event) => setThresholdScopeType(event.target.value as "global" | "device")}
+                  onChange={(event) =>
+                    setThresholdScopeType(event.target.value as 'global' | 'device')
+                  }
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                 >
                   <option value="global">Global</option>
@@ -330,9 +375,9 @@ export default function SettingsPage() {
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
                 Mã phạm vi
                 <input
-                  value={thresholdScopeType === "global" ? "global" : thresholdScopeId}
+                  value={thresholdScopeType === 'global' ? 'global' : thresholdScopeId}
                   onChange={(event) => setThresholdScopeId(event.target.value)}
-                  disabled={thresholdScopeType === "global"}
+                  disabled={thresholdScopeType === 'global'}
                   placeholder="device-001"
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:bg-gray-100"
                 />
@@ -340,20 +385,24 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {([
-                ["latencyWarningMs", "Latency warning (ms)"],
-                ["latencyCriticalMs", "Latency critical (ms)"],
-                ["packetLossWarningPercent", "Packet loss warning (%)"],
-                ["packetLossCriticalPercent", "Packet loss critical (%)"],
-                ["signalWarningDbm", "Signal warning (dBm)"],
-                ["signalCriticalDbm", "Signal critical (dBm)"],
-              ] as const).map(([key, label]) => (
+              {(
+                [
+                  ['latencyWarningMs', 'Latency warning (ms)'],
+                  ['latencyCriticalMs', 'Latency critical (ms)'],
+                  ['packetLossWarningPercent', 'Packet loss warning (%)'],
+                  ['packetLossCriticalPercent', 'Packet loss critical (%)'],
+                  ['signalWarningDbm', 'Signal warning (dBm)'],
+                  ['signalCriticalDbm', 'Signal critical (dBm)'],
+                ] as const
+              ).map(([key, label]) => (
                 <label key={key} className="flex flex-col gap-2 text-sm font-medium text-gray-700">
                   {label}
                   <input
                     type="number"
                     value={thresholdDraft[key]}
-                    onChange={(event) => setThresholdDraft((prev) => ({ ...prev, [key]: Number(event.target.value) }))}
+                    onChange={(event) =>
+                      setThresholdDraft((prev) => ({ ...prev, [key]: Number(event.target.value) }))
+                    }
                     className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                   />
                 </label>
@@ -364,7 +413,9 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={thresholdDraft.enabled}
-                onChange={(event) => setThresholdDraft((prev) => ({ ...prev, enabled: event.target.checked }))}
+                onChange={(event) =>
+                  setThresholdDraft((prev) => ({ ...prev, enabled: event.target.checked }))
+                }
                 className="h-4 w-4 rounded border-gray-300 text-blue-600"
               />
               Kích hoạt profile ngưỡng này
@@ -376,7 +427,7 @@ export default function SettingsPage() {
                 disabled={savingThreshold}
                 className="inline-flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-50"
               >
-                {savingThreshold ? "Đang lưu..." : "Lưu ngưỡng"}
+                {savingThreshold ? 'Đang lưu...' : 'Lưu ngưỡng'}
               </button>
               <button
                 onClick={() => {
@@ -389,8 +440,8 @@ export default function SettingsPage() {
                     signalCriticalDbm: -100,
                     enabled: true,
                   });
-                  setThresholdScopeType("global");
-                  setThresholdScopeId("global");
+                  setThresholdScopeType('global');
+                  setThresholdScopeId('global');
                 }}
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
@@ -404,13 +455,24 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-gray-900 mb-2">Cấu hình hiện có</p>
               <div className="space-y-2">
                 {thresholdProfiles.length === 0 ? (
-                  <p className="text-sm text-gray-600">Chưa có profile nào. Hệ thống sẽ dùng ngưỡng mặc định trong worker.</p>
+                  <p className="text-sm text-gray-600">
+                    Chưa có profile nào. Hệ thống sẽ dùng ngưỡng mặc định trong worker.
+                  </p>
                 ) : (
                   thresholdProfiles.map((profile) => (
-                    <div key={`${profile.scopeType}:${profile.scopeId}`} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 border border-gray-200">
+                    <div
+                      key={`${profile.scopeType}:${profile.scopeId}`}
+                      className="flex items-center justify-between rounded-lg bg-white px-3 py-2 border border-gray-200"
+                    >
                       <div className="text-xs text-gray-700">
-                        <p className="font-semibold text-gray-900">{profile.scopeType.toUpperCase()} / {profile.scopeId}</p>
-                        <p>Latency {profile.latencyWarningMs}/{profile.latencyCriticalMs} ms • Loss {profile.packetLossWarningPercent}/{profile.packetLossCriticalPercent}% • Signal {profile.signalWarningDbm}/{profile.signalCriticalDbm} dBm</p>
+                        <p className="font-semibold text-gray-900">
+                          {profile.scopeType.toUpperCase()} / {profile.scopeId}
+                        </p>
+                        <p>
+                          Latency {profile.latencyWarningMs}/{profile.latencyCriticalMs} ms • Loss{' '}
+                          {profile.packetLossWarningPercent}/{profile.packetLossCriticalPercent}% •
+                          Signal {profile.signalWarningDbm}/{profile.signalCriticalDbm} dBm
+                        </p>
                       </div>
                       <button
                         onClick={() => rollbackThreshold(profile)}
@@ -450,15 +512,43 @@ export default function SettingsPage() {
           <div className="px-6 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: "API Gateway", desc: "REST API & WebSocket", icon: Server, color: "text-blue-500" },
-                { name: "Event Broker (API nội bộ)", desc: "Được tích hợp trong API Gateway", icon: Activity, color: "text-purple-500" },
-                { name: "Worker Service", desc: "Xử lý sự kiện, phát hiện bất thường", icon: Shield, color: "text-green-500" },
-                { name: "Simulator", desc: "Tạo dữ liệu mô phỏng", icon: Send, color: "text-orange-500" },
-                { name: "Dashboard", desc: "Giao diện giám sát (Next.js)", icon: Wifi, color: "text-cyan-500" },
+                {
+                  name: 'API Gateway',
+                  desc: 'REST API & WebSocket',
+                  icon: Server,
+                  color: 'text-blue-500',
+                },
+                {
+                  name: 'Event Broker (API nội bộ)',
+                  desc: 'Được tích hợp trong API Gateway',
+                  icon: Activity,
+                  color: 'text-purple-500',
+                },
+                {
+                  name: 'Worker Service',
+                  desc: 'Xử lý sự kiện, phát hiện bất thường',
+                  icon: Shield,
+                  color: 'text-green-500',
+                },
+                {
+                  name: 'Simulator',
+                  desc: 'Tạo dữ liệu mô phỏng',
+                  icon: Send,
+                  color: 'text-orange-500',
+                },
+                {
+                  name: 'Dashboard',
+                  desc: 'Giao diện giám sát (Next.js)',
+                  icon: Wifi,
+                  color: 'text-cyan-500',
+                },
               ].map((svc) => {
                 const Icon = svc.icon;
                 return (
-                  <div key={svc.name} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                  <div
+                    key={svc.name}
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors"
+                  >
                     <Icon className={`w-5 h-5 ${svc.color}`} />
                     <div>
                       <p className="text-sm font-medium text-gray-900">{svc.name}</p>
@@ -479,8 +569,8 @@ export default function SettingsPage() {
           </div>
           <div className="px-6 py-4">
             <p className="text-sm text-gray-600 mb-4">
-              Gửi một event thử với các chỉ số vượt ngưỡng (latency=250ms, loss=8%) để kiểm tra toàn bộ luồng xử lý:
-              API → Hàng đợi → Worker → Tạo cảnh báo → Dashboard.
+              Gửi một event thử với các chỉ số vượt ngưỡng (latency=250ms, loss=8%) để kiểm tra toàn
+              bộ luồng xử lý: API → Hàng đợi → Worker → Tạo cảnh báo → Dashboard.
             </p>
             <button
               onClick={sendTestEvent}
@@ -488,10 +578,12 @@ export default function SettingsPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
-              {testLoading ? "Đang gửi..." : "Gửi event thử nghiệm"}
+              {testLoading ? 'Đang gửi...' : 'Gửi event thử nghiệm'}
             </button>
             {testResult && (
-              <div className={`mt-3 rounded-lg px-4 py-3 text-sm ${testResult.startsWith("✅") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+              <div
+                className={`mt-3 rounded-lg px-4 py-3 text-sm ${testResult.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}
+              >
                 {testResult}
               </div>
             )}
@@ -524,7 +616,12 @@ export default function SettingsPage() {
               />
               <select
                 value={newWebhook.channel}
-                onChange={(e) => setNewWebhook((prev) => ({ ...prev, channel: e.target.value as "slack" | "telegram" }))}
+                onChange={(e) =>
+                  setNewWebhook((prev) => ({
+                    ...prev,
+                    channel: e.target.value as 'slack' | 'telegram',
+                  }))
+                }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               >
                 <option value="slack">Slack</option>
@@ -539,7 +636,7 @@ export default function SettingsPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             />
             <div className="flex flex-wrap gap-2">
-              {(["low", "warning", "medium", "high", "critical"] as Severity[]).map((severity) => {
+              {(['low', 'warning', 'medium', 'high', 'critical'] as Severity[]).map((severity) => {
                 const selected = newWebhook.severities.includes(severity);
                 return (
                   <button
@@ -547,8 +644,8 @@ export default function SettingsPage() {
                     onClick={() => toggleSeverityForNewWebhook(severity)}
                     className={`rounded-full px-3 py-1 text-xs font-semibold border ${
                       selected
-                        ? "bg-indigo-100 text-indigo-800 border-indigo-300"
-                        : "bg-gray-100 text-gray-600 border-gray-200"
+                        ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                        : 'bg-gray-100 text-gray-600 border-gray-200'
                     }`}
                   >
                     {severity.toUpperCase()}
@@ -564,9 +661,7 @@ export default function SettingsPage() {
               Thêm webhook
             </button>
 
-            {webhookError && (
-              <p className="text-sm text-red-600">{webhookError}</p>
-            )}
+            {webhookError && <p className="text-sm text-red-600">{webhookError}</p>}
 
             <div className="space-y-3">
               {webhooks.length === 0 && !webhookError && (
@@ -577,32 +672,35 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                      <p className="text-xs text-gray-500">{item.channel.toUpperCase()} • {item.webhookUrl}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.channel.toUpperCase()} • {item.webhookUrl}
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">
                         Trạng thái gần nhất: {item.lastStatus.toUpperCase()}
-                        {item.lastResponseCode ? ` (HTTP ${item.lastResponseCode})` : ""}
-                        {item.lastError ? ` • ${item.lastError}` : ""}
+                        {item.lastResponseCode ? ` (HTTP ${item.lastResponseCode})` : ''}
+                        {item.lastError ? ` • ${item.lastError}` : ''}
                       </p>
                     </div>
                     <button
                       onClick={() => toggleWebhook(item)}
                       disabled={savingWebhookId === item._id}
                       className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                        item.enabled
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-700"
+                        item.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
                       } disabled:opacity-60`}
                     >
                       {savingWebhookId === item._id
-                        ? "Đang cập nhật..."
+                        ? 'Đang cập nhật...'
                         : item.enabled
-                        ? "Đang bật"
-                        : "Đang tắt"}
+                          ? 'Đang bật'
+                          : 'Đang tắt'}
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {item.severities.map((severity) => (
-                      <span key={`${item._id}-${severity}`} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                      <span
+                        key={`${item._id}-${severity}`}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                      >
                         {severity.toUpperCase()}
                       </span>
                     ))}
@@ -629,9 +727,7 @@ export default function SettingsPage() {
             </button>
           </div>
           <div className="px-6 py-4">
-            {dlqError && (
-              <p className="text-sm text-red-600">Không thể tải danh sách DLQ.</p>
-            )}
+            {dlqError && <p className="text-sm text-red-600">Không thể tải danh sách DLQ.</p>}
             {!dlqError && dlqJobs.length === 0 && (
               <p className="text-sm text-gray-600">Không có failed jobs trong DLQ.</p>
             )}
@@ -650,7 +746,7 @@ export default function SettingsPage() {
                       <tr key={String(job.id)} className="border-b border-gray-100">
                         <td className="py-2 pr-4 text-gray-800">{String(job.id)}</td>
                         <td className="py-2 pr-4 text-gray-700">{job.attemptsMade ?? 0}</td>
-                        <td className="py-2 pr-4 text-gray-700">{job.failedReason || "N/A"}</td>
+                        <td className="py-2 pr-4 text-gray-700">{job.failedReason || 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>

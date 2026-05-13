@@ -3,7 +3,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { User, UserSchema } from './schemas/user.schema';
 import { Role, RoleSchema } from './schemas/role.schema';
-import { PasswordResetToken, PasswordResetTokenSchema } from './schemas/password-reset-token.schema';
+import {
+  PasswordResetToken,
+  PasswordResetTokenSchema,
+} from './schemas/password-reset-token.schema';
 import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
 import { PasswordResetService } from './services/password-reset.service';
@@ -24,7 +27,14 @@ import { UserController } from './user.controller';
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
     }),
   ],
-  providers: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService, EmailService],
+  providers: [
+    AuthService,
+    UserService,
+    PasswordResetService,
+    TwoFactorService,
+    OAuthService,
+    EmailService,
+  ],
   exports: [AuthService, UserService, PasswordResetService, TwoFactorService, OAuthService],
   controllers: [UserController],
 })

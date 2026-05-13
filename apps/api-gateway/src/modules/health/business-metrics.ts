@@ -130,7 +130,11 @@ export class BusinessMetrics {
     this.queueDepth.set({ queue_name: queueName }, depth);
   }
 
-  static recordJobProcessing(jobType: string, durationSeconds: number, status: 'success' | 'failed') {
+  static recordJobProcessing(
+    jobType: string,
+    durationSeconds: number,
+    status: 'success' | 'failed'
+  ) {
     this.jobProcessingSeconds.observe({ job_type: jobType, status }, durationSeconds);
   }
 
@@ -144,9 +148,17 @@ export class BusinessMetrics {
     this.aggregationDuration.observe({ pipeline }, seconds);
   }
 
-  static recordTenantUsage(tenantName: string, resourceType: 'events' | 'alerts', current: number, quota: number) {
+  static recordTenantUsage(
+    tenantName: string,
+    resourceType: 'events' | 'alerts',
+    current: number,
+    quota: number
+  ) {
     this.tenantUsage.set({ tenant_name: tenantName, resource_type: resourceType }, current);
-    this.tenantQuotaRemaining.set({ tenant_name: tenantName, resource_type: resourceType }, Math.max(0, quota - current));
+    this.tenantQuotaRemaining.set(
+      { tenant_name: tenantName, resource_type: resourceType },
+      Math.max(0, quota - current)
+    );
   }
 
   static recordTenantQuotaExceeded(tenantName: string, resourceType: 'events' | 'alerts') {

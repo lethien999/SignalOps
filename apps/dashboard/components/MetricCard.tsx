@@ -33,7 +33,8 @@ export function MetricCard({
   const ic = iconColor || colorMap[bgColor] || 'text-blue-600';
 
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
-  const trendColor = trend === 'up' ? 'text-red-500' : trend === 'down' ? 'text-green-500' : 'text-gray-400';
+  const trendColor =
+    trend === 'up' ? 'text-red-500' : trend === 'down' ? 'text-green-500' : 'text-gray-400';
 
   return (
     <div className="metric-card group">
@@ -48,7 +49,9 @@ export function MetricCard({
             </div>
           )}
         </div>
-        <div className={`${bgColor} rounded-xl p-3.5 transition-transform duration-300 group-hover:scale-110`}>
+        <div
+          className={`${bgColor} rounded-xl p-3.5 transition-transform duration-300 group-hover:scale-110`}
+        >
           <Icon className={`w-6 h-6 ${ic}`} />
         </div>
       </div>

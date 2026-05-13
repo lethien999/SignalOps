@@ -122,22 +122,22 @@ async function main() {
     const waitAlertNew = waitForEvent(
       alertsSocket,
       'alert:new',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
     const waitProcessedA = waitForEvent(
       eventsSocketA,
       'event:processed',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
     const waitProcessedB = waitForEvent(
       eventsSocketB,
       'event:processed',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
     const waitStatusChanged = waitForEvent(
       eventsSocketA,
       'device:status:changed',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
 
     const { response: createRes } = await requestJson('/api/events', {
@@ -156,7 +156,9 @@ async function main() {
     await waitStatusChanged;
     console.log('✓ Verified alert:new, event:processed and device:status:changed emissions');
 
-    const { response: alertsRes, body: alertsBody } = await requestJson('/api/alerts?status=open&skip=0&limit=50');
+    const { response: alertsRes, body: alertsBody } = await requestJson(
+      '/api/alerts?status=open&skip=0&limit=50'
+    );
     assert(alertsRes.status === 200, `GET /api/alerts expected 200, got ${alertsRes.status}`);
 
     const targetAlert = (alertsBody?.data || []).find((item) => item.deviceId === deviceId);
@@ -165,12 +167,12 @@ async function main() {
     const waitAck = waitForEvent(
       alertsSocket,
       'alert:acknowledged',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
     const waitResolved = waitForEvent(
       alertsSocket,
       'alert:resolved',
-      (payload) => payload?.deviceId === deviceId,
+      (payload) => payload?.deviceId === deviceId
     );
 
     const { response: ackRes } = await requestJson(`/api/alerts/${targetAlert._id}`, {

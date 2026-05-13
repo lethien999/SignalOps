@@ -6,7 +6,7 @@ export class Logger {
         level: 'info',
         message,
         ...(data !== undefined && { data }),
-      }),
+      })
     );
   }
 
@@ -17,7 +17,7 @@ export class Logger {
         level: 'error',
         message,
         ...(errorMsg && { error: errorMsg }),
-      }),
+      })
     );
   }
 }

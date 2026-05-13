@@ -34,7 +34,11 @@ export class EventController {
   @ApiAcceptedResponse({
     description: 'Event accepted and queued',
     schema: {
-      example: { id: '662a7ed9a6b4f9838b0c9f45', status: 'queued', jobId: 'device-001-662a7ed9a6b4f9838b0c9f45' },
+      example: {
+        id: '662a7ed9a6b4f9838b0c9f45',
+        status: 'queued',
+        jobId: 'device-001-662a7ed9a6b4f9838b0c9f45',
+      },
     },
   })
   @ApiBadRequestResponse({ description: 'Invalid event payload' })
@@ -50,7 +54,12 @@ export class EventController {
   @ApiQuery({ name: 'skip', required: false, type: Number, example: 0 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiQuery({ name: 'deviceId', required: false, type: String, example: 'device-001' })
-  @ApiQuery({ name: 'startDate', required: false, type: String, example: '2026-04-24T00:00:00.000Z' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    example: '2026-04-24T00:00:00.000Z',
+  })
   @ApiQuery({ name: 'endDate', required: false, type: String, example: '2026-04-25T00:00:00.000Z' })
   @ApiOkResponse({
     description: 'Paged events response',
@@ -68,7 +77,7 @@ export class EventController {
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
     @Query('deviceId') deviceId?: string,
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('endDate') endDate?: string
   ) {
     const filters = this.eventService.parseEventFilters({
       skip,
@@ -93,7 +102,11 @@ export class EventController {
   @ApiAcceptedResponse({
     description: 'Event accepted and queued',
     schema: {
-      example: { id: '662a7ed9a6b4f9838b0c9f45', status: 'queued', jobId: 'device-001-662a7ed9a6b4f9838b0c9f45' },
+      example: {
+        id: '662a7ed9a6b4f9838b0c9f45',
+        status: 'queued',
+        jobId: 'device-001-662a7ed9a6b4f9838b0c9f45',
+      },
     },
   })
   @ApiBadRequestResponse({ description: 'Invalid event payload' })

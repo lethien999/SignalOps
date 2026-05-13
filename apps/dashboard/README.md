@@ -78,18 +78,23 @@ apps/dashboard/
 ## Key Components
 
 ### Header
+
 Displays application title, notifications, and settings button.
 
 ### Sidebar
+
 Navigation menu with links to dashboard sections.
 
 ### Map
+
 Interactive Leaflet map showing device locations with color-coded status markers.
 
 ### AlertTable
+
 Sortable table displaying alerts with filtering options.
 
 ### MetricCard
+
 Dashboard cards showing key metrics with trend indicators.
 
 ## WebSocket Integration
@@ -154,6 +159,7 @@ npm start
 ```
 
 Docker image:
+
 ```bash
 docker build -f infrastructure/Dockerfile.dashboard -t signalops-dashboard .
 ```

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ['main', 'master']
+  pull_request:
+    branches: ['main', 'master']
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality - ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api-gateway
+            workspace: api-gateway
+            extra: test
+          - name: worker-service
+            workspace: worker-service
+            extra: test
+          - name: simulator
+            workspace: simulator
+            extra: test
+          - name: dashboard
+            workspace: dashboard
+            extra: type-check
+          - name: common
+            workspace: '@signalops/common'
+            extra: test
+          - name: models
+            workspace: '@signalops/models'
+            extra: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run root lint
+        run: npm run lint
+
+      - name: Run workspace lint
+        run: npm run lint -w ${{ matrix.workspace }} --if-present
+
+      - name: Run workspace build
+        run: npm run build -w ${{ matrix.workspace }} --if-present
+
+      - name: Run workspace extra check
+        run: npm run ${{ matrix.extra }} -w ${{ matrix.workspace }} --if-present

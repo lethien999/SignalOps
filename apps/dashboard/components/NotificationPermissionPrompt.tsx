@@ -6,7 +6,9 @@ import { NotificationService } from '../services/notification.service';
 
 export function NotificationPermissionPrompt() {
   const [show, setShow] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | 'not-supported' | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission | 'not-supported' | null>(
+    null
+  );
 
   useEffect(() => {
     if (!NotificationService.isAvailable()) {
@@ -81,7 +83,9 @@ export function NotificationPermissionPrompt() {
  * Status badge for showing notification permission status
  */
 export function NotificationStatusBadge() {
-  const [permission, setPermission] = useState<NotificationPermission | 'not-supported' | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission | 'not-supported' | null>(
+    null
+  );
 
   useEffect(() => {
     if (!NotificationService.isAvailable()) {

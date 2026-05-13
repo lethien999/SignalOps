@@ -8,16 +8,16 @@ SignalOps sử dụng kiến trúc hướng sự kiện (event-driven). Việc t
 
 ## 2. Các thành phần chính
 
-| Thành phần | Công nghệ | Vai trò | Vấn đề giải quyết |
-|-----------|-----------|--------|------------------|
-| **API Gateway** | NestJS 10 + Express | Nhận request từ thiết bị, validate, enqueue job | Tách riêng I/O từ xử lý CPU-heavy để trả về 202 nhanh (không blocking) |
-| **Worker Service** | NestJS 10 + BullMQ | Lấy job từ queue, phát hiện ngưỡng, lưu DB | Xử lý bất đồng bộ & retry tự động khi xảy ra lỗi tạm thời |
-| **MongoDB** | MongoDB 5.0+ | Lưu trữ chính cho events, alerts, devices | Persist dữ liệu, query nhanh với indexes theo deviceId + timestamp |
-| **Redis + BullMQ** | Redis 5.3+ + BullMQ 4.10+ | Message queue & cache | Decouple producer (API) từ consumer (Worker) để scale ngang |
-| **WebSocket (Socket.io)** | Socket.io 4.7 | Real-time broadcast | Thay thế polling → update dashboard ngay lập tức khi có alert mới |
-| **Dashboard** | Next.js 14 + React | UI giám sát & xử lý cảnh báo | Visualization alerts trên map, table, metrics chart |
-| **Prometheus + Grafana** | Prometheus 2.51 + Grafana 10.4 | Monitoring hệ thống | Collect & visualize metrics (CPU, memory, latency) để detect performance issue |
-| **Nginx** (tuỳ chọn) | Nginx | Reverse proxy | Rate limit, HTTPS termination, load balance |
+| Thành phần                | Công nghệ                      | Vai trò                                         | Vấn đề giải quyết                                                              |
+| ------------------------- | ------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| **API Gateway**           | NestJS 10 + Express            | Nhận request từ thiết bị, validate, enqueue job | Tách riêng I/O từ xử lý CPU-heavy để trả về 202 nhanh (không blocking)         |
+| **Worker Service**        | NestJS 10 + BullMQ             | Lấy job từ queue, phát hiện ngưỡng, lưu DB      | Xử lý bất đồng bộ & retry tự động khi xảy ra lỗi tạm thời                      |
+| **MongoDB**               | MongoDB 5.0+                   | Lưu trữ chính cho events, alerts, devices       | Persist dữ liệu, query nhanh với indexes theo deviceId + timestamp             |
+| **Redis + BullMQ**        | Redis 5.3+ + BullMQ 4.10+      | Message queue & cache                           | Decouple producer (API) từ consumer (Worker) để scale ngang                    |
+| **WebSocket (Socket.io)** | Socket.io 4.7                  | Real-time broadcast                             | Thay thế polling → update dashboard ngay lập tức khi có alert mới              |
+| **Dashboard**             | Next.js 14 + React             | UI giám sát & xử lý cảnh báo                    | Visualization alerts trên map, table, metrics chart                            |
+| **Prometheus + Grafana**  | Prometheus 2.51 + Grafana 10.4 | Monitoring hệ thống                             | Collect & visualize metrics (CPU, memory, latency) để detect performance issue |
+| **Nginx** (tuỳ chọn)      | Nginx                          | Reverse proxy                                   | Rate limit, HTTPS termination, load balance                                    |
 
 ---
 
@@ -82,7 +82,7 @@ SignalOps sử dụng kiến trúc hướng sự kiện (event-driven). Việc t
 ## 4. Luồng Real-time (WebSocket)
 
 - **EventsGateway** broadcast `alert:new`, `alert:acknowledged`, `alert:resolved` tới `/alerts` namespace
-- **AlertsGateway** broadcast `event:processed`, `device:status:changed` tới `/events` namespace  
+- **AlertsGateway** broadcast `event:processed`, `device:status:changed` tới `/events` namespace
 - **Periodic emissions**: `queue:depth`, `worker:stats` gửi mỗi 10s để client update monitoring UI
 - **Vấn đề giải quyết**: Không cần polling → latency < 500ms từ khi alert tạo đến khi display lên dashboard
 
@@ -90,61 +90,62 @@ SignalOps sử dụng kiến trúc hướng sự kiện (event-driven). Việc t
 
 ## 5. Tầng dữ liệu (MongoDB)
 
-| Collection | TTL | Mục đích | Query chính |
-|-----------|-----|---------|-------------|
-| `events` | 30 ngày | Raw telemetry | `find({deviceId, createdAt})` + `findRecent()` |
-| `alerts` | Vô hạn | Alert history | `find({status, severity, createdAt})` + `alertHistory()` |
-| `devices` | Derived | Device list | `distinct(deviceId)` từ events |
-| `api_keys` | Vô hạn | Auth secrets | `findOne({key})` |
+| Collection | TTL     | Mục đích      | Query chính                                              |
+| ---------- | ------- | ------------- | -------------------------------------------------------- |
+| `events`   | 30 ngày | Raw telemetry | `find({deviceId, createdAt})` + `findRecent()`           |
+| `alerts`   | Vô hạn  | Alert history | `find({status, severity, createdAt})` + `alertHistory()` |
+| `devices`  | Derived | Device list   | `distinct(deviceId)` từ events                           |
+| `api_keys` | Vô hạn  | Auth secrets  | `findOne({key})`                                         |
 
 **Indexes được tạo**:
+
 ```javascript
 // events
-db.events.createIndex({ deviceId: 1, timestamp: -1 })
-db.events.createIndex({ timestamp: 1 }, { expireAfterSeconds: 60*60*24*30 }) // TTL
+db.events.createIndex({ deviceId: 1, timestamp: -1 });
+db.events.createIndex({ timestamp: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 }); // TTL
 
-// alerts  
-db.alerts.createIndex({ status: 1, severity: 1, createdAt: -1 })
-db.alerts.createIndex({ createdAt: -1 })
+// alerts
+db.alerts.createIndex({ status: 1, severity: 1, createdAt: -1 });
+db.alerts.createIndex({ createdAt: -1 });
 ```
 
 ---
 
 ## 6. Khả năng mở rộng (Scalability)
 
-| Chiều | Cách scaling | Chi tiết |
-|------|------------|---------|
-| **Ingest API** | Horizontal (add replicas) | BullMQ queue là bottleneck, không phải API |
-| **Processing** | Horizontal (add Worker pods) | Worker consume độc lập từ queue |
-| **Database** | Vertical (bigger MongoDB) + sharding | Shard theo `deviceId` nếu >100M docs/month |
-| **Cache** | Redis Cluster | Backup Redis nếu queue là SPoF |
-| **WebSocket** | Redis adapter (socket.io) | Broadcast qua Redis Channel để sync tất cả instances |
+| Chiều          | Cách scaling                         | Chi tiết                                             |
+| -------------- | ------------------------------------ | ---------------------------------------------------- |
+| **Ingest API** | Horizontal (add replicas)            | BullMQ queue là bottleneck, không phải API           |
+| **Processing** | Horizontal (add Worker pods)         | Worker consume độc lập từ queue                      |
+| **Database**   | Vertical (bigger MongoDB) + sharding | Shard theo `deviceId` nếu >100M docs/month           |
+| **Cache**      | Redis Cluster                        | Backup Redis nếu queue là SPoF                       |
+| **WebSocket**  | Redis adapter (socket.io)            | Broadcast qua Redis Channel để sync tất cả instances |
 
 ---
 
 ## 7. Độ tin cậy (Reliability)
 
-| Cơ chế | Cách triển khai | Vấn đề giải quyết |
-|-------|-----------------|------------------|
-| **Retry tự động** | BullMQ exponential backoff | Xử lý timeout/network blip (1-3 lần) |
-| **Dead Letter Queue** | Failed jobs → `dlq_*` queue | Track sự cố xử lý để manual replay sau |
-| **Health checks** | Liveness + readiness probes | Kubernetes/Docker orchestration know when to restart |
-| **Graceful shutdown** | SIGTERM handler | Drain in-flight jobs trước khi kill process |
-| **Rate limiting** | Redis-backed sliding window | Chống DDoS & sử dụng quá mức (E4) |
-| **Correlation ID** | Propagate qua all logs (F4) | Trace request xuyên suốt để debug production |
+| Cơ chế                | Cách triển khai             | Vấn đề giải quyết                                    |
+| --------------------- | --------------------------- | ---------------------------------------------------- |
+| **Retry tự động**     | BullMQ exponential backoff  | Xử lý timeout/network blip (1-3 lần)                 |
+| **Dead Letter Queue** | Failed jobs → `dlq_*` queue | Track sự cố xử lý để manual replay sau               |
+| **Health checks**     | Liveness + readiness probes | Kubernetes/Docker orchestration know when to restart |
+| **Graceful shutdown** | SIGTERM handler             | Drain in-flight jobs trước khi kill process          |
+| **Rate limiting**     | Redis-backed sliding window | Chống DDoS & sử dụng quá mức (E4)                    |
+| **Correlation ID**    | Propagate qua all logs (F4) | Trace request xuyên suốt để debug production         |
 
 ---
 
 ## 8. Bảo mật
 
-| Lớp | Cơ chế | Vấn đề giải quyết |
-|---|----|------|
-| **Authentication** | x-api-key header (F1) | Chỉ có thiết bị được phép mới enqueue events |
-| **CORS** | Env-controlled origin (M8 Medium 7) | Dashboard chỉ access từ domain được phép |
-| **Database Auth** | MongoDB username/password (M8 Critical 2) | Chỉ API/Worker credential mới connect tới DB |
-| **Port binding** | Prod compose không expose 27017/6379 | MongoDB/Redis chỉ accessible từ bên trong network |
-| **Environment secrets** | .env file (không commit) | Credentials không lộ trong git |
-| **Logging** | Structured JSON (no passwords) | Logs safe để review & debug |
+| Lớp                     | Cơ chế                                    | Vấn đề giải quyết                                 |
+| ----------------------- | ----------------------------------------- | ------------------------------------------------- |
+| **Authentication**      | x-api-key header (F1)                     | Chỉ có thiết bị được phép mới enqueue events      |
+| **CORS**                | Env-controlled origin (M8 Medium 7)       | Dashboard chỉ access từ domain được phép          |
+| **Database Auth**       | MongoDB username/password (M8 Critical 2) | Chỉ API/Worker credential mới connect tới DB      |
+| **Port binding**        | Prod compose không expose 27017/6379      | MongoDB/Redis chỉ accessible từ bên trong network |
+| **Environment secrets** | .env file (không commit)                  | Credentials không lộ trong git                    |
+| **Logging**             | Structured JSON (no passwords)            | Logs safe để review & debug                       |
 
 ---
 
@@ -175,6 +176,7 @@ db.alerts.createIndex({ createdAt: -1 })
 ## 10. Topology Triển Khai
 
 ### Local Development
+
 ```
 [Docker Compose]
 ├── api-gateway:3000
@@ -189,6 +191,7 @@ db.alerts.createIndex({ createdAt: -1 })
 ```
 
 ### Production
+
 ```
 [Kubernetes / Docker Swarm]
 ├── api-gateway (2-3 replicas)

@@ -44,7 +44,21 @@ export class ApiKeyAdminService {
 
   async list(): Promise<ApiKeyView[]> {
     const keys = await this.collection()
-      .find({}, { projection: { key: 1, name: 1, description: 1, scopes: 1, active: 1, createdAt: 1, updatedAt: 1, lastUsedAt: 1 } })
+      .find(
+        {},
+        {
+          projection: {
+            key: 1,
+            name: 1,
+            description: 1,
+            scopes: 1,
+            active: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            lastUsedAt: 1,
+          },
+        }
+      )
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -112,10 +126,13 @@ export class ApiKeyAdminService {
           updatedAt: now,
           lastUsedAt: undefined,
         },
-      },
+      }
     );
 
-    return { ...this.toView({ ...existing, key: hashedKey, updatedAt: now, lastUsedAt: undefined }), key };
+    return {
+      ...this.toView({ ...existing, key: hashedKey, updatedAt: now, lastUsedAt: undefined }),
+      key,
+    };
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
@@ -165,7 +182,7 @@ export class ApiKeyAdminService {
       if (await verifyApiKey(providedKey, storedDoc.key)) {
         await this.collection().updateOne(
           { _id: storedDoc._id },
-          { $set: { lastUsedAt: new Date() } },
+          { $set: { lastUsedAt: new Date() } }
         );
         break;
       }

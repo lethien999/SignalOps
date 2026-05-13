@@ -17,14 +17,29 @@ export function parseConfidenceLevel(confidence?: number): ConfidenceLevel {
   const pct = confidence ?? 0;
 
   if (pct >= 70) {
-    return { level: 'high', percentage: pct, label: 'High Confidence', color: 'text-red-700 bg-red-50' };
+    return {
+      level: 'high',
+      percentage: pct,
+      label: 'High Confidence',
+      color: 'text-red-700 bg-red-50',
+    };
   }
 
   if (pct >= 40) {
-    return { level: 'medium', percentage: pct, label: 'Medium Confidence', color: 'text-amber-700 bg-amber-50' };
+    return {
+      level: 'medium',
+      percentage: pct,
+      label: 'Medium Confidence',
+      color: 'text-amber-700 bg-amber-50',
+    };
   }
 
-  return { level: 'low', percentage: pct, label: 'Low Confidence', color: 'text-blue-700 bg-blue-50' };
+  return {
+    level: 'low',
+    percentage: pct,
+    label: 'Low Confidence',
+    color: 'text-blue-700 bg-blue-50',
+  };
 }
 
 interface AIConfidenceBadgeProps {
@@ -41,7 +56,9 @@ export function AIConfidenceBadge({ confidence, className = '' }: AIConfidenceBa
   const level = parseConfidenceLevel(confidence);
 
   return (
-    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${level.color} ${className}`}>
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${level.color} ${className}`}
+    >
       <div className="flex items-center gap-1">
         {level.level === 'high' && <AlertCircle className="h-3.5 w-3.5" />}
         {level.level === 'medium' && <Zap className="h-3.5 w-3.5" />}
@@ -63,7 +80,13 @@ interface AIScoreDisplayProps {
 /**
  * Comprehensive AI score display with confidence and reasons
  */
-export function AIScoreDisplay({ score, confidence, label, reasons, className = '' }: AIScoreDisplayProps) {
+export function AIScoreDisplay({
+  score,
+  confidence,
+  label,
+  reasons,
+  className = '',
+}: AIScoreDisplayProps) {
   if (score === undefined && confidence === undefined) {
     return null;
   }
@@ -71,7 +94,9 @@ export function AIScoreDisplay({ score, confidence, label, reasons, className = 
   return (
     <div className={`rounded-lg border border-purple-200 bg-purple-50 p-3 ${className}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-purple-700">AI Analysis</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-purple-700">
+          AI Analysis
+        </span>
         <AIConfidenceBadge confidence={confidence} />
       </div>
 

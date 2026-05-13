@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import {
-  useAlertStore,
-  useEventStore,
-  useDeviceStore,
-  useSystemStore,
-} from '@/stores';
+import { useAlertStore, useEventStore, useDeviceStore, useSystemStore } from '@/stores';
 import { NotificationService } from '../services/notification.service';
 import type { Alert, DeviceStatus, Event } from '@/types';
 
@@ -97,14 +92,17 @@ export function useSocket() {
         console.log('Received alert:new', data);
         addAlert(data);
 
-        if (typeof window !== 'undefined' && window.localStorage.getItem(ALERT_SOUND_STORAGE_KEY) !== 'off') {
+        if (
+          typeof window !== 'undefined' &&
+          window.localStorage.getItem(ALERT_SOUND_STORAGE_KEY) !== 'off'
+        ) {
           playAlertSound(data.severity);
         }
 
         // M13: Send push notification for critical/high alerts
         if (['critical', 'high'].includes(data.severity)) {
           NotificationService.notifyAlert(data.deviceId, data.type, data.severity).catch((err) =>
-            console.warn('Failed to send notification:', err),
+            console.warn('Failed to send notification:', err)
           );
         }
       });
@@ -124,10 +122,13 @@ export function useSocket() {
         addEvent(data);
       });
 
-      socketRef.current.on('device:status:changed', (data: { deviceId: string; status: DeviceStatus }) => {
-        console.log('Received device:status:changed', data);
-        updateDevice(data.deviceId, { status: data.status });
-      });
+      socketRef.current.on(
+        'device:status:changed',
+        (data: { deviceId: string; status: DeviceStatus }) => {
+          console.log('Received device:status:changed', data);
+          updateDevice(data.deviceId, { status: data.status });
+        }
+      );
 
       socketRef.current.on('queue:depth', (data: { depth: number; timestamp: string }) => {
         console.log('Received queue:depth', data);

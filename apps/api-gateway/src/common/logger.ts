@@ -27,8 +27,7 @@ export class Logger {
   }
 
   static error(message: string, error?: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : error ? String(error) : undefined;
+    const errorMessage = error instanceof Error ? error.message : error ? String(error) : undefined;
 
     const entry = this.buildLogEntry('error', message, {
       ...(errorMessage && { error: errorMessage }),
@@ -46,4 +45,3 @@ export class Logger {
     }
   }
 }
-

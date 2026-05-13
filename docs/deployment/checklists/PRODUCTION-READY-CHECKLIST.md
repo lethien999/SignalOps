@@ -3,6 +3,7 @@
 **Status**: 📋 PREPARED - Ready to execute after Staging Decision (NOT DEPLOYED YET)
 
 **Timeline**:
+
 - 12-14/05: Staging A/B test monitoring (ONGOING)
 - 14/05 12:00: Decision gate → If PASS, proceed
 - 14/05 14:00-18:00: Production shadow mode deployment window
@@ -15,21 +16,21 @@
 
 - [ ] **Staging A/B test PASS** (Precision ≥ 88%, Recall ≥ 90%)
   - Proof: [Decision form từ STAGING-MONITORING-CHECKLIST.md]
-  
 - [ ] **PR #27 reviewed & approved**
-  - Reviewers: _________________
-  - Approval date: ___/05/2026
+  - Reviewers: **\*\*\*\***\_**\*\*\*\***
+  - Approval date: \_\_\_/05/2026
 
 - [ ] **PR #27 merged to main**
+
   ```bash
   # Verify merge
   git log main --oneline | grep "M13"
   ```
 
 - [ ] **Production environment ready**
-  - MongoDB backup created: ___/05
-  - Redis backup created: ___/05
-  - On-call team notified: ___/05
+  - MongoDB backup created: \_\_\_/05
+  - Redis backup created: \_\_\_/05
+  - On-call team notified: \_\_\_/05
 
 ---
 
@@ -51,6 +52,7 @@ grep -E "ANOMALY_THRESHOLD|AI_ROLLOUT_PERCENT|AI_AB_TEST" .env.production
 ```
 
 **Shadow Mode Config** (giai đoạn 1):
+
 ```bash
 ANOMALY_THRESHOLD=80           # ← Từ staging threshold sweep
 AI_AB_TEST=true                # ← Enable A/B infrastructure
@@ -58,6 +60,7 @@ AI_ROLLOUT_PERCENT=0           # ← Shadow mode: NO ML alerts (score only)
 ```
 
 **Verification**:
+
 ```bash
 # File tồn tại
 [ -f .env.production ] && echo "✓ File exists" || echo "✗ Missing"
@@ -70,6 +73,7 @@ grep -q "^ANOMALY_THRESHOLD=80" .env.production && echo "✓ Threshold set"
 ### Bước 2: Backup Production Data
 
 **MongoDB Backup**:
+
 ```bash
 # Local backup (nếu chạy local)
 docker compose exec mongodb mongosh --eval "db.adminCommand('shutdown')" 2>/dev/null || true
@@ -81,6 +85,7 @@ echo "✓ MongoDB backup created"
 ```
 
 **Redis Backup**:
+
 ```bash
 docker compose exec redis redis-cli BGSAVE
 # Expected: "Background saving started"
@@ -90,12 +95,14 @@ docker compose exec redis redis-cli LASTSAVE
 ```
 
 **Verification**:
-- [ ] MongoDB backup file tồn tại: ___________
-- [ ] Redis LASTSAVE gần nhất: ___________
+
+- [ ] MongoDB backup file tồn tại: \***\*\_\_\_\*\***
+- [ ] Redis LASTSAVE gần nhất: \***\*\_\_\_\*\***
 
 ### Bước 3: Kiểm tra Production Infrastructure
 
 **MongoDB Connection**:
+
 ```bash
 # Nếu local test trước
 docker compose --env-file .env.production exec mongodb mongosh --eval "db.version()"
@@ -103,12 +110,14 @@ docker compose --env-file .env.production exec mongodb mongosh --eval "db.versio
 ```
 
 **Redis Connection**:
+
 ```bash
 docker compose --env-file .env.production exec redis redis-cli ping
 # Expected: "PONG"
 ```
 
 **ONNX Model File**:
+
 ```bash
 # Verify model exists
 ls -lh apps/worker-service/src/assets/anomaly-model.onnx
@@ -120,9 +129,10 @@ file apps/worker-service/src/assets/anomaly-model.onnx
 ```
 
 **Verification**:
-- [ ] MongoDB version: __________
+
+- [ ] MongoDB version: \***\*\_\_\*\***
 - [ ] Redis ping: OK / FAIL
-- [ ] ONNX model size: __________
+- [ ] ONNX model size: \***\*\_\_\*\***
 
 ### Bước 4: Deploy Production Stack
 
@@ -151,12 +161,14 @@ docker compose ps
 ```
 
 **Verification**:
-- [ ] Build completed: ___/05 __:__
-- [ ] Containers started: ___/05 __:__
+
+- [ ] Build completed: **\_/05 **:\_\_
+- [ ] Containers started: **\_/05 **:\_\_
 
 ### Bước 5: Verify Production Deployment
 
 **Health Check - API Gateway**:
+
 ```bash
 # Local test
 curl http://localhost:3000/api/health -s | jq .
@@ -169,18 +181,21 @@ curl http://localhost:3000/api/health -s | jq .
 ```
 
 **Health Check - Worker**:
+
 ```bash
 docker compose logs --tail=20 signalops-worker | grep -i "connected\|listening\|ready"
 # Expected: "Worker started successfully" hoặc "Queue listener ready"
 ```
 
 **ML Model Load Verification**:
+
 ```bash
 docker compose logs --tail=50 signalops-worker | grep -i "model\|onnx\|ml"
 # Expected: "ML model loaded from..." hoặc "ONNX inference ready"
 ```
 
 **Test Event Ingestion**:
+
 ```bash
 # Send test event
 curl -X POST http://localhost:3000/api/events \
@@ -198,19 +213,22 @@ docker compose exec mongodb mongosh --eval "use signalops-db; db.events.findOne(
 ```
 
 **Verification Checklist**:
-- [ ] API /health returns 200: ___/05 __:__
-- [ ] Worker logs show ML loaded: ___/05 __:__
-- [ ] Test event created: ___/05 __:__
-- [ ] Event visible in MongoDB: ___/05 __:__
+
+- [ ] API /health returns 200: **\_/05 **:\_\_
+- [ ] Worker logs show ML loaded: **\_/05 **:\_\_
+- [ ] Test event created: **\_/05 **:\_\_
+- [ ] Event visible in MongoDB: **\_/05 **:\_\_
 
 ### Bước 6: Verify Shadow Mode (AI_ROLLOUT_PERCENT=0)
 
 **Expected Behavior**:
+
 - AI chấm điểm ALL events → `anomalyScore` + `anomalyConfidence` stored
 - Nhưng KHÔNG tạo alert từ AI (0% rollout)
 - Rule-based detection TẠO alerts như bình thường
 
 **Verification Query**:
+
 ```bash
 docker compose exec mongodb mongosh --eval "
 use signalops-db
@@ -225,15 +243,17 @@ db.alerts.countDocuments({ source: 'rule-based' })  // Expected: > 0
 ```
 
 **Log Verification**:
+
 ```bash
 docker compose logs --tail=100 signalops-worker | grep -i "shadow\|rollout.*0\|ai.*score"
 # Expected pattern: "Scoring event in shadow mode" hoặc "AI_ROLLOUT_PERCENT=0: storing score only"
 ```
 
 **Verification**:
-- [ ] Events have anomalyScore: ___/05 __:__
-- [ ] Alerts from ML: 0 (shadow mode OK): ___/05 __:__
-- [ ] Alerts from rule-based: > 0 (normal): ___/05 __:__
+
+- [ ] Events have anomalyScore: **\_/05 **:\_\_
+- [ ] Alerts from ML: 0 (shadow mode OK): **\_/05 **:\_\_
+- [ ] Alerts from rule-based: > 0 (normal): **\_/05 **:\_\_
 
 ### Bước 7: Prometheus Metrics Check
 
@@ -248,8 +268,9 @@ http://localhost:9090/graph?g0.expr=signalops_ml_score_computed_total
 ```
 
 **Verification**:
-- [ ] Prometheus scraping metrics: ___/05 __:__
-- [ ] ML score counter increasing: ___/05 __:__
+
+- [ ] Prometheus scraping metrics: **\_/05 **:\_\_
+- [ ] ML score counter increasing: **\_/05 **:\_\_
 
 ---
 
@@ -257,12 +278,12 @@ http://localhost:9090/graph?g0.expr=signalops_ml_score_computed_total
 
 ### Hàng ngày trong 1 tuần (Shadow Mode Baseline)
 
-| Ngày | Mục tiêu | Checklist |
-|-----|---------|-----------|
-| 14/05 | Kiểm tra 4 giờ sau deploy | ✓ Health / ✓ Events flowing / ✓ No errors |
-| 15/05 | 24h baseline | ✓ Metrics stable / ✓ Uptime > 99% |
-| 16-20/05 | Cumulative metrics | ✓ Precision tracking / ✓ Recall estimation |
-| 21/05 | 1 week decision | Compare AI scores vs rule-based |
+| Ngày     | Mục tiêu                  | Checklist                                  |
+| -------- | ------------------------- | ------------------------------------------ |
+| 14/05    | Kiểm tra 4 giờ sau deploy | ✓ Health / ✓ Events flowing / ✓ No errors  |
+| 15/05    | 24h baseline              | ✓ Metrics stable / ✓ Uptime > 99%          |
+| 16-20/05 | Cumulative metrics        | ✓ Precision tracking / ✓ Recall estimation |
+| 21/05    | 1 week decision           | Compare AI scores vs rule-based            |
 
 ### Monitoring Commands
 
@@ -274,7 +295,7 @@ db.events.countDocuments({ createdAt: { \$gte: new Date(Date.now() - 24*60*60*10
 
 # AI scores stored (24h)
 docker compose exec mongodb mongosh --eval "
-db.events.countDocuments({ 
+db.events.countDocuments({
   anomalyScore: { \$exists: true },
   createdAt: { \$gte: new Date(Date.now() - 24*60*60*1000) }
 })
@@ -295,6 +316,7 @@ db.events.aggregate([
 ## 🔄 Rollback Procedure (If Issues Detected)
 
 **Immediate Rollback** (< 1 hour):
+
 ```bash
 # Stop production
 docker compose down
@@ -311,6 +333,7 @@ curl http://localhost:3000/api/health
 ```
 
 **Data Rollback** (If data corruption):
+
 ```bash
 # Restore MongoDB from backup
 tar -xzf mongodb-backup-<timestamp>.tar.gz -C /path/to/mongodb/data/
@@ -318,6 +341,7 @@ docker compose restart mongodb
 ```
 
 **Rollback Decision Criteria**:
+
 - Worker crash không recovery
 - Error rate > 5% liên tục
 - Database connection lost > 1 giờ
@@ -327,25 +351,26 @@ docker compose restart mongodb
 
 ## 📞 Escalation Contacts
 
-| Role | Name | Phone | On-call |
-|------|------|-------|---------|
-| Engineering Lead | ___________ | __________ | Yes/No |
-| DevOps | ___________ | __________ | Yes/No |
-| Database Admin | ___________ | __________ | Yes/No |
+| Role             | Name               | Phone            | On-call |
+| ---------------- | ------------------ | ---------------- | ------- |
+| Engineering Lead | \***\*\_\_\_\*\*** | \***\*\_\_\*\*** | Yes/No  |
+| DevOps           | \***\*\_\_\_\*\*** | \***\*\_\_\*\*** | Yes/No  |
+| Database Admin   | \***\*\_\_\_\*\*** | \***\*\_\_\*\*** | Yes/No  |
 
 ---
 
 ## ✍️ Deployment Sign-off
 
-**Deployed by**: __________________ (Date: __/05 Time: __ :__)  
-**Verified by**: __________________ (Date: __/05 Time: __ :__)  
-**Approved by**: __________________ (Date: __/05 Time: __ :__)  
+**Deployed by**: **\*\*\*\***\_\_**\*\*\*\*** (Date: **/05 Time: ** :**)  
+**Verified by**: \*\*\*\***\_\_\_\_**\*\*\*\*** (Date: **/05 Time: ** :**)  
+**Approved by**: \*\*\*\***\_\_\_\_**\*\*\*\*** (Date: **/05 Time: ** :\_\_)
 
 **Notes**:
+
 - Deployment successful: ✓ / ✗
-- Issues encountered: _____________________
+- Issues encountered: \***\*\*\*\*\***\_\***\*\*\*\*\***
 - Rollback used: Yes / No
-- Time to stabilize: __ minutes
+- Time to stabilize: \_\_ minutes
 
 ---
 

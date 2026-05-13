@@ -41,8 +41,10 @@ export class TenantService {
 
   async create(dto: CreateTenantDto): Promise<TenantView> {
     const apiKey = generateRandomApiKey();
-    const eventsPerMonth = dto.eventsPerMonth ?? parseInt(process.env.TENANT_QUOTA_EVENTS_DEFAULT || '1000000', 10);
-    const alertsPerMonth = dto.alertsPerMonth ?? parseInt(process.env.TENANT_QUOTA_ALERTS_DEFAULT || '100000', 10);
+    const eventsPerMonth =
+      dto.eventsPerMonth ?? parseInt(process.env.TENANT_QUOTA_EVENTS_DEFAULT || '1000000', 10);
+    const alertsPerMonth =
+      dto.alertsPerMonth ?? parseInt(process.env.TENANT_QUOTA_ALERTS_DEFAULT || '100000', 10);
 
     const tenant = await this.tenantModel.create({
       name: dto.name,
@@ -98,7 +100,10 @@ export class TenantService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.tenantModel.findByIdAndUpdate(id, { status: 'deleted', updatedAt: new Date() });
+    const result = await this.tenantModel.findByIdAndUpdate(id, {
+      status: 'deleted',
+      updatedAt: new Date(),
+    });
     if (!result) throw new NotFoundException(`Tenant not found: ${id}`);
     Logger.info(`Tenant deleted (soft): ${id}`);
   }
@@ -107,7 +112,10 @@ export class TenantService {
    * Increment event count for tenant + check quota
    * Returns { allowed: boolean, remaining: number }
    */
-  async recordEventIngest(apiKey: string, count: number = 1): Promise<{ allowed: boolean; remaining: number }> {
+  async recordEventIngest(
+    apiKey: string,
+    count: number = 1
+  ): Promise<{ allowed: boolean; remaining: number }> {
     const tenant = await this.tenantModel.findOne({ apiKey, status: 'active' });
     if (!tenant) {
       return { allowed: false, remaining: 0 };
@@ -138,7 +146,9 @@ export class TenantService {
 
     // Warn at 80%
     if (newCount >= quota * 0.8) {
-      Logger.warn(`Tenant ${tenant.name} approaching quota: events ${newCount}/${quota} (80% threshold)`);
+      Logger.warn(
+        `Tenant ${tenant.name} approaching quota: events ${newCount}/${quota} (80% threshold)`
+      );
     }
 
     return { allowed: true, remaining };
@@ -147,7 +157,10 @@ export class TenantService {
   /**
    * Increment alert count for tenant + check quota
    */
-  async recordAlertCreation(apiKey: string, count: number = 1): Promise<{ allowed: boolean; remaining: number }> {
+  async recordAlertCreation(
+    apiKey: string,
+    count: number = 1
+  ): Promise<{ allowed: boolean; remaining: number }> {
     const tenant = await this.tenantModel.findOne({ apiKey, status: 'active' });
     if (!tenant) {
       return { allowed: false, remaining: 0 };
@@ -175,7 +188,9 @@ export class TenantService {
     BusinessMetrics.recordTenantUsage(tenant.name, 'alerts', newCount, quota);
 
     if (newCount >= quota * 0.8) {
-      Logger.warn(`Tenant ${tenant.name} approaching alert quota: ${newCount}/${quota} (80% threshold)`);
+      Logger.warn(
+        `Tenant ${tenant.name} approaching alert quota: ${newCount}/${quota} (80% threshold)`
+      );
     }
 
     return { allowed: true, remaining };

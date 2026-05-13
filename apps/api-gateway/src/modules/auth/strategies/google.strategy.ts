@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { Strategy } from 'passport-google-oauth20';
 import { getOAuthConfig } from '../../../config/oauth.config';
 
 export interface GoogleProfile {
@@ -30,16 +30,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     accessToken: string,
     refreshToken: string,
     profile: GoogleProfile,
-    done: VerifyCallback,
+    done: (error: Error | null, user?: unknown) => void
   ): Promise<void> {
     // Validate profile has email
     if (!profile.emails || profile.emails.length === 0) {
-      return done(new Error('Google profile does not contain email'), null);
+      return done(new Error('Google profile does not contain email'));
     }
 
     const email = profile.emails[0].value;
     if (!email) {
-      return done(new Error('Google profile email is invalid'), null);
+      return done(new Error('Google profile email is invalid'));
     }
 
     // Return profile data for controller to use

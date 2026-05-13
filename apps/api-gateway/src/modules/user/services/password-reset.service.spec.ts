@@ -90,10 +90,7 @@ describe('PasswordResetService', () => {
   describe('resetPassword', () => {
     it('should reset password with valid token', async () => {
       const token = 'plaintext-token';
-      const tokenHash = crypto
-        .createHash('sha256')
-        .update(token)
-        .digest('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
       const newPassword = 'newsecurepass123';
       const userId = 'user123';
 
@@ -110,9 +107,7 @@ describe('PasswordResetService', () => {
 
       mockUserModel.findByIdAndUpdate.mockResolvedValue({});
       mockResetTokenModel.findByIdAndUpdate.mockResolvedValue({});
-      mockEmailService.sendPasswordResetSuccessEmail.mockResolvedValue(
-        undefined,
-      );
+      mockEmailService.sendPasswordResetSuccessEmail.mockResolvedValue(undefined);
 
       await service.resetPassword(token, newPassword);
 
@@ -125,18 +120,18 @@ describe('PasswordResetService', () => {
       const token = 'invalid-token';
       mockResetTokenModel.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.resetPassword(token, 'newpass123'),
-      ).rejects.toThrow('Token không hợp lệ hoặc đã hết hạn');
+      await expect(service.resetPassword(token, 'newpass123')).rejects.toThrow(
+        'Token không hợp lệ hoặc đã hết hạn'
+      );
     });
 
     it('should throw error for short password', async () => {
       const token = 'valid-token';
       const shortPassword = 'short';
 
-      await expect(
-        service.resetPassword(token, shortPassword),
-      ).rejects.toThrow('Mật khẩu phải có ít nhất 8 ký tự');
+      await expect(service.resetPassword(token, shortPassword)).rejects.toThrow(
+        'Mật khẩu phải có ít nhất 8 ký tự'
+      );
     });
   });
 

@@ -35,12 +35,14 @@
 ## ✨ Tính năng chính
 
 ### Nhập liệu & Xử lý dữ liệu
+
 - ✅ **API nhập sự kiện** với xác thực API Key + JWT
 - ✅ **Ingestion pipeline** xử lý hàng nghìn sự kiện/giây từ thiết bị IoT
 - ✅ **Data normalization** chuẩn hóa metrics (latency 0-500ms, packet loss 0-20%, signal -120 to -40 dBm)
 - ✅ **Lịch sử sự kiện** lưu trữ 30+ ngày dữ liệu trong MongoDB
 
 ### Phát hiện bất thường
+
 - ✅ **Rule-based detection** (cảnh báo/cao/tối)
 - ✅ **AI/ML anomaly detection** (RandomForest + ONNX, Precision 89.19%, Recall 91.67%)
 - ✅ **Shadow mode** chấm điểm AI song song rule-based
@@ -48,12 +50,14 @@
 - ✅ **Fallback logic** quay về rule-based nếu model lỗi
 
 ### Cảnh báo & Thông báo
+
 - ✅ **Cảnh báo tức thì** (WebSocket < 500ms)
 - ✅ **Multi-channel notifications** (webhook, email, dashboard)
 - ✅ **Alert grouping** gộp cảnh báo trùng lặp
 - ✅ **Auto-resolve** tự đóng cảnh báo khi metric bình thường
 
 ### Quản lý & Dashboard
+
 - ✅ **Dashboard Web** hiển thị alert, device status, bản đồ (Leaflet)
 - ✅ **Mobile PWA** cho field operators (responsive, offline-ready)
 - ✅ **Real-time updates** via Socket.io
@@ -61,6 +65,7 @@
 - ✅ **Device maintenance** chế độ (suppress alerts trong bảo trì)
 
 ### Quản trị & Giám sát
+
 - ✅ **Multi-tenant** (tenant-level config, toggles, webhooks)
 - ✅ **RBAC** (Admin, Operator, View-only roles)
 - ✅ **SLA tracking** (resolution time, uptime metrics)
@@ -69,6 +74,7 @@
 - ✅ **Health checks** (graceful shutdown, readiness probes)
 
 ### Hiệu suất & Độ tin cậy
+
 - ✅ **Sub-100ms latency** cho alert creation (p95)
 - ✅ **99.95% uptime** với redundancy
 - ✅ **Horizontal scaling** (stateless workers, Redis queue)
@@ -80,6 +86,7 @@
 ## 🏗️ Kiến trúc
 
 ### Sơ đồ tổng quan
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Nguồn dữ liệu: Thiết bị, Simulator, API Client     │
@@ -132,11 +139,13 @@
 ### Luồng dữ liệu chi tiết
 
 **Ingestion (Thêm sự kiện):**
+
 ```
 Device → POST /api/events → API Gateway → Redis Queue → Worker
 ```
 
 **Processing (Xử lý & Phát hiện):**
+
 ```
 Worker:
   1. Lấy sự kiện từ queue
@@ -149,6 +158,7 @@ Worker:
 ```
 
 **Real-time (Thông báo):**
+
 ```
 Alert Created → Pub/Sub → Dashboard (WS) + Mobile (PWA) + Webhooks
 ```
@@ -158,6 +168,7 @@ Alert Created → Pub/Sub → Dashboard (WS) + Mobile (PWA) + Webhooks
 ## 🚀 Khởi động nhanh
 
 ### Yêu cầu
+
 - Node.js ≥ 18
 - Docker & Docker Compose
 - MongoDB 7+
@@ -184,16 +195,18 @@ npm run dev
 ```
 
 ### Truy cập
-| Dịch vụ | URL | Ghi chú |
-|---------|-----|--------|
-| **API** | http://localhost:3000/api | OpenAPI docs tại `/docs` |
-| **Dashboard** | http://localhost:3001 | Web UI + Real-time alerts |
-| **Prometheus** | http://localhost:9090 | Metrics scraper |
-| **Grafana** | http://localhost:3003 | Visualization (nếu có) |
-| **MongoDB** | localhost:27017 | Auth: `signalops:secret123` |
-| **Redis** | localhost:6379 | Queue & cache |
+
+| Dịch vụ        | URL                       | Ghi chú                     |
+| -------------- | ------------------------- | --------------------------- |
+| **API**        | http://localhost:3000/api | OpenAPI docs tại `/docs`    |
+| **Dashboard**  | http://localhost:3001     | Web UI + Real-time alerts   |
+| **Prometheus** | http://localhost:9090     | Metrics scraper             |
+| **Grafana**    | http://localhost:3003     | Visualization (nếu có)      |
+| **MongoDB**    | localhost:27017           | Auth: `signalops:secret123` |
+| **Redis**      | localhost:6379            | Queue & cache               |
 
 ### Dừng hệ thống
+
 ```bash
 docker compose -f infrastructure/docker-compose.yml down
 ```
@@ -203,6 +216,7 @@ docker compose -f infrastructure/docker-compose.yml down
 ## 📍 Lộ trình phát triển (M1-M13)
 
 ### ✅ M1-M9: Nền tảng cơ bản
+
 - Cấu trúc monorepo + stack tech
 - Ingestion API + Database schemas
 - Alert detection engine
@@ -210,6 +224,7 @@ docker compose -f infrastructure/docker-compose.yml down
 - Monitoring setup
 
 ### ✅ M10: Tính năng mở rộng (v1.0)
+
 - Webhook notifications
 - Alert management (acknowledge, resolve, note)
 - Device maintenance mode
@@ -217,6 +232,7 @@ docker compose -f infrastructure/docker-compose.yml down
 - Graceful degradation
 
 ### ✅ M11: Tăng trưởng & Scale (v1.1)
+
 - SLA tracking (resolution time, uptime)
 - Alert correlation & grouping
 - Audit logs & admin metrics
@@ -224,6 +240,7 @@ docker compose -f infrastructure/docker-compose.yml down
 - Horizontal scaling tests
 
 ### ✅ M12: Xác thực & SaaS (v2.0)
+
 - Multi-tenant architecture
 - JWT authentication + RBAC
 - Tenant-level webhooks, thresholds, configs
@@ -231,6 +248,7 @@ docker compose -f infrastructure/docker-compose.yml down
 - Tenant isolation + data segregation
 
 ### ✅ M13: Mobile + AI (v2.1)
+
 - **Mobile PWA** cho field operators
   - Responsive design, offline support
   - Real-time alerts sync, device status
@@ -296,6 +314,7 @@ SignalOps/
 ### Biến môi trường
 
 **Database:**
+
 ```bash
 MONGODB_URI=mongodb://signalops:secret123@localhost:27017/signalops-db?authSource=admin
 REDIS_HOST=redis
@@ -303,6 +322,7 @@ REDIS_PORT=6379
 ```
 
 **API Gateway:**
+
 ```bash
 API_GATEWAY_PORT=3000
 API_KEY=signalops-local-key
@@ -311,6 +331,7 @@ JWT_SECRET=your-secret-key-change-in-production
 ```
 
 **Worker Service:**
+
 ```bash
 WORKER_CONCURRENCY=5
 
@@ -321,6 +342,7 @@ AI_ROLLOUT_PERCENT=0              # % of events using ML
 ```
 
 **Alert Thresholds:**
+
 ```bash
 THRESHOLD_LATENCY_MS=200
 THRESHOLD_PACKET_LOSS_PERCENT=5
@@ -331,14 +353,14 @@ THRESHOLD_SIGNAL_STRENGTH_DBM=-90
 
 ## 📖 Tài liệu
 
-| Tài liệu | Mục đích |
-|----------|---------|
-| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Thiết kế hệ thống, components, scaling |
-| **[API.md](docs/API.md)** | REST endpoints, WebSocket events |
-| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Local, staging, production deployment |
-| **[OPERATIONS.md](docs/OPERATIONS.md)** | Troubleshooting, runbooks |
-| **[PRODUCTION-ROLLOUT-PLAN.md](docs/PRODUCTION-ROLLOUT-PLAN.md)** | M13: AI rollout strategy |
-| **[STAGING-AB-REPORT.md](docs/STAGING-AB-REPORT.md)** | M13: Staging monitoring |
+| Tài liệu                                                          | Mục đích                               |
+| ----------------------------------------------------------------- | -------------------------------------- |
+| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**                       | Thiết kế hệ thống, components, scaling |
+| **[API.md](docs/API.md)**                                         | REST endpoints, WebSocket events       |
+| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)**                           | Local, staging, production deployment  |
+| **[OPERATIONS.md](docs/OPERATIONS.md)**                           | Troubleshooting, runbooks              |
+| **[PRODUCTION-ROLLOUT-PLAN.md](docs/PRODUCTION-ROLLOUT-PLAN.md)** | M13: AI rollout strategy               |
+| **[STAGING-AB-REPORT.md](docs/STAGING-AB-REPORT.md)**             | M13: Staging monitoring                |
 
 ---
 
@@ -414,4 +436,4 @@ Xem [CONTRIBUTING.md](docs/CONTRIBUTING.md)
 
 **Built with ❤️ for telecom operations.**
 
-*Version: 2.1 (M13 Complete) | Last Updated: 12/05/2026*
+_Version: 2.1 (M13 Complete) | Last Updated: 12/05/2026_

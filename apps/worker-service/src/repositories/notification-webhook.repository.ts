@@ -41,18 +41,19 @@ const notificationWebhookSchema = new mongoose.Schema(
     lastError: { type: String, trim: true },
     updatedBy: { type: String, trim: true },
   },
-  { timestamps: true, strict: 'throw', minimize: false },
+  { timestamps: true, strict: 'throw', minimize: false }
 );
 
 const NotificationWebhookModel = mongoose.model<NotificationWebhookRecord>(
   'NotificationWebhook',
-  notificationWebhookSchema,
+  notificationWebhookSchema
 );
 
 export class NotificationWebhookRepository {
-  async findEnabledBySeverity(severity: NotificationSeverity): Promise<NotificationWebhookRecord[]> {
-    return NotificationWebhookModel
-      .find({ enabled: true, severities: severity })
+  async findEnabledBySeverity(
+    severity: NotificationSeverity
+  ): Promise<NotificationWebhookRecord[]> {
+    return NotificationWebhookModel.find({ enabled: true, severities: severity })
       .lean()
       .exec() as unknown as NotificationWebhookRecord[];
   }
@@ -63,7 +64,7 @@ export class NotificationWebhookRepository {
       success: boolean;
       responseCode?: number;
       errorMessage?: string;
-    },
+    }
   ): Promise<void> {
     await NotificationWebhookModel.findByIdAndUpdate(
       id,
@@ -76,7 +77,7 @@ export class NotificationWebhookRepository {
           ...(payload.errorMessage !== undefined ? { lastError: payload.errorMessage } : {}),
         },
       },
-      { runValidators: true },
+      { runValidators: true }
     ).exec();
   }
 }

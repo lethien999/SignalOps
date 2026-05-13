@@ -4,11 +4,11 @@ Chi tiết kế hoạch cho từng giai đoạn rollout AI từ staging tới pr
 
 ## Các file trong mục này
 
-| File | Mô tả | Giai đoạn |
-|------|-------|----------|
-| [STAGING-AB-REPORT.md](STAGING-AB-REPORT.md) | Hướng dẫn A/B test staging, metrics, quyết định | Giai đoạn 0 (Staging) |
-| [PRODUCTION-SHADOW-MODE-DEPLOYMENT.md](PRODUCTION-SHADOW-MODE-DEPLOYMENT.md) | Triển khai shadow mode (AI scoring, không tạo alert) | Giai đoạn 1 (Production Shadow) |
-| [PRODUCTION-ROLLOUT-PLAN.md](PRODUCTION-ROLLOUT-PLAN.md) | 5 giai đoạn từ 0% → 100% AI rollout | Giai đoạn 2-5 (Production Gradual) |
+| File                                                                         | Mô tả                                                | Giai đoạn                          |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------- |
+| [STAGING-AB-REPORT.md](STAGING-AB-REPORT.md)                                 | Hướng dẫn A/B test staging, metrics, quyết định      | Giai đoạn 0 (Staging)              |
+| [PRODUCTION-SHADOW-MODE-DEPLOYMENT.md](PRODUCTION-SHADOW-MODE-DEPLOYMENT.md) | Triển khai shadow mode (AI scoring, không tạo alert) | Giai đoạn 1 (Production Shadow)    |
+| [PRODUCTION-ROLLOUT-PLAN.md](PRODUCTION-ROLLOUT-PLAN.md)                     | 5 giai đoạn từ 0% → 100% AI rollout                  | Giai đoạn 2-5 (Production Gradual) |
 
 ## Timeline M13
 
@@ -32,12 +32,14 @@ Production Phase (14/05 onwards):
 ## Quy trình
 
 1. **Staging** (12-14/05)
+
    ```
    Chuẩn bị → Deploy → Monitor 48-72h → Decision
    Tài liệu: STAGING-AB-REPORT.md
    ```
 
 2. **Production Shadow** (14-21/05)
+
    ```
    Nếu staging PASS:
    Chuẩn bị → Deploy shadow (0%) → 1 tuần baseline

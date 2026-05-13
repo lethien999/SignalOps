@@ -1,5 +1,14 @@
 import axios from 'axios';
-import type { Alert, Device, DlqJob, Event, NotificationWebhook, SlaSnapshot, SystemStats, ThresholdProfile } from '@/types';
+import type {
+  Alert,
+  Device,
+  DlqJob,
+  Event,
+  NotificationWebhook,
+  SlaSnapshot,
+  SystemStats,
+  ThresholdProfile,
+} from '@/types';
 import { getAuthHeader } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
@@ -10,15 +19,18 @@ const api = axios.create({
 });
 
 // Add auth headers to all requests
-api.interceptors.request.use((config) => {
-  const authHeader = getAuthHeader();
-  if (authHeader && 'Authorization' in authHeader) {
-    config.headers.Authorization = authHeader.Authorization;
+api.interceptors.request.use(
+  (config) => {
+    const authHeader = getAuthHeader();
+    if (authHeader && 'Authorization' in authHeader) {
+      config.headers.Authorization = authHeader.Authorization;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+);
 
 type AlertApiResponse = Alert & {
   _id?: string;
@@ -39,11 +51,19 @@ function extractApiErrorMessage(error: unknown, fallback: string): string {
       return responseData;
     }
 
-    if (responseData && typeof responseData === 'object' && typeof responseData.message === 'string' && responseData.message.trim().length > 0) {
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      typeof responseData.message === 'string' &&
+      responseData.message.trim().length > 0
+    ) {
       return responseData.message;
     }
 
-    if (typeof error.response?.statusText === 'string' && error.response.statusText.trim().length > 0) {
+    if (
+      typeof error.response?.statusText === 'string' &&
+      error.response.statusText.trim().length > 0
+    ) {
       return error.response.statusText;
     }
   }
@@ -152,8 +172,14 @@ export async function fetchDevices(): Promise<Device[]> {
 
 export async function setDeviceMaintenance(
   deviceId: string,
-  payload: { enabled: boolean; reason?: string; updatedBy?: string },
-): Promise<{ deviceId: string; enabled: boolean; reason?: string; updatedBy?: string; updatedAt?: string }> {
+  payload: { enabled: boolean; reason?: string; updatedBy?: string }
+): Promise<{
+  deviceId: string;
+  enabled: boolean;
+  reason?: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}> {
   try {
     const response = await api.patch<{
       deviceId: string;
@@ -173,7 +199,7 @@ export async function setDeviceMaintenance(
 export async function updateAlertStatus(
   alertId: string,
   status: 'acknowledged' | 'resolved',
-  extra?: Record<string, string>,
+  extra?: Record<string, string>
 ): Promise<Alert> {
   try {
     const response = await api.patch<AlertApiResponse>(`/alerts/${alertId}`, {
@@ -227,14 +253,17 @@ export async function fetchHealth(): Promise<{ status: string; uptime: number }>
 export async function batchUpdateAlerts(
   ids: string[],
   status: 'acknowledged' | 'resolved',
-  extra?: Record<string, string>,
+  extra?: Record<string, string>
 ): Promise<{ success: number; failed: number; errors: string[] }> {
   try {
-    const response = await api.post<{ success: number; failed: number; errors: string[] }>('/alerts/batch', {
-      ids,
-      status,
-      ...extra,
-    });
+    const response = await api.post<{ success: number; failed: number; errors: string[] }>(
+      '/alerts/batch',
+      {
+        ids,
+        status,
+        ...extra,
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Không thể cập nhật hàng loạt:', error);
@@ -251,7 +280,8 @@ function normalizeDlqJob(job: Record<string, unknown>): DlqJob {
     timestamp: typeof job.timestamp === 'number' ? job.timestamp : undefined,
     processedOn: typeof job.processedOn === 'number' ? job.processedOn : undefined,
     finishedOn: typeof job.finishedOn === 'number' ? job.finishedOn : undefined,
-    data: job.data && typeof job.data === 'object' ? (job.data as Record<string, unknown>) : undefined,
+    data:
+      job.data && typeof job.data === 'object' ? (job.data as Record<string, unknown>) : undefined,
   };
 }
 
@@ -287,7 +317,9 @@ export async function fetchThresholdProfiles(): Promise<ThresholdProfile[]> {
   }
 }
 
-export async function fetchEffectiveThresholdProfile(deviceId?: string): Promise<ThresholdProfile[]> {
+export async function fetchEffectiveThresholdProfile(
+  deviceId?: string
+): Promise<ThresholdProfile[]> {
   try {
     const response = await api.get<ThresholdProfile[]>('/thresholds/effective', {
       params: deviceId ? { deviceId } : undefined,
@@ -321,7 +353,10 @@ export async function saveThresholdProfile(payload: {
   }
 }
 
-export async function rollbackThresholdProfile(scopeType: 'global' | 'device', scopeId: string): Promise<{ success: boolean }> {
+export async function rollbackThresholdProfile(
+  scopeType: 'global' | 'device',
+  scopeId: string
+): Promise<{ success: boolean }> {
   try {
     const response = await api.delete<{ success: boolean }>(`/thresholds/${scopeType}/${scopeId}`);
     return response.data;
@@ -361,7 +396,7 @@ export async function updateNotificationWebhook(
     retryMax: number;
     retryBackoffMs: number;
     updatedBy: string;
-  }>,
+  }>
 ): Promise<NotificationWebhook> {
   try {
     const response = await api.patch<NotificationWebhook>(`/notifications/webhooks/${id}`, payload);

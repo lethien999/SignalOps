@@ -7,9 +7,7 @@ import { ThresholdProfileRepository } from './repositories/threshold-profile.rep
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: ThresholdProfile.name, schema: ThresholdProfileSchema },
-    ]),
+    MongooseModule.forFeature([{ name: ThresholdProfile.name, schema: ThresholdProfileSchema }]),
   ],
   controllers: [ThresholdsController],
   providers: [ThresholdsService, ThresholdProfileRepository],

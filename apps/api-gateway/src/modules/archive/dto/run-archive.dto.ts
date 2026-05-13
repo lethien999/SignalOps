@@ -14,7 +14,10 @@ export class RunArchiveDto {
   @Max(3650)
   olderThanDays?: number;
 
-  @ApiPropertyOptional({ description: 'Số bản ghi tối đa mỗi lần archive cho mỗi collection', default: 5000 })
+  @ApiPropertyOptional({
+    description: 'Số bản ghi tối đa mỗi lần archive cho mỗi collection',
+    default: 5000,
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

@@ -3,7 +3,11 @@ import { Event } from './schemas/event.schema';
 import { CreateEventDto } from './dto/create-event.dto';
 import { EventBrokerService, TelemetryEventPayload } from './event-broker.service';
 import { Logger } from '../../common/logger';
-import { EventCreateInput, EventFindFilters, EventRepository } from './repositories/event.repository';
+import {
+  EventCreateInput,
+  EventFindFilters,
+  EventRepository,
+} from './repositories/event.repository';
 import { OutboxRepository } from './repositories/outbox.repository';
 import { DeviceMaintenanceRepository } from './repositories/device-maintenance.repository';
 import { UpdateDeviceMaintenanceDto } from './dto/update-device-maintenance.dto';
@@ -21,17 +25,18 @@ type EventListResult = {
 
 @Injectable()
 export class EventService {
-  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+  private readonly redisEnabled =
+    String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly eventBrokerService: EventBrokerService,
     private readonly deviceMaintenanceRepository: DeviceMaintenanceRepository,
-    private readonly outboxRepository?: OutboxRepository,
+    private readonly outboxRepository?: OutboxRepository
   ) {}
 
   async createEvent(
-    createEventDto: CreateEventDto,
+    createEventDto: CreateEventDto
   ): Promise<{ id: string; status: string; jobId: string }> {
     try {
       const savedEvent = await this.eventRepository.save(createEventDto as EventCreateInput);
@@ -161,9 +166,10 @@ export class EventService {
     // Use optimized aggregation to get latest event per device
     const latestEvents = await this.eventRepository.findLatestEventPerDevice(500);
     const deviceIds = latestEvents.map((ev) => ev.deviceId);
-    const maintenanceRecords = await this.deviceMaintenanceRepository.findEnabledByDeviceIds(deviceIds);
+    const maintenanceRecords =
+      await this.deviceMaintenanceRepository.findEnabledByDeviceIds(deviceIds);
     const maintenanceByDevice = new Map(
-      maintenanceRecords.map((record) => [record.deviceId, record]),
+      maintenanceRecords.map((record) => [record.deviceId, record])
     );
 
     return latestEvents.map((ev) => ({

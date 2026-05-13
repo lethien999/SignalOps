@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
-import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
-import { useAlertStore } from "@/stores";
-import { useSocket } from "@/hooks/useSocket";
+import React from 'react';
+import { Header } from '@/components/Header';
+import { Sidebar } from '@/components/Sidebar';
+import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
+import { useAlertStore } from '@/stores';
+import { useSocket } from '@/hooks/useSocket';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const activeAlerts = useAlertStore(
-    (state) => state.alerts.filter((a) => a.status === "open").length
+    (state) => state.alerts.filter((a) => a.status === 'open').length
   );
 
   useSocket();

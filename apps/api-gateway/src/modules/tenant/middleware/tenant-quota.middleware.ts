@@ -46,7 +46,7 @@ export class TenantQuotaMiddleware implements NestMiddleware {
               statusCode: HttpStatus.TOO_MANY_REQUESTS,
               message: `Tenant quota exceeded for events. Monthly limit: ${tenant.quota.eventsPerMonth}. Current usage: ${tenant.usage.events + 1}/${tenant.quota.eventsPerMonth}`,
             },
-            HttpStatus.TOO_MANY_REQUESTS,
+            HttpStatus.TOO_MANY_REQUESTS
           );
         }
       }

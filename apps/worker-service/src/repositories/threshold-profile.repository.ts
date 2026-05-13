@@ -30,17 +30,25 @@ const thresholdProfileSchema = new mongoose.Schema(
     updatedBy: { type: String, trim: true },
     note: { type: String, trim: true },
   },
-  { timestamps: true, strict: 'throw', minimize: false },
+  { timestamps: true, strict: 'throw', minimize: false }
 );
 
 thresholdProfileSchema.index({ scopeType: 1, scopeId: 1 }, { unique: true });
 
-const ThresholdProfileModel = mongoose.model<ThresholdProfileRecord>('ThresholdProfile', thresholdProfileSchema);
+const ThresholdProfileModel = mongoose.model<ThresholdProfileRecord>(
+  'ThresholdProfile',
+  thresholdProfileSchema
+);
 
 export class ThresholdProfileRepository {
   async findEffective(deviceId?: string): Promise<ThresholdProfileRecord | null> {
     if (deviceId) {
-      const deviceProfile = await ThresholdProfileModel.findOne({ scopeType: 'device', scopeId: deviceId }).lean().exec();
+      const deviceProfile = await ThresholdProfileModel.findOne({
+        scopeType: 'device',
+        scopeId: deviceId,
+      })
+        .lean()
+        .exec();
       if (deviceProfile) {
         return deviceProfile;
       }

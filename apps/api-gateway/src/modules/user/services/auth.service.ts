@@ -14,8 +14,8 @@ export type JwtPayload = {
   tenantId: string;
   email: string;
   roleId: string;
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
 };
 
 export type LoginResult = {
@@ -35,7 +35,7 @@ export class AuthService {
 
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Role.name) private readonly roleModel: Model<RoleDocument>,
+    @InjectModel(Role.name) private readonly roleModel: Model<RoleDocument>
   ) {}
 
   async signup(email: string, password: string, tenantId: Types.ObjectId): Promise<LoginResult> {
@@ -66,7 +66,11 @@ export class AuthService {
       isActive: true,
     });
 
-    Logger.info('User signed up', { email: user.email, userId: user._id.toString(), tenantId: tenantId.toString() });
+    Logger.info('User signed up', {
+      email: user.email,
+      userId: user._id.toString(),
+      tenantId: tenantId.toString(),
+    });
 
     return this.buildLoginResult(user);
   }
@@ -88,11 +92,6 @@ export class AuthService {
     if (!user.isActive) {
       throw new UnauthorizedException('User account is inactive');
     }
-
-    // Update lastLoginAt
-    await this.userModel.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
-
-    Logger.info('User logged in', { email: user.email, userId: user._id.toString() });
 
     return this.buildLoginResult(user as any);
   }
@@ -148,8 +147,6 @@ export class AuthService {
       tenantId: user.tenantId.toString(),
       email: user.email,
       roleId: user.roleId,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
     };
 
     return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn as any });
@@ -165,8 +162,6 @@ export class AuthService {
       tenantId: user.tenantId.toString(),
       email: user.email,
       roleId: user.roleId,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
     };
 
     const token = jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn as any });

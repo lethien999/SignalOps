@@ -73,7 +73,7 @@ describe('AlertService', () => {
       service.updateAlert('alert-1', {
         status: 'acknowledged',
         acknowledgedBy: 'operator',
-      }),
+      })
     ).resolves.toBeTruthy();
 
     alertRepository.findById.mockResolvedValueOnce({
@@ -84,7 +84,7 @@ describe('AlertService', () => {
     await expect(
       service.updateAlert('alert-1', {
         status: 'open',
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -102,7 +102,9 @@ describe('AlertService', () => {
 
     const service = new AlertService(alertRepository as never, alertsGateway as never);
 
-    await expect(service.updateAlert('missing', { status: 'acknowledged' })).rejects.toThrow(NotFoundException);
+    await expect(service.updateAlert('missing', { status: 'acknowledged' })).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('batchAcknowledge updates multiple alerts and reports failures', async () => {

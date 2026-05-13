@@ -56,12 +56,13 @@ type DlqStatusMessage = {
 export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDestroy {
   private pubSubRedis?: Redis;
   private initialized = false;
-  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+  private readonly redisEnabled =
+    String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(
     private readonly eventsGateway: EventsGateway,
     private readonly alertsGateway: AlertsGateway,
-    private readonly statusGateway: StatusGateway,
+    private readonly statusGateway: StatusGateway
   ) {}
 
   async onModuleInit() {
@@ -83,7 +84,12 @@ export class WebSocketPubSubListenerService implements OnModuleInit, OnModuleDes
       });
 
       // Subscribe to channels
-      await this.pubSubRedis.subscribe('events:processed', 'alerts:created', 'alerts:resolved', 'dlq:status');
+      await this.pubSubRedis.subscribe(
+        'events:processed',
+        'alerts:created',
+        'alerts:resolved',
+        'dlq:status'
+      );
       this.initialized = true;
       Logger.info('WebSocket Pub/Sub listener initialized and subscribed to channels', {
         channels: 'events:processed,alerts:created,alerts:resolved,dlq:status',

@@ -8,10 +8,7 @@ import { TenantAdminController } from './controllers/tenant-admin.controller';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Tenant.name, schema: TenantSchema }]),
-    UserModule,
-  ],
+  imports: [MongooseModule.forFeature([{ name: Tenant.name, schema: TenantSchema }]), UserModule],
   providers: [TenantService],
   controllers: [TenantController, TenantAdminController],
   exports: [TenantService],

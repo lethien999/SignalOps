@@ -8,13 +8,13 @@ SignalOps được thiết kế để chạy local với Docker Compose hoặc t
 
 ## Yêu cầu
 
-| Công cụ | Phiên bản | Mục đích | Vấn đề giải quyết |
-|--------|---------|---------|------------------|
-| Node.js | 18.x LTS | Runtime cho NestJS & Next.js | Đảm bảo tính tương thích với async/await, modern JS |
-| npm/pnpm | 9.x+ | Package manager | Workspace monorepo support |
-| Docker Desktop | 4.0+ | Container platform | Isolated environment, consistent across dev/staging/prod |
-| Docker Compose | v2.0+ | Orchestration | Spin up multi-service stack trong 1 command |
-| Git | Bất kỳ | Version control | Track changes, CI/CD trigger |
+| Công cụ        | Phiên bản | Mục đích                     | Vấn đề giải quyết                                        |
+| -------------- | --------- | ---------------------------- | -------------------------------------------------------- |
+| Node.js        | 18.x LTS  | Runtime cho NestJS & Next.js | Đảm bảo tính tương thích với async/await, modern JS      |
+| npm/pnpm       | 9.x+      | Package manager              | Workspace monorepo support                               |
+| Docker Desktop | 4.0+      | Container platform           | Isolated environment, consistent across dev/staging/prod |
+| Docker Compose | v2.0+     | Orchestration                | Spin up multi-service stack trong 1 command              |
+| Git            | Bất kỳ    | Version control              | Track changes, CI/CD trigger                             |
 
 ---
 
@@ -84,7 +84,7 @@ open http://localhost:3001
 # Prometheus
 open http://localhost:9090
 
-# Grafana  
+# Grafana
 open http://localhost:3000/grafana (admin:admin123)
 ```
 
@@ -148,12 +148,12 @@ JWT_SECRET=<use-random-generated>
 
 ## Docker Images
 
-| Dockerfile | Service | Base Image | Size |
-|-----------|---------|-----------|------|
-| `Dockerfile.api` | API Gateway | `node:18-alpine` | ~300MB |
-| `Dockerfile.worker` | Worker Service | `node:18-alpine` | ~300MB |
-| `Dockerfile.simulator` | Simulator | `node:18-alpine` | ~280MB |
-| `Dockerfile.dashboard` | Dashboard | `node:18-alpine` multi-stage | ~150MB |
+| Dockerfile             | Service        | Base Image                   | Size   |
+| ---------------------- | -------------- | ---------------------------- | ------ |
+| `Dockerfile.api`       | API Gateway    | `node:18-alpine`             | ~300MB |
+| `Dockerfile.worker`    | Worker Service | `node:18-alpine`             | ~300MB |
+| `Dockerfile.simulator` | Simulator      | `node:18-alpine`             | ~280MB |
+| `Dockerfile.dashboard` | Dashboard      | `node:18-alpine` multi-stage | ~150MB |
 
 **Vấn đề giải quyết**: Alpine base → minimal image size, security patches cho OS packages, image pull nhanh.
 
@@ -196,15 +196,15 @@ docker push ${REGISTRY}/signalops-api-gateway:latest
 
 ### Jenkins Pipeline Stages
 
-| Stage | Action | Success Criteria | Rollback |
-|-------|--------|-----------------|----------|
-| **Checkout** | Pull latest code | No git errors | N/A |
-| **Build** | npm install + npm run build | 0 TS errors | Abort pipeline |
-| **Test** | npm run test + npm run test:integration | >70% coverage + all tests pass | Abort pipeline |
-| **Docker Build** | Build & tag images | Image exists in local | Abort pipeline |
-| **Docker Push** | Push to registry | Image accessible from registry | N/A |
-| **Deploy** | Pull & run docker-compose | Health check pass | Rollback to previous version |
-| **Verify** | Health check + smoke tests | API /health responds 200 | Rollback |
+| Stage            | Action                                  | Success Criteria               | Rollback                     |
+| ---------------- | --------------------------------------- | ------------------------------ | ---------------------------- |
+| **Checkout**     | Pull latest code                        | No git errors                  | N/A                          |
+| **Build**        | npm install + npm run build             | 0 TS errors                    | Abort pipeline               |
+| **Test**         | npm run test + npm run test:integration | >70% coverage + all tests pass | Abort pipeline               |
+| **Docker Build** | Build & tag images                      | Image exists in local          | Abort pipeline               |
+| **Docker Push**  | Push to registry                        | Image accessible from registry | N/A                          |
+| **Deploy**       | Pull & run docker-compose               | Health check pass              | Rollback to previous version |
+| **Verify**       | Health check + smoke tests              | API /health responds 200       | Rollback                     |
 
 **Vấn đề giải quyết**: Automated verification ở mỗi stage → catch deployment issue trước user phát hiện.
 
@@ -289,12 +289,12 @@ docker compose up -d
 
 ### Lộ trình hardening đề xuất (ưu tiên theo thứ tự)
 
-| Ưu tiên | Hạng mục | ETA đề xuất | Trạng thái |
-|--------|----------|-------------|-----------|
-| P1 | HTTPS/TLS + redirect HTTP | 0.5-1 ngày | Sẵn sàng triển khai |
-| P1 | Alert rules cơ bản (API/queue/worker) | 0.5-1 ngày | Sẵn sàng triển khai |
-| P2 | Backup schedule + restore drill | 1 ngày | Sẵn sàng triển khai |
-| P2 | OpenTelemetry end-to-end tracing | 1-2 ngày | Sẵn sàng triển khai |
+| Ưu tiên | Hạng mục                              | ETA đề xuất | Trạng thái          |
+| ------- | ------------------------------------- | ----------- | ------------------- |
+| P1      | HTTPS/TLS + redirect HTTP             | 0.5-1 ngày  | Sẵn sàng triển khai |
+| P1      | Alert rules cơ bản (API/queue/worker) | 0.5-1 ngày  | Sẵn sàng triển khai |
+| P2      | Backup schedule + restore drill       | 1 ngày      | Sẵn sàng triển khai |
+| P2      | OpenTelemetry end-to-end tracing      | 1-2 ngày    | Sẵn sàng triển khai |
 
 ---
 
@@ -334,6 +334,7 @@ npm start  # Start production server
 ```
 
 **Lưu ý**: Chrome yêu cầu:
+
 - Manifest hợp lệ (`name`, `start_url`, `display`, `icons`)
 - Service worker đã register (Next.js tự động qua `next/app`)
 - HTTPS (hoặc localhost)
@@ -349,6 +350,7 @@ npm start  # Start production server
 ```
 
 **Lưu ý**:
+
 - iOS không hỗ trợ Web Push API (chỉ hỗ trợ đến Safari 15)
 - Installable nếu manifest hợp lệ + điều kiện PWA tối thiểu
 - App name & icon lấy từ manifest
@@ -382,6 +384,7 @@ add_header Service-Worker-Allowed "/";  # cho phép SW tại root scope
 ### Push Notifications (Optional, M13 Phase 2)
 
 PWA hỗ trợ Web Push API cho background notifications. Chuẩn hóa:
+
 - **FCM (Firebase Cloud Messaging)**: Recommended cho production (cross-platform)
 - **Web Notifications API**: Fallback for desktop-only (no server-side persistence)
 
@@ -432,6 +435,7 @@ cat public/manifest.webmanifest | grep icon
 **Nguyên nhân**: MongoDB container chưa sẵn sàng hoặc auth failed
 
 **Cách khắc phục**:
+
 ```bash
 docker compose logs mongodb | tail -20
 docker compose restart mongodb
@@ -442,6 +446,7 @@ docker compose restart mongodb
 **Nguyên nhân**: CORS policy hoặc WebSocket URL sai
 
 **Cách khắc phục**:
+
 ```bash
 # Check CORS config
 curl -H "Origin: http://localhost:3001" http://localhost:3000/api/health -v
@@ -455,6 +460,7 @@ cat .env.production | grep SOCKET_URL
 **Nguyên nhân**: Dependencies không cài đặt trong Dockerfile hoặc cache stale
 
 **Cách khắc phục**:
+
 ```bash
 # Rebuild without cache
 docker build --no-cache -f infrastructure/Dockerfile.api .

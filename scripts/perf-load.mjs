@@ -7,9 +7,15 @@ dotenv.config({ path: path.resolve(scriptDir, '../.env') });
 
 const baseUrl = process.env.SIGNALOPS_API_BASE_URL || 'http://localhost:3000';
 const apiKey = process.env.SIGNALOPS_API_KEY || process.env.API_KEY;
-const durationSeconds = Math.max(Number.parseInt(process.env.PERF_TEST_DURATION_SECONDS || '30', 10), 1);
+const durationSeconds = Math.max(
+  Number.parseInt(process.env.PERF_TEST_DURATION_SECONDS || '30', 10),
+  1
+);
 const concurrency = Math.max(Number.parseInt(process.env.PERF_TEST_CONCURRENCY || '10', 10), 1);
-const targetTotalRequests = Math.max(Number.parseInt(process.env.PERF_TEST_TOTAL_REQUESTS || '0', 10), 0);
+const targetTotalRequests = Math.max(
+  Number.parseInt(process.env.PERF_TEST_TOTAL_REQUESTS || '0', 10),
+  0
+);
 const maxAvgMs = Number.parseFloat(process.env.PERF_TEST_MAX_AVG_MS || '0');
 const maxP95Ms = Number.parseFloat(process.env.PERF_TEST_MAX_P95_MS || '0');
 const maxErrorRate = Number.parseFloat(process.env.PERF_TEST_MAX_ERROR_RATE || '0');
@@ -106,9 +112,10 @@ async function main() {
 
   const elapsedSeconds = Math.max((Date.now() - start) / 1000, 0.001);
   const total = stats.success + stats.errors;
-  const avg = stats.latencies.length > 0
-    ? stats.latencies.reduce((sum, value) => sum + value, 0) / stats.latencies.length
-    : 0;
+  const avg =
+    stats.latencies.length > 0
+      ? stats.latencies.reduce((sum, value) => sum + value, 0) / stats.latencies.length
+      : 0;
   const p95 = percentile(stats.latencies, 95);
   const throughput = stats.success / elapsedSeconds;
   const errorRate = total > 0 ? stats.errors / total : 0;
@@ -126,7 +133,7 @@ async function main() {
       avgMs: Number(avg.toFixed(2)),
       p95Ms: Number(p95.toFixed(2)),
       errorRate: Number(errorRate.toFixed(4)),
-    }),
+    })
   );
 
   if (maxAvgMs > 0) {
@@ -138,7 +145,10 @@ async function main() {
   }
 
   if (maxErrorRate > 0) {
-    assert(errorRate <= maxErrorRate, `Error rate ${(errorRate * 100).toFixed(2)}% exceeds ${(maxErrorRate * 100).toFixed(2)}%`);
+    assert(
+      errorRate <= maxErrorRate,
+      `Error rate ${(errorRate * 100).toFixed(2)}% exceeds ${(maxErrorRate * 100).toFixed(2)}%`
+    );
   }
 
   if (stats.errors > 0) {

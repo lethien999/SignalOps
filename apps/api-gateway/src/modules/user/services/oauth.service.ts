@@ -17,7 +17,7 @@ export class OAuthService {
   async findOrCreateUserViaOAuth(
     provider: string,
     providerId: string,
-    email: string,
+    email: string
   ): Promise<UserDocument> {
     // Validate inputs
     if (!['google', 'github'].includes(provider)) {
@@ -50,7 +50,12 @@ export class OAuthService {
 
       // Link this provider to existing user
       await this.linkOAuthProvider(user._id as Types.ObjectId, provider, providerId, email);
-      return this.userModel.findById(user._id);
+      const refreshedUser = await this.userModel.findById(user._id);
+      if (!refreshedUser) {
+        throw new BadRequestException('User not found after linking OAuth provider');
+      }
+
+      return refreshedUser;
     }
 
     // Step 3: Create new user with OAuth provider
@@ -91,7 +96,7 @@ export class OAuthService {
     userId: Types.ObjectId,
     provider: string,
     providerId: string,
-    email: string,
+    email: string
   ): Promise<UserDocument> {
     if (!['google', 'github'].includes(provider)) {
       throw new BadRequestException('Invalid OAuth provider');
@@ -106,7 +111,7 @@ export class OAuthService {
 
     if (existingLink) {
       throw new ConflictException(
-        `This ${provider} account is already linked to another user. Please unlink it first.`,
+        `This ${provider} account is already linked to another user. Please unlink it first.`
       );
     }
 
@@ -123,7 +128,7 @@ export class OAuthService {
           },
         },
       },
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
@@ -138,10 +143,7 @@ export class OAuthService {
    * Validates:
    *  - User must have at least one auth method (email+password OR 2+ providers)
    */
-  async unlinkOAuthProvider(
-    userId: Types.ObjectId,
-    provider: string,
-  ): Promise<UserDocument> {
+  async unlinkOAuthProvider(userId: Types.ObjectId, provider: string): Promise<UserDocument> {
     if (!['google', 'github'].includes(provider)) {
       throw new BadRequestException('Invalid OAuth provider');
     }
@@ -163,7 +165,7 @@ export class OAuthService {
 
     if (!hasOtherAuthMethod) {
       throw new BadRequestException(
-        'Cannot unlink your only authentication method. Please set a password or link another provider first.',
+        'Cannot unlink your only authentication method. Please set a password or link another provider first.'
       );
     }
 
@@ -175,8 +177,12 @@ export class OAuthService {
           oauthProviders: { provider },
         },
       },
-      { new: true },
+      { new: true }
     );
+
+    if (!updatedUser) {
+      throw new BadRequestException('User not found');
+    }
 
     return updatedUser;
   }
@@ -185,7 +191,7 @@ export class OAuthService {
    * Get all linked OAuth providers for a user
    */
   async getLinkedProviders(
-    userId: Types.ObjectId,
+    userId: Types.ObjectId
   ): Promise<Array<{ provider: string; email: string; linkedAt: Date }>> {
     const user = await this.userModel.findById(userId);
     if (!user) {

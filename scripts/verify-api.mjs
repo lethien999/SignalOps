@@ -68,47 +68,73 @@ async function main() {
   assert(typeof stats.activeAlerts === 'number', 'Stats activeAlerts is not numeric');
   assert(typeof stats.eventsPerMinute === 'number', 'Stats eventsPerMinute is not numeric');
 
-  const { response: eventsRes, body: eventsBody } = await requestJson('/api/events?skip=0&limit=10');
+  const { response: eventsRes, body: eventsBody } = await requestJson(
+    '/api/events?skip=0&limit=10'
+  );
   assert(eventsRes.status === 200, `GET /api/events expected 200, got ${eventsRes.status}`);
   assert(Array.isArray(eventsBody.data), 'GET /api/events data is not an array');
   assert(eventsBody.pagination?.limit === 10, 'GET /api/events pagination.limit mismatch');
 
-  const { response: deviceRes, body: byDevice } = await requestJson(`/api/events?skip=0&limit=10&deviceId=${encodeURIComponent(deviceId)}`);
-  assert(deviceRes.status === 200, `GET /api/events by device expected 200, got ${deviceRes.status}`);
-  assert(byDevice.data.some((e) => e.deviceId === deviceId), 'GET /api/events deviceId filter failed');
+  const { response: deviceRes, body: byDevice } = await requestJson(
+    `/api/events?skip=0&limit=10&deviceId=${encodeURIComponent(deviceId)}`
+  );
+  assert(
+    deviceRes.status === 200,
+    `GET /api/events by device expected 200, got ${deviceRes.status}`
+  );
+  assert(
+    byDevice.data.some((e) => e.deviceId === deviceId),
+    'GET /api/events deviceId filter failed'
+  );
 
   const { response: rangeRes, body: byRange } = await requestJson(
-    `/api/events?skip=0&limit=10&startDate=${encodeURIComponent(startIso)}&endDate=${encodeURIComponent(endIso)}`,
+    `/api/events?skip=0&limit=10&startDate=${encodeURIComponent(startIso)}&endDate=${encodeURIComponent(endIso)}`
   );
   assert(rangeRes.status === 200, `GET /api/events by range expected 200, got ${rangeRes.status}`);
   assert(byRange.data.length > 0, 'GET /api/events date-range filter returned empty unexpectedly');
 
-  const { response: eventDetailRes, body: eventDetail } = await requestJson(`/api/events/${created.id}`);
-  assert(eventDetailRes.status === 200, `GET /api/events/:id expected 200, got ${eventDetailRes.status}`);
+  const { response: eventDetailRes, body: eventDetail } = await requestJson(
+    `/api/events/${created.id}`
+  );
+  assert(
+    eventDetailRes.status === 200,
+    `GET /api/events/:id expected 200, got ${eventDetailRes.status}`
+  );
   assert(eventDetail?._id === created.id, 'GET /api/events/:id returned wrong event');
 
-  const { response: alertsRes, body: alertsBody } = await requestJson('/api/alerts?status=open&skip=0&limit=20');
+  const { response: alertsRes, body: alertsBody } = await requestJson(
+    '/api/alerts?status=open&skip=0&limit=20'
+  );
   assert(alertsRes.status === 200, `GET /api/alerts expected 200, got ${alertsRes.status}`);
   assert(Array.isArray(alertsBody.data), 'GET /api/alerts data is not an array');
 
   const firstOpenAlert = alertsBody.data[0];
   if (firstOpenAlert?._id) {
-    const { response: ackRes, body: ackBody } = await requestJson(`/api/alerts/${firstOpenAlert._id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-api-script' }),
-    });
+    const { response: ackRes, body: ackBody } = await requestJson(
+      `/api/alerts/${firstOpenAlert._id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'acknowledged', acknowledgedBy: 'verify-api-script' }),
+      }
+    );
     assert(ackRes.status === 200, `PATCH acknowledged expected 200, got ${ackRes.status}`);
     assert(ackBody.status === 'acknowledged', 'PATCH did not set acknowledged status');
 
-    const { response: resolveRes, body: resolveBody } = await requestJson(`/api/alerts/${firstOpenAlert._id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status: 'resolved' }),
-    });
+    const { response: resolveRes, body: resolveBody } = await requestJson(
+      `/api/alerts/${firstOpenAlert._id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'resolved' }),
+      }
+    );
     assert(resolveRes.status === 200, `PATCH resolved expected 200, got ${resolveRes.status}`);
     assert(resolveBody.status === 'resolved', 'PATCH did not set resolved status');
 
     const { response: alertDetailRes } = await requestJson(`/api/alerts/${firstOpenAlert._id}`);
-    assert(alertDetailRes.status === 200, `GET /api/alerts/:id expected 200, got ${alertDetailRes.status}`);
+    assert(
+      alertDetailRes.status === 200,
+      `GET /api/alerts/:id expected 200, got ${alertDetailRes.status}`
+    );
   }
 
   const docsRes = await fetch(`${baseUrl}/api/docs`);

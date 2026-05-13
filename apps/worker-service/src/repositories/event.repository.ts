@@ -17,7 +17,7 @@ const eventSchema = new mongoose.Schema(
     processedAt: Date,
     alertId: String,
   },
-  { timestamps: true, strict: 'throw', minimize: false },
+  { timestamps: true, strict: 'throw', minimize: false }
 );
 
 export const EventModel = mongoose.model('Event', eventSchema);
@@ -31,7 +31,7 @@ export class EventRepository {
     return EventModel.findByIdAndUpdate(
       id,
       { processedAt: new Date() },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   }
 
@@ -39,7 +39,7 @@ export class EventRepository {
     return EventModel.findByIdAndUpdate(
       id,
       { alertId, processedAt: new Date() },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   }
 }

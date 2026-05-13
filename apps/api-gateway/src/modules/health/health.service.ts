@@ -14,7 +14,7 @@ export class HealthService {
     @InjectConnection() private readonly mongooseConnection: Connection,
     private readonly eventBrokerService: EventBrokerService,
     private readonly eventService: EventService,
-    private readonly alertService: AlertService,
+    private readonly alertService: AlertService
   ) {}
 
   async getHealth() {

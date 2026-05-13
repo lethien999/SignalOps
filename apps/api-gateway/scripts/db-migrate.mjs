@@ -7,7 +7,16 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(scriptDir, '../../../.env') });
 
 function isRunningInDocker() {
-  return process.platform !== 'win32' && path.resolve('/') === '/' && Boolean(process.env.DOCKER_CONTAINER || process.env.container || process.env.KUBERNETES_SERVICE_HOST || process.env.CI);
+  return (
+    process.platform !== 'win32' &&
+    path.resolve('/') === '/' &&
+    Boolean(
+      process.env.DOCKER_CONTAINER ||
+      process.env.container ||
+      process.env.KUBERNETES_SERVICE_HOST ||
+      process.env.CI
+    )
+  );
 }
 
 function buildMongoUri() {
@@ -71,7 +80,11 @@ async function createIndexSafe(db, collection, spec, options) {
     console.log('Created index on', collection, JSON.stringify(spec));
   } catch (error) {
     if (error && error.codeName === 'IndexOptionsConflict') {
-      console.log('Index already exists with different options on', collection, JSON.stringify(spec));
+      console.log(
+        'Index already exists with different options on',
+        collection,
+        JSON.stringify(spec)
+      );
       return;
     }
 
@@ -133,7 +146,7 @@ async function up(db) {
         updatedAt: new Date(),
       },
     },
-    { upsert: true },
+    { upsert: true }
   );
 
   console.log('Migration up completed');
@@ -172,7 +185,13 @@ withDb(async (db) => {
 
   if (command === 'status') {
     const collections = await db.listCollections().toArray();
-    console.log(JSON.stringify(collections.map((collection) => collection.name), null, 2));
+    console.log(
+      JSON.stringify(
+        collections.map((collection) => collection.name),
+        null,
+        2
+      )
+    );
     return;
   }
 
