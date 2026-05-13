@@ -35,19 +35,21 @@ export class WebSocketRetryService {
     socket: { emit: (event: string, data: unknown) => void; id: string },
     event: string,
     payload: T,
-    attempt: number = 0,
+    attempt: number = 0
   ): Promise<void> {
     try {
       socket.emit(event, payload);
       if (attempt > 0) {
-        Logger.debug(`Successfully emitted ${event} to socket ${socket.id} on attempt ${attempt + 1}`);
+        Logger.debug(
+          `Successfully emitted ${event} to socket ${socket.id} on attempt ${attempt + 1}`
+        );
       }
     } catch (error) {
       if (attempt < this.maxRetries) {
         const delayMs = this.calculateBackoffDelay(attempt);
         Logger.warn(
           `Emit failed for ${event} on socket ${socket.id}, retrying in ${delayMs}ms (attempt ${attempt + 1}/${this.maxRetries})`,
-          { error: String(error) },
+          { error: String(error) }
         );
 
         await this.sleep(delayMs);
@@ -55,7 +57,7 @@ export class WebSocketRetryService {
       } else {
         Logger.error(
           `Failed to emit ${event} on socket ${socket.id} after ${this.maxRetries} retries`,
-          error,
+          error
         );
         throw error;
       }
@@ -71,10 +73,10 @@ export class WebSocketRetryService {
   async emitBatchWithRetry<T>(
     sockets: Array<{ emit: (event: string, data: unknown) => void; id: string }>,
     event: string,
-    payload: T,
+    payload: T
   ): Promise<void> {
     const results = await Promise.allSettled(
-      sockets.map((socket) => this.emitWithRetry(socket, event, payload)),
+      sockets.map((socket) => this.emitWithRetry(socket, event, payload))
     );
 
     const failed = results.filter((r) => r.status === 'rejected').length;

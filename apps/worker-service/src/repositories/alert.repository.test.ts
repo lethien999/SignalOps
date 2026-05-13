@@ -23,7 +23,7 @@ describe('AlertRepository', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         eventId: 'event-1',
-      }),
+      })
     ).resolves.toBe(savedAlert);
 
     expect(saveSpy).toHaveBeenCalled();
@@ -36,7 +36,11 @@ describe('AlertRepository', () => {
     const repository = new AlertRepository();
     await expect(repository.findOpenDuplicate('device-1', 'latency')).resolves.toBe(duplicate);
 
-    expect(findOneSpy).toHaveBeenCalledWith({ deviceId: 'device-1', type: 'latency', status: 'open' });
+    expect(findOneSpy).toHaveBeenCalledWith({
+      deviceId: 'device-1',
+      type: 'latency',
+      status: 'open',
+    });
   });
 
   it('updates, acknowledges, and resolves alerts with timestamps', async () => {
@@ -44,12 +48,20 @@ describe('AlertRepository', () => {
     jest.useFakeTimers().setSystemTime(now);
 
     const updateResult = { _id: 'alert-3' };
-    const updateSpy = jest.spyOn(AlertModel, 'findByIdAndUpdate').mockReturnValue(updateResult as never);
+    const updateSpy = jest
+      .spyOn(AlertModel, 'findByIdAndUpdate')
+      .mockReturnValue(updateResult as never);
 
     const repository = new AlertRepository();
 
-    await expect(repository.update('alert-3', { status: 'acknowledged' })).resolves.toBe(updateResult);
-    expect(updateSpy).toHaveBeenCalledWith('alert-3', { status: 'acknowledged' }, { new: true, runValidators: true });
+    await expect(repository.update('alert-3', { status: 'acknowledged' })).resolves.toBe(
+      updateResult
+    );
+    expect(updateSpy).toHaveBeenCalledWith(
+      'alert-3',
+      { status: 'acknowledged' },
+      { new: true, runValidators: true }
+    );
 
     await expect(repository.acknowledge('alert-3', 'operator-1')).resolves.toBe(updateResult);
     expect(updateSpy).toHaveBeenCalledWith(
@@ -59,7 +71,7 @@ describe('AlertRepository', () => {
         acknowledgedBy: 'operator-1',
         acknowledgedAt: now,
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     await expect(repository.resolve('alert-3')).resolves.toBe(updateResult);
@@ -69,7 +81,7 @@ describe('AlertRepository', () => {
         status: 'resolved',
         resolvedAt: now,
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   });
 

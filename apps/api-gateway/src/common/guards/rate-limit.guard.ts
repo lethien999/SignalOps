@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import Redis from 'ioredis';
 import { Logger } from '../logger';
 import { createRedisClient } from '../redis.config';
@@ -55,7 +61,7 @@ export class RateLimitGuard implements CanActivate {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
           message: `Quá nhiều request. Giới hạn ${this.maxRequests} request/${this.windowMs / 1000}s. Vui lòng thử lại sau.`,
         },
-        HttpStatus.TOO_MANY_REQUESTS,
+        HttpStatus.TOO_MANY_REQUESTS
       );
     }
 
@@ -75,11 +81,7 @@ export class RateLimitGuard implements CanActivate {
     const key = `ratelimit:${ip}:${bucket}`;
 
     try {
-      const results = await redisClient
-        .multi()
-        .incr(key)
-        .pexpire(key, this.windowMs)
-        .exec();
+      const results = await redisClient.multi().incr(key).pexpire(key, this.windowMs).exec();
 
       const count = Number(results?.[0]?.[1] ?? 0);
 
@@ -95,7 +97,7 @@ export class RateLimitGuard implements CanActivate {
             statusCode: HttpStatus.TOO_MANY_REQUESTS,
             message: `Quá nhiều request. Giới hạn ${this.maxRequests} request/${this.windowMs / 1000}s. Vui lòng thử lại sau.`,
           },
-          HttpStatus.TOO_MANY_REQUESTS,
+          HttpStatus.TOO_MANY_REQUESTS
         );
       }
 

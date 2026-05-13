@@ -1,10 +1,10 @@
 /**
  * Contract Tests: Dashboard <-> API Gateway
  * Verifies API contract between frontend and backend
- * 
+ *
  * Approach: Use Jest + Supertest for API contract validation
  * Tools: Consider Pact.js for formal contract testing in future
- * 
+ *
  * Usage:
  * - Document expected request/response formats
  * - Assert both sides honor the contract
@@ -28,7 +28,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
         //   }
         // Response (202):
         //   { "id": "string", "status": "queued", "jobId": "string" }
-
         // TODO: Assert request schema
         // TODO: Assert response schema
         // TODO: Assert 202 status code
@@ -47,7 +46,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
         //     "data": [ { id, deviceId, location, metrics, createdAt, ... } ],
         //     "pagination": { "skip": number, "limit": number, "total": number }
         //   }
-
         // TODO: Assert response schema
         // TODO: Assert events array
         // TODO: Assert pagination metadata
@@ -82,7 +80,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
         //     ],
         //     "pagination": { skip, limit, total }
         //   }
-
         // TODO: Assert all fields present
         // TODO: Assert type correctness (string, number, enum, date)
       });
@@ -95,7 +92,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
         //   { "status": "acknowledged" | "resolved", "acknowledgedBy"?: "string", ... }
         // Response (200):
         //   { ...alert with updated fields }
-
         // TODO: Assert update payload accepted
         // TODO: Assert response reflects changes
       });
@@ -108,7 +104,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
         //   { "alertIds": ["id1", "id2"], "status": "acknowledged", "acknowledgedBy": "user" }
         // Response (200):
         //   { "success": number, "failed": number }
-
         // TODO: Assert batch operation
       });
     });
@@ -126,7 +121,6 @@ describe('API Contract: Dashboard <-> API Gateway', () => {
       // Contract:
       // Error responses should have:
       //   { "statusCode": number, "message": "string", "error"?: "string" }
-
       // TODO: Verify error format consistency
     });
   });

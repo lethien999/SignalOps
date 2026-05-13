@@ -36,7 +36,7 @@ export class ThresholdsController {
   @Delete(':scopeType/:scopeId')
   async rollbackProfile(
     @Param('scopeType') scopeType: 'global' | 'device',
-    @Param('scopeId') scopeId: string,
+    @Param('scopeId') scopeId: string
   ) {
     return this.thresholdsService.rollbackProfile(scopeType, scopeId);
   }

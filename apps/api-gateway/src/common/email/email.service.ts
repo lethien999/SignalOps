@@ -15,11 +15,7 @@ export class EmailService {
     };
   }
 
-  async sendPasswordResetEmail(
-    email: string,
-    resetLink: string,
-    userName?: string,
-  ): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetLink: string, userName?: string): Promise<void> {
     const subject = 'Đặt lại mật khẩu SignalOps';
     const html = `
       <h1>Đặt lại mật khẩu</h1>

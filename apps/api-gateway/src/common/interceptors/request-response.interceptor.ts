@@ -1,9 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { Logger } from '../logger';
 
@@ -28,7 +23,7 @@ export class RequestResponseInterceptor implements NestInterceptor {
           statusCode: response.statusCode,
           durationMs: Date.now() - now,
         });
-      }),
+      })
     );
   }
 }

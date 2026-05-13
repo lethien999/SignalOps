@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, AnyBulkWriteOperation, Document } from 'mongodb';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -10,7 +10,13 @@ function buildMongoUri() {
   return process.env.MONGODB_URI || 'mongodb://localhost:27017';
 }
 
-export async function computeDailySummaries({ fromDate, toDate }: { fromDate: Date; toDate: Date }) {
+export async function computeDailySummaries({
+  fromDate,
+  toDate,
+}: {
+  fromDate: Date;
+  toDate: Date;
+}) {
   const uri = buildMongoUri();
   const client = new MongoClient(uri);
   await client.connect();
@@ -43,13 +49,15 @@ export async function computeDailySummaries({ fromDate, toDate }: { fromDate: Da
           open: { $sum: { $cond: [{ $eq: ['$status', 'open'] }, 1, 0] } },
           acknowledged: { $sum: { $cond: [{ $eq: ['$status', 'acknowledged'] }, 1, 0] } },
           resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
-          avgMttrMinutes: { $avg: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] } },
+          avgMttrMinutes: {
+            $avg: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60] },
+          },
         },
       },
     ];
 
     const cursor = alerts.aggregate(pipeline, { allowDiskUse: true });
-    const bulkOps: any[] = [];
+    const bulkOps: AnyBulkWriteOperation<Document>[] = [];
     for await (const row of cursor) {
       const [date, type, severity] = [row._id.date, row._id.type || null, row._id.severity || null];
       bulkOps.push({

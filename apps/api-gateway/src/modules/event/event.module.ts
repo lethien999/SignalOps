@@ -34,6 +34,12 @@ import { AdminModule } from '../admin/admin.module';
     OutboxRepository,
     DeviceMaintenanceRepository,
   ],
-  exports: [EventService, EventBrokerService, EventRepository, OutboxRepository, DeviceMaintenanceRepository],
+  exports: [
+    EventService,
+    EventBrokerService,
+    EventRepository,
+    OutboxRepository,
+    DeviceMaintenanceRepository,
+  ],
 })
 export class EventModule {}

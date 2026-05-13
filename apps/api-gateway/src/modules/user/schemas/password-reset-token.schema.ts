@@ -24,9 +24,7 @@ export class PasswordResetToken {
   usedAt?: Date;
 }
 
-export const PasswordResetTokenSchema = SchemaFactory.createForClass(
-  PasswordResetToken,
-);
+export const PasswordResetTokenSchema = SchemaFactory.createForClass(PasswordResetToken);
 
 // TTL index: auto-delete expired tokens after 24 hours
 PasswordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

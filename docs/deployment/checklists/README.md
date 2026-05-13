@@ -4,10 +4,10 @@ Danh sách kiểm tra cho từng giai đoạn triển khai.
 
 ## Các file trong mục này
 
-| File | Khi nào dùng | Thời gian |
-|------|-------------|----------|
+| File                                                               | Khi nào dùng                                      | Thời gian |
+| ------------------------------------------------------------------ | ------------------------------------------------- | --------- |
 | [STAGING-MONITORING-CHECKLIST.md](STAGING-MONITORING-CHECKLIST.md) | Kiểm tra hàng ngày khi chạy A/B test trên staging | 48-72 giờ |
-| [PRODUCTION-READY-CHECKLIST.md](PRODUCTION-READY-CHECKLIST.md) | Chuẩn bị trước khi triển khai lên production | 2-3 giờ |
+| [PRODUCTION-READY-CHECKLIST.md](PRODUCTION-READY-CHECKLIST.md)     | Chuẩn bị trước khi triển khai lên production      | 2-3 giờ   |
 
 ## Cách sử dụng
 

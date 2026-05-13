@@ -29,9 +29,9 @@
 > Đang chờ bạn xác nhận prioritize
 
 - [ ] **[Idea A]**: [Context]
-  - *Estimated effort*: ?
-  - *Dependencies*: ?
-  - *Suggested priority*: TBD
+  - _Estimated effort_: ?
+  - _Dependencies_: ?
+  - _Suggested priority_: TBD
 
 ---
 
@@ -39,8 +39,8 @@
 
 > Quyết định "sau" hoặc chờ điều kiện khác
 
-- [ ] ~~Feature X~~: *Reason - waiting for [condition]*
-- [ ] ~~Feature Y~~: *Reason - lower priority after [date]*
+- [ ] ~~Feature X~~: _Reason - waiting for [condition]_
+- [ ] ~~Feature Y~~: _Reason - lower priority after [date]_
 
 ---
 
@@ -48,7 +48,7 @@
 
 > Quyết định không làm
 
-- [ ] ~~Old feature request~~: *Reason - out of scope / technical debt / user feedback*
+- [ ] ~~Old feature request~~: _Reason - out of scope / technical debt / user feedback_
 
 ---
 
@@ -64,6 +64,7 @@
 ## How to Add Ideas
 
 **Option 1** — Comment in chat (user):
+
 ```
 "Tôi muốn thêm feature: [name]
 - Requirements: ...
@@ -71,6 +72,7 @@
 ```
 
 **Option 2** — Direct in this file:
+
 ```
 - [ ] **Feature Name**: Description
   - Details: ...

@@ -31,6 +31,8 @@
     "db:rollback": "npm run -w api-gateway db:rollback",
     "db:seed": "npm run -w api-gateway db:seed",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md,yml,yaml}\"",
+    "lint:fix": "npm --workspaces run lint -- --fix",
     "docker:build": "docker compose --env-file .env -f infrastructure/docker-compose.yml build",
     "docker:up": "docker compose --env-file .env -f infrastructure/docker-compose.yml up -d",
     "docker:down": "docker compose --env-file .env -f infrastructure/docker-compose.yml down",

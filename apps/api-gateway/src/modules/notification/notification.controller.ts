@@ -28,10 +28,7 @@ export class NotificationController {
   @ApiBody({ type: UpdateNotificationWebhookDto })
   @ApiOkResponse({ description: 'Webhook đã cập nhật' })
   @Patch('webhooks/:id')
-  async updateWebhook(
-    @Param('id') id: string,
-    @Body() body: UpdateNotificationWebhookDto,
-  ) {
+  async updateWebhook(@Param('id') id: string, @Body() body: UpdateNotificationWebhookDto) {
     return this.notificationService.updateWebhook(id, body);
   }
 }

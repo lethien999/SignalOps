@@ -24,9 +24,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 export class NotificationWebhookService {
-  constructor(
-    private readonly notificationWebhookRepository: NotificationWebhookRepository,
-  ) {}
+  constructor(private readonly notificationWebhookRepository: NotificationWebhookRepository) {}
 
   async notifyAlertCreated(alert: AlertPayload): Promise<void> {
     const hooks = await this.notificationWebhookRepository.findEnabledBySeverity(alert.severity);
@@ -40,10 +38,7 @@ export class NotificationWebhookService {
     }
   }
 
-  private async sendWithRetry(
-    hook: NotificationWebhookRecord,
-    alert: AlertPayload,
-  ): Promise<void> {
+  private async sendWithRetry(hook: NotificationWebhookRecord, alert: AlertPayload): Promise<void> {
     const maxAttempts = Math.max(hook.retryMax || 3, 1);
     const baseBackoffMs = Math.max(hook.retryBackoffMs || 1000, 100);
 
@@ -108,7 +103,10 @@ export class NotificationWebhookService {
     }
   }
 
-  private buildPayload(channel: 'slack' | 'telegram', alert: AlertPayload): Record<string, unknown> {
+  private buildPayload(
+    channel: 'slack' | 'telegram',
+    alert: AlertPayload
+  ): Record<string, unknown> {
     const summary = `[${alert.severity.toUpperCase()}] ${alert.type} - ${alert.deviceId}`;
 
     if (channel === 'slack') {
@@ -121,11 +119,11 @@ export class NotificationWebhookService {
           type: alert.type,
           timestamp: alert.timestamp,
           location: alert.location,
-            ai: {
-              anomalyScore: alert.anomalyScore,
-              anomalyConfidence: alert.anomalyConfidence,
-              anomalyLabel: alert.anomalyLabel,
-            },
+          ai: {
+            anomalyScore: alert.anomalyScore,
+            anomalyConfidence: alert.anomalyConfidence,
+            anomalyLabel: alert.anomalyLabel,
+          },
         },
       };
     }
@@ -140,11 +138,11 @@ export class NotificationWebhookService {
         type: alert.type,
         timestamp: alert.timestamp,
         location: alert.location,
-            ai: {
-              anomalyScore: alert.anomalyScore,
-              anomalyConfidence: alert.anomalyConfidence,
-              anomalyLabel: alert.anomalyLabel,
-            },
+        ai: {
+          anomalyScore: alert.anomalyScore,
+          anomalyConfidence: alert.anomalyConfidence,
+          anomalyLabel: alert.anomalyLabel,
+        },
       },
     };
   }

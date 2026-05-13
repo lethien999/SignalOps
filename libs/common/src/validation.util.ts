@@ -11,7 +11,8 @@ export class ValidationUtil {
     if (!data || typeof data !== 'object') return false;
     const record = data as Record<string, unknown>;
     const location = record.location;
-    const locationRecord = location && typeof location === 'object' ? (location as Record<string, unknown>) : null;
+    const locationRecord =
+      location && typeof location === 'object' ? (location as Record<string, unknown>) : null;
 
     return (
       ValidationUtil.isString(record.deviceId) &&

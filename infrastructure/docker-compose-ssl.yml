@@ -13,8 +13,8 @@ services:
       # For production: use Let's Encrypt + Certbot or AWS ACM
       - ./certs:/etc/nginx/certs:ro
     ports:
-      - "80:80"    # HTTP redirect to HTTPS
-      - "443:443"  # HTTPS listener
+      - '80:80' # HTTP redirect to HTTPS
+      - '443:443' # HTTPS listener
     environment:
       # Optional: Enable additional logging
       - NGINX_DEBUG=notice

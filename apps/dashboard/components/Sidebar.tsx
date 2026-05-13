@@ -1,7 +1,15 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, MapPin, AlertCircle, BarChart3, Settings, Radio, Smartphone } from 'lucide-react';
+import {
+  LayoutDashboard,
+  MapPin,
+  AlertCircle,
+  BarChart3,
+  Settings,
+  Radio,
+  Smartphone,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUIStore, useAlertStore } from '@/stores';
@@ -34,7 +42,9 @@ export function Sidebar() {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">SignalOps</h1>
-            <p className="text-[10px] text-blue-400 uppercase tracking-widest font-medium">Giám sát mạng</p>
+            <p className="text-[10px] text-blue-400 uppercase tracking-widest font-medium">
+              Giám sát mạng
+            </p>
           </div>
         </Link>
       </div>
@@ -54,7 +64,9 @@ export function Sidebar() {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
               }`}
             >
-              <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`} />
+              <Icon
+                className={`w-5 h-5 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`}
+              />
               <span className="text-sm font-medium flex-1">{item.label}</span>
               {item.badge && item.badge > 0 && (
                 <span className="min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5">

@@ -123,7 +123,9 @@ describe('AuthService', () => {
     it('should throw error for invalid email', async () => {
       mockUserModel.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.login('notfound@example.com', 'password123')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('notfound@example.com', 'password123')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
 
     it('should throw error for wrong password', async () => {
@@ -194,7 +196,10 @@ describe('AuthService', () => {
     it('should return true if user has permission', async () => {
       const userId = new Types.ObjectId();
       const mockUser = { _id: userId, roleId: 'admin' };
-      const mockRole = { _id: 'admin', permissions: ['read:events', 'write:events', 'manage:users'] };
+      const mockRole = {
+        _id: 'admin',
+        permissions: ['read:events', 'write:events', 'manage:users'],
+      };
 
       mockUserModel.findById.mockResolvedValueOnce(mockUser);
       mockRoleModel.findById.mockResolvedValueOnce(mockRole);

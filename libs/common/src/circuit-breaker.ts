@@ -10,8 +10,8 @@ export type CircuitBreakerOptions = {
 };
 
 export enum CircuitState {
-  CLOSED = 'CLOSED',       // Normal operation
-  OPEN = 'OPEN',           // Failing fast
+  CLOSED = 'CLOSED', // Normal operation
+  OPEN = 'OPEN', // Failing fast
   HALF_OPEN = 'HALF_OPEN', // Testing if service recovered
 }
 
@@ -24,7 +24,7 @@ export class CircuitBreaker {
 
   constructor(
     private readonly name: string,
-    options: Partial<CircuitBreakerOptions> = {},
+    options: Partial<CircuitBreakerOptions> = {}
   ) {
     this.options = {
       failureThreshold: options.failureThreshold ?? 5,
@@ -73,7 +73,10 @@ export class CircuitBreaker {
         throw error;
       }
 
-      if (this.failureCount >= this.options.failureThreshold && this.state === CircuitState.CLOSED) {
+      if (
+        this.failureCount >= this.options.failureThreshold &&
+        this.state === CircuitState.CLOSED
+      ) {
         this.state = CircuitState.OPEN;
         console.warn(`Circuit breaker [${this.name}] opened after ${this.failureCount} failures`);
       }

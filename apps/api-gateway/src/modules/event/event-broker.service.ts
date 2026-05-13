@@ -140,7 +140,9 @@ export class EventBrokerService {
       typeof metrics.packetLoss !== 'number' ||
       typeof metrics.signalStrength !== 'number'
     ) {
-      throw new Error('metrics.latency, metrics.packetLoss, and metrics.signalStrength must be numbers');
+      throw new Error(
+        'metrics.latency, metrics.packetLoss, and metrics.signalStrength must be numbers'
+      );
     }
   }
 
@@ -170,7 +172,11 @@ export class EventBrokerService {
       throw new Error('Redis integrations are disabled in local development');
     }
 
-    const jobs = await this.dlqQueue.getJobs(['waiting', 'active', 'delayed', 'failed'], 0, Math.max(limit - 1, 0));
+    const jobs = await this.dlqQueue.getJobs(
+      ['waiting', 'active', 'delayed', 'failed'],
+      0,
+      Math.max(limit - 1, 0)
+    );
 
     return jobs.map((job) => ({
       id: job.id,

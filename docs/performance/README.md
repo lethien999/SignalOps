@@ -4,8 +4,8 @@ Tài liệu về performance testing, load testing, và optimization.
 
 ## Các file trong mục này
 
-| File | Mô tả |
-|------|-------|
+| File                                             | Mô tả                                                  |
+| ------------------------------------------------ | ------------------------------------------------------ |
 | [PERFORMANCE_TESTING.md](PERFORMANCE_TESTING.md) | Performance testing plan: load test, baseline, metrics |
 
 ## Khi nào dùng?

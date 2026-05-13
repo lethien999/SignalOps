@@ -1,12 +1,22 @@
-"use client";
+'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Clock, ShieldAlert, RefreshCw, Filter, ChevronLeft, ChevronRight } from "lucide-react";
-import { AlertTable } from "@/components/AlertTable";
-import { AlertDetailModal } from "@/components/AlertDetailModal";
-import { ToastStack, type ToastItem, type ToastType } from "@/components/ToastStack";
-import { useAlertStore } from "@/stores";
-import { downloadAlertHistoryCsv, fetchAlertsPage } from "@/lib/api";
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  ShieldAlert,
+  RefreshCw,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { AlertTable } from '@/components/AlertTable';
+import { AlertDetailModal } from '@/components/AlertDetailModal';
+import { ToastStack, type ToastItem, type ToastType } from '@/components/ToastStack';
+import { useAlertStore } from '@/stores';
+import { downloadAlertHistoryCsv, fetchAlertsPage } from '@/lib/api';
 
 type AlertSummary = {
   open: number;
@@ -24,46 +34,56 @@ export default function AlertsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [page, setPage] = useState(1);
-  const [severity, setSeverity] = useState<"all" | "low" | "medium" | "high">("all");
-  const [status, setStatus] = useState<"all" | "open" | "acknowledged" | "resolved">("all");
-  const [deviceId, setDeviceId] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [severity, setSeverity] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [status, setStatus] = useState<'all' | 'open' | 'acknowledged' | 'resolved'>('all');
+  const [deviceId, setDeviceId] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState<AlertSummary>({ open: 0, acknowledged: 0, resolved: 0, highOpen: 0 });
+  const [summary, setSummary] = useState<AlertSummary>({
+    open: 0,
+    acknowledged: 0,
+    resolved: 0,
+    highOpen: 0,
+  });
 
   const alerts = useAlertStore((s) => s.alerts);
   const selectedAlert = useAlertStore((s) => s.selectedAlert);
   const setAlerts = useAlertStore((s) => s.setAlerts);
   const selectAlert = useAlertStore((s) => s.selectAlert);
 
-  const loadAlerts = useCallback(async (showSpinner = true) => {
-    try {
-      if (showSpinner) setLoading(true);
-      setRefreshing(true);
-      const response = await fetchAlertsPage({
-        severity: severity === "all" ? undefined : severity,
-        status: status === "all" ? undefined : status,
-        deviceId: deviceId.trim() || undefined,
-        from: fromDate || undefined,
-        to: toDate || undefined,
-        skip: (page - 1) * PAGE_SIZE,
-        limit: PAGE_SIZE,
-      });
+  const loadAlerts = useCallback(
+    async (showSpinner = true) => {
+      try {
+        if (showSpinner) setLoading(true);
+        setRefreshing(true);
+        const response = await fetchAlertsPage({
+          severity: severity === 'all' ? undefined : severity,
+          status: status === 'all' ? undefined : status,
+          deviceId: deviceId.trim() || undefined,
+          from: fromDate || undefined,
+          to: toDate || undefined,
+          skip: (page - 1) * PAGE_SIZE,
+          limit: PAGE_SIZE,
+        });
 
-      setAlerts(response.data);
-      setTotal(response.pagination.total);
-      setSummary(response.summary);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải cảnh báo");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [deviceId, fromDate, page, severity, setAlerts, status, toDate]);
+        setAlerts(response.data);
+        setTotal(response.pagination.total);
+        setSummary(response.summary);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Không thể tải cảnh báo');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [deviceId, fromDate, page, severity, setAlerts, status, toDate]
+  );
 
-  useEffect(() => { void loadAlerts(); }, [loadAlerts]);
+  useEffect(() => {
+    void loadAlerts();
+  }, [loadAlerts]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
@@ -72,7 +92,7 @@ export default function AlertsPage() {
   const resolvedAlerts = summary.resolved;
   const highAlerts = summary.highOpen;
 
-  const pushToast = (msg: string, type: ToastType = "info") => {
+  const pushToast = (msg: string, type: ToastType = 'info') => {
     const id = Date.now();
     setToasts((c) => [...c, { id, message: msg, type }]);
     setTimeout(() => setToasts((c) => c.filter((t) => t.id !== id)), 3500);
@@ -82,23 +102,23 @@ export default function AlertsPage() {
     try {
       setExportingCsv(true);
       const blobUrl = await downloadAlertHistoryCsv({
-        severity: severity === "all" ? undefined : severity,
-        status: status === "all" ? undefined : status,
+        severity: severity === 'all' ? undefined : severity,
+        status: status === 'all' ? undefined : status,
         deviceId: deviceId.trim() || undefined,
         from: fromDate || undefined,
         to: toDate || undefined,
       });
 
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = "alert-history.csv";
+      link.download = 'alert-history.csv';
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(blobUrl);
-      pushToast("Đã tải file CSV theo bộ lọc hiện tại", "success");
+      pushToast('Đã tải file CSV theo bộ lọc hiện tại', 'success');
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : "Không thể tải CSV", "error");
+      pushToast(err instanceof Error ? err.message : 'Không thể tải CSV', 'error');
     } finally {
       setExportingCsv(false);
     }
@@ -106,7 +126,10 @@ export default function AlertsPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <ToastStack toasts={toasts} onDismiss={(id) => setToasts((c) => c.filter((t) => t.id !== id))} />
+      <ToastStack
+        toasts={toasts}
+        onDismiss={(id) => setToasts((c) => c.filter((t) => t.id !== id))}
+      />
 
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -114,7 +137,9 @@ export default function AlertsPage() {
             <ShieldAlert className="w-7 h-7 text-red-600" />
             Quản lý cảnh báo
           </h1>
-          <p className="mt-1 text-sm text-gray-500">Theo dõi, xác nhận và xử lý các cảnh báo theo thời gian thực.</p>
+          <p className="mt-1 text-sm text-gray-500">
+            Theo dõi, xác nhận và xử lý các cảnh báo theo thời gian thực.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -122,14 +147,14 @@ export default function AlertsPage() {
             disabled={exportingCsv}
             className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition disabled:opacity-50"
           >
-            {exportingCsv ? "Đang xuất CSV..." : "Tải CSV"}
+            {exportingCsv ? 'Đang xuất CSV...' : 'Tải CSV'}
           </button>
           <button
             onClick={() => loadAlerts(false)}
             disabled={refreshing}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Làm mới
           </button>
         </div>
@@ -234,7 +259,9 @@ export default function AlertsPage() {
             <div>
               <p className="text-sm font-medium text-gray-500">Đang mở</p>
               <p className="text-3xl font-bold text-red-600 mt-1">{openAlerts}</p>
-              {highAlerts > 0 && <p className="text-xs text-red-500 mt-1">{highAlerts} nghiêm trọng</p>}
+              {highAlerts > 0 && (
+                <p className="text-xs text-red-500 mt-1">{highAlerts} nghiêm trọng</p>
+              )}
             </div>
             <div className="rounded-xl bg-red-50 p-3.5">
               <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -311,7 +338,7 @@ export default function AlertsPage() {
       <AlertDetailModal
         alert={selectedAlert}
         onClose={() => selectAlert(null)}
-        onActionComplete={(msg, type = "info") => pushToast(msg, type)}
+        onActionComplete={(msg, type = 'info') => pushToast(msg, type)}
       />
     </div>
   );

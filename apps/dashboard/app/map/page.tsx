@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { MapPin, Wifi, WifiOff, AlertTriangle, Search, Wrench } from "lucide-react";
-import { useDeviceStore } from "@/stores";
-import { fetchDevices, setDeviceMaintenance } from "@/lib/api";
-import type { Device } from "@/types";
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { MapPin, Wifi, WifiOff, AlertTriangle, Search, Wrench } from 'lucide-react';
+import { useDeviceStore } from '@/stores';
+import { fetchDevices, setDeviceMaintenance } from '@/lib/api';
+import type { Device } from '@/types';
 
 const MapComponent = dynamic(
-  () => import("@/components/Map").then((mod) => ({ default: mod.Map })),
+  () => import('@/components/Map').then((mod) => ({ default: mod.Map })),
   {
     ssr: false,
     loading: () => (
@@ -23,12 +23,17 @@ export default function MapPage() {
   const storeDevices = useDeviceStore((s) => s.devices);
   const setDevices = useDeviceStore((s) => s.setDevices);
   const updateDevice = useDeviceStore((s) => s.updateDevice);
+  const [hasMounted, setHasMounted] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingMaintenance, setSavingMaintenance] = useState<string | null>(null);
 
   // Load danh sách thiết bị đã tổng hợp từ API
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -36,29 +41,33 @@ export default function MapPage() {
         const deviceData = await fetchDevices();
         setDevices(deviceData);
       } catch (err) {
-        console.error("Không thể tải dữ liệu thiết bị:", err);
+        console.error('Không thể tải dữ liệu thiết bị:', err);
       } finally {
         setLoading(false);
       }
     })();
   }, [setDevices]);
 
-  const devices = Array.from(storeDevices.values());
-  const activeCount = devices.filter((d) => d.status === "active").length;
-  const alertCount = devices.filter((d) => d.status === "alert").length;
-  const inactiveCount = devices.filter((d) => d.status === "inactive").length;
+  const devices = hasMounted ? Array.from(storeDevices.values()) : [];
+  const activeCount = devices.filter((d) => d.status === 'active').length;
+  const alertCount = devices.filter((d) => d.status === 'alert').length;
+  const inactiveCount = devices.filter((d) => d.status === 'inactive').length;
   const maintenanceCount = devices.filter((d) => d.maintenanceMode).length;
 
-  const filteredDevices = devices.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.id.toLowerCase().includes(search.toLowerCase())
+  const filteredDevices = devices.filter(
+    (d) =>
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-500";
-      case "alert": return "bg-red-500";
-      default: return "bg-gray-400";
+      case 'active':
+        return 'bg-green-500';
+      case 'alert':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-400';
     }
   };
 
@@ -66,11 +75,11 @@ export default function MapPage() {
     try {
       setSavingMaintenance(device.id);
       const nextEnabled = !device.maintenanceMode;
-      const reason = nextEnabled ? "Bảo trì theo yêu cầu vận hành" : "";
+      const reason = nextEnabled ? 'Bảo trì theo yêu cầu vận hành' : '';
       const response = await setDeviceMaintenance(device.id, {
         enabled: nextEnabled,
         reason,
-        updatedBy: "dashboard-user",
+        updatedBy: 'dashboard-user',
       });
 
       const updates: Partial<Device> = {
@@ -84,8 +93,8 @@ export default function MapPage() {
         setSelectedDevice({ ...selectedDevice, ...updates });
       }
     } catch (error) {
-      console.error("Không thể cập nhật maintenance mode:", error);
-      alert(error instanceof Error ? error.message : "Không thể cập nhật maintenance mode");
+      console.error('Không thể cập nhật maintenance mode:', error);
+      alert(error instanceof Error ? error.message : 'Không thể cập nhật maintenance mode');
     } finally {
       setSavingMaintenance(null);
     }
@@ -93,17 +102,23 @@ export default function MapPage() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800";
-      case "alert": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'alert':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const statusLabel = (status: string) => {
     switch (status) {
-      case "active": return "HOẠT ĐỘNG";
-      case "alert": return "CẢNH BÁO";
-      default: return "NGẮT KN";
+      case 'active':
+        return 'HOẠT ĐỘNG';
+      case 'alert':
+        return 'CẢNH BÁO';
+      default:
+        return 'NGẮT KN';
     }
   };
 
@@ -152,8 +167,8 @@ export default function MapPage() {
             ) : filteredDevices.length === 0 ? (
               <div className="p-8 text-center text-sm text-gray-500">
                 {devices.length === 0
-                  ? "Chưa có thiết bị nào. Đang chờ dữ liệu từ simulator..."
-                  : "Không tìm thấy thiết bị phù hợp."}
+                  ? 'Chưa có thiết bị nào. Đang chờ dữ liệu từ simulator...'
+                  : 'Không tìm thấy thiết bị phù hợp.'}
               </div>
             ) : (
               filteredDevices.map((device) => (
@@ -161,17 +176,22 @@ export default function MapPage() {
                   key={device.id}
                   onClick={() => setSelectedDevice(device)}
                   className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-blue-50 transition-colors ${
-                    selectedDevice?.id === device.id ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
+                    selectedDevice?.id === device.id
+                      ? 'bg-blue-50 border-l-4 border-l-blue-600'
+                      : ''
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
                       <p className="font-medium text-gray-900 truncate">{device.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {device.location?.name || `${device.location.lat.toFixed(4)}, ${device.location.lng.toFixed(4)}`}
+                        {device.location?.name ||
+                          `${device.location.lat.toFixed(4)}, ${device.location.lng.toFixed(4)}`}
                       </p>
                     </div>
-                    <span className={`flex-shrink-0 ml-2 inline-block px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(device.status)}`}>
+                    <span
+                      className={`flex-shrink-0 ml-2 inline-block px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(device.status)}`}
+                    >
                       {statusLabel(device.status)}
                     </span>
                   </div>
@@ -184,8 +204,12 @@ export default function MapPage() {
                   )}
                   {device.metrics && (
                     <div className="mt-2 flex gap-3 text-xs text-gray-500">
-                      {device.metrics.latency !== undefined && <span>Latency: {device.metrics.latency}ms</span>}
-                      {device.metrics.signalStrength !== undefined && <span>Signal: {device.metrics.signalStrength} dBm</span>}
+                      {device.metrics.latency !== undefined && (
+                        <span>Latency: {device.metrics.latency}ms</span>
+                      )}
+                      {device.metrics.signalStrength !== undefined && (
+                        <span>Signal: {device.metrics.signalStrength} dBm</span>
+                      )}
                     </div>
                   )}
                 </button>
@@ -198,10 +222,7 @@ export default function MapPage() {
         </div>
 
         <div className="flex-1 relative">
-          <MapComponent
-            devices={devices}
-            onDeviceClick={(device) => setSelectedDevice(device)}
-          />
+          <MapComponent devices={devices} onDeviceClick={(device) => setSelectedDevice(device)} />
 
           {selectedDevice && (
             <div className="absolute bottom-6 left-6 z-[1000] w-80 rounded-xl bg-white/95 backdrop-blur-sm border border-gray-200 shadow-2xl p-5">
@@ -213,11 +234,20 @@ export default function MapPage() {
                       `${selectedDevice.location.lat.toFixed(4)}, ${selectedDevice.location.lng.toFixed(4)}`}
                   </p>
                 </div>
-                <button onClick={() => setSelectedDevice(null)} className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600">✕</button>
+                <button
+                  onClick={() => setSelectedDevice(null)}
+                  className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                <span className={`w-2.5 h-2.5 rounded-full ${statusColor(selectedDevice.status)}`} />
-                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(selectedDevice.status)}`}>
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${statusColor(selectedDevice.status)}`}
+                />
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(selectedDevice.status)}`}
+                >
                   {statusLabel(selectedDevice.status)}
                 </span>
                 {selectedDevice.maintenanceMode && (
@@ -232,33 +262,41 @@ export default function MapPage() {
                   disabled={savingMaintenance === selectedDevice.id}
                   className={`w-full rounded-lg px-3 py-2 text-sm font-semibold transition ${
                     selectedDevice.maintenanceMode
-                      ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                      : "bg-blue-100 text-blue-900 hover:bg-blue-200"
+                      ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                      : 'bg-blue-100 text-blue-900 hover:bg-blue-200'
                   } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
                   {savingMaintenance === selectedDevice.id
-                    ? "Đang cập nhật..."
+                    ? 'Đang cập nhật...'
                     : selectedDevice.maintenanceMode
-                    ? "Tắt chế độ bảo trì"
-                    : "Bật chế độ bảo trì"}
+                      ? 'Tắt chế độ bảo trì'
+                      : 'Bật chế độ bảo trì'}
                 </button>
                 {selectedDevice.maintenanceReason && (
-                  <p className="mt-2 text-xs text-amber-700">Lý do: {selectedDevice.maintenanceReason}</p>
+                  <p className="mt-2 text-xs text-amber-700">
+                    Lý do: {selectedDevice.maintenanceReason}
+                  </p>
                 )}
               </div>
               {selectedDevice.metrics && (
                 <div className="grid grid-cols-3 gap-3 rounded-lg bg-gray-50 p-3">
                   <div className="text-center">
                     <p className="text-xs text-gray-500">Latency</p>
-                    <p className="text-sm font-bold text-gray-900">{selectedDevice.metrics.latency ?? "-"}ms</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDevice.metrics.latency ?? '-'}ms
+                    </p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-gray-500">Packet Loss</p>
-                    <p className="text-sm font-bold text-gray-900">{selectedDevice.metrics.packetLoss ?? "-"}%</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDevice.metrics.packetLoss ?? '-'}%
+                    </p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-gray-500">Signal</p>
-                    <p className="text-sm font-bold text-gray-900">{selectedDevice.metrics.signalStrength ?? "-"}</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDevice.metrics.signalStrength ?? '-'}
+                    </p>
                   </div>
                 </div>
               )}

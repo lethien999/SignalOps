@@ -11,38 +11,43 @@
 ### ☀️ Sáng (08:00)
 
 - [ ] **Container Health**
+
   ```bash
   docker compose ps | grep -E 'worker|mongodb|redis'
   # Expected: all "UP"
   ```
 
 - [ ] **Worker Startup Logs** (kiểm tra ML model load)
+
   ```bash
   docker compose logs --tail=20 signalops-worker | grep -i "model loaded\|ml\|anomaly"
   # Expected: "ML model loaded successfully" hoặc "ONNX inference ready"
   ```
 
 - [ ] **MongoDB Connection**
+
   ```bash
   docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
   # Expected: { ok: 1 }
   ```
 
 - [ ] **Redis Queue Depth**
+
   ```bash
   docker compose exec redis redis-cli LLEN event-processing
   # Expected: < 100 (không backlog)
   ```
 
 - [ ] **Ghi nhận lúc bắt đầu ca**
-  - Số container restart (nếu có): ___
-  - Ghi chú: ___________
+  - Số container restart (nếu có): \_\_\_
+  - Ghi chú: \***\*\_\_\_\*\***
 
 ---
 
 ### 🌤️ Trưa (12:00)
 
 - [ ] **Log Anomaly Detection Events**
+
   ```bash
   docker compose logs --since 4h signalops-worker | grep -i "in a/b rollout\|ai score\|anomaly"
   | tee staging-logs-$(date +%Y%m%d-%H%M).txt
@@ -50,6 +55,7 @@
   ```
 
 - [ ] **MongoDB Event Count**
+
   ```bash
   docker compose exec mongodb mongosh --eval "
   use signalops-db
@@ -61,6 +67,7 @@
   ```
 
 - [ ] **Alert Comparison** (ML vs Rule-based)
+
   ```bash
   docker compose exec mongodb mongosh --eval "
   use signalops-db
@@ -76,6 +83,7 @@
   ```
 
 - [ ] **False Positives Check** (optional: compare with actual issues)
+
   ```bash
   # Lấy sample alerts từ ML
   docker compose exec mongodb mongosh --eval "
@@ -88,55 +96,59 @@
   ```
 
 - [ ] **Thống kê ca sáng**
-  - Events xử lý: ___
-  - Alerts created (ML): ___
-  - Alerts created (Rule): ___
-  - Worker uptime: ___
-  - Ghi chú: ___________
+  - Events xử lý: \_\_\_
+  - Alerts created (ML): \_\_\_
+  - Alerts created (Rule): \_\_\_
+  - Worker uptime: \_\_\_
+  - Ghi chú: \***\*\_\_\_\*\***
 
 ---
 
 ### 🌙 Tối (18:00)
 
 - [ ] **Error Rate Check**
+
   ```bash
   docker compose logs --since 6h signalops-worker | grep -i "error\|exception\|fail" | wc -l
   # Expected: < 5 lỗi (trong 6 giờ)
   ```
 
 - [ ] **ML Inference Latency** (từ logs)
+
   ```bash
   docker compose logs --since 6h signalops-worker | grep "ml.*ms\|inference.*ms" | tail -10
   # Expected: 30-50ms / event
   ```
 
 - [ ] **Redis Memory Usage**
+
   ```bash
   docker compose exec redis redis-cli INFO memory | grep used_memory_human
   # Expected: < 500MB
   ```
 
 - [ ] **MongoDB Connection Pool**
+
   ```bash
   docker compose logs --tail=30 mongodb | grep -i "connection"
   ```
 
 - [ ] **Thống kê ca chiều**
-  - Total events (24h cumulative): ___
-  - Alerts ratio (ML vs Rule): ___
-  - Errors encountered: ___
-  - Memory usage (Redis): ___
-  - Ghi chú: ___________
+  - Total events (24h cumulative): \_\_\_
+  - Alerts ratio (ML vs Rule): \_\_\_
+  - Errors encountered: \_\_\_
+  - Memory usage (Redis): \_\_\_
+  - Ghi chú: \***\*\_\_\_\*\***
 
 ---
 
 ## 📊 Daily Summary Sheet
 
-| Ngày | Sáng (Container ✓) | Trưa (Events/Alerts) | Tối (Errors/Latency) | Status |
-|-----|------------------|-------------------|---------------------|--------|
-| 12/05 | ✓ | _ | _ | 🔄 Collecting |
-| 13/05 | _ | _ | _ | 🔄 Monitoring |
-| 14/05 | _ | _ | _ | ⏳ Decision |
+| Ngày  | Sáng (Container ✓) | Trưa (Events/Alerts) | Tối (Errors/Latency) | Status        |
+| ----- | ------------------ | -------------------- | -------------------- | ------------- |
+| 12/05 | ✓                  | \_                   | \_                   | 🔄 Collecting |
+| 13/05 | \_                 | \_                   | \_                   | 🔄 Monitoring |
+| 14/05 | \_                 | \_                   | \_                   | ⏳ Decision   |
 
 ---
 
@@ -144,23 +156,23 @@
 
 ### Tiêu chí PASS ✅ (Tất cả phải đạt):
 
-| Metric | Target | Status | Notes |
-|--------|--------|--------|-------|
-| **Precision** | ≥ 88% | _ | Local: 89.19% |
-| **Recall** | ≥ 90% | _ | Local: 91.67% |
-| **False Positive Rate** | < 5% | _ | Monitoring... |
-| **Worker Uptime** | > 99% | _ | No restart |
-| **ML Latency** | < 100ms avg | _ | Target: 30-50ms |
-| **Error Rate** | < 0.1% | _ | < 5 errors/6h |
+| Metric                  | Target      | Status | Notes           |
+| ----------------------- | ----------- | ------ | --------------- |
+| **Precision**           | ≥ 88%       | \_     | Local: 89.19%   |
+| **Recall**              | ≥ 90%       | \_     | Local: 91.67%   |
+| **False Positive Rate** | < 5%        | \_     | Monitoring...   |
+| **Worker Uptime**       | > 99%       | \_     | No restart      |
+| **ML Latency**          | < 100ms avg | \_     | Target: 30-50ms |
+| **Error Rate**          | < 0.1%      | \_     | < 5 errors/6h   |
 
 ### Tiêu chí FAIL ❌ (Bất kỳ 1 nào fail):
 
-| Metric | Threshold | Status | Action |
-|--------|-----------|--------|--------|
-| Precision | < 70% | _ | Increase ANOMALY_THRESHOLD |
-| Recall | < 70% | _ | Decrease ANOMALY_THRESHOLD |
-| Worker Crash | > 2 restarts | _ | Debug & retry |
-| Latency | > 200ms avg | _ | Check ONNX/CPU resources |
+| Metric       | Threshold    | Status | Action                     |
+| ------------ | ------------ | ------ | -------------------------- |
+| Precision    | < 70%        | \_     | Increase ANOMALY_THRESHOLD |
+| Recall       | < 70%        | \_     | Decrease ANOMALY_THRESHOLD |
+| Worker Crash | > 2 restarts | \_     | Debug & retry              |
+| Latency      | > 200ms avg  | \_     | Check ONNX/CPU resources   |
 
 ---
 
@@ -168,14 +180,14 @@
 
 ### Kết quả Monitoring
 
-**Precision (24h-72h average)**: _____ %  
-**Recall (24h-72h average)**: _____ %  
-**False Positive Rate**: _____ %  
-**Worker Uptime**: _____ %  
-**Total Events**: _____ (ML scored: _____)  
-**Alerts Created**: _____ (ML-driven: _____, Rule-based: _____)  
-**Errors Encountered**: _____  
-**Critical Issues**: ___________________________
+**Precision (24h-72h average)**: **\_** %  
+**Recall (24h-72h average)**: **\_** %  
+**False Positive Rate**: **\_** %  
+**Worker Uptime**: **\_** %  
+**Total Events**: **\_** (ML scored: **\_**)  
+**Alerts Created**: **\_** (ML-driven: **\_**, Rule-based: **\_**)  
+**Errors Encountered**: **\_**  
+**Critical Issues**: \***\*\*\*\*\*\*\***\_\_\_\***\*\*\*\*\*\*\***
 
 ### Quyết định
 
@@ -185,34 +197,34 @@
   - Next: 1 week baseline collection
 
 - [ ] ⚠️ **CONDITIONAL GO** (Most criteria PASS, minor tune needed)
-  - Issue: _________________________
-  - Fix: Adjust ANOMALY_THRESHOLD to ___
+  - Issue: \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\***
+  - Fix: Adjust ANOMALY_THRESHOLD to \_\_\_
   - Retry: Run A/B test 3-5 more days
 
 - [ ] ❌ **NO-GO ROLLBACK** (Multiple criteria FAIL)
   - Issues:
-    1. _________________________
-    2. _________________________
+    1. ***
+    2. ***
   - Action: Revert to rule-based only, debug, retrain
-  - Timeline: __ days để fix
+  - Timeline: \_\_ days để fix
 
 ### Ký duyệt
 
-- **Reviewed by**: ___________________ (Date: __/05)
-- **Approved by**: ___________________ (Date: __/05)
-- **Deployed by**: ___________________ (Date: __/05)
+- **Reviewed by**: **\*\*\*\***\_\_\_**\*\*\*\*** (Date: \_\_/05)
+- **Approved by**: **\*\*\*\***\_\_\_**\*\*\*\*** (Date: \_\_/05)
+- **Deployed by**: **\*\*\*\***\_\_\_**\*\*\*\*** (Date: \_\_/05)
 
 ---
 
 ## 📞 Liên hệ Nếu Có Vấn đề
 
-| Tình huống | Action |
-|-----------|--------|
-| Worker crash liên tục | Restart: `docker compose restart signalops-worker` |
+| Tình huống            | Action                                                                           |
+| --------------------- | -------------------------------------------------------------------------------- |
+| Worker crash liên tục | Restart: `docker compose restart signalops-worker`                               |
 | MongoDB không respond | Check: `docker compose logs mongodb` → restart: `docker compose restart mongodb` |
-| Precision quá thấp | Increase ANOMALY_THRESHOLD từ 80 → 85 (khắt khe hơn) |
-| Recall quá thấp | Decrease ANOMALY_THRESHOLD từ 80 → 75 (nhạy hơn) |
-| Queue depth cao | Check event rate: `docker compose logs worker` |
+| Precision quá thấp    | Increase ANOMALY_THRESHOLD từ 80 → 85 (khắt khe hơn)                             |
+| Recall quá thấp       | Decrease ANOMALY_THRESHOLD từ 80 → 75 (nhạy hơn)                                 |
+| Queue depth cao       | Check event rate: `docker compose logs worker`                                   |
 
 ---
 

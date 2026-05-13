@@ -81,7 +81,7 @@ describe('TwoFactorService', () => {
         expect.objectContaining({
           totpSecret: secret,
           totpEnabled: true,
-        }),
+        })
       );
       expect(backupCodes).toHaveLength(10);
     });
@@ -91,9 +91,9 @@ describe('TwoFactorService', () => {
       const secret = 'mysecret';
       const invalidCode = '12345'; // Only 5 digits
 
-      await expect(
-        service.enableTotp(userId, secret, invalidCode),
-      ).rejects.toThrow('Mã OTP không hợp lệ');
+      await expect(service.enableTotp(userId, secret, invalidCode)).rejects.toThrow(
+        'Mã OTP không hợp lệ'
+      );
     });
   });
 

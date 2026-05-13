@@ -13,7 +13,7 @@ type ArchiveRecordFilters = {
 @Injectable()
 export class ArchiveRecordRepository {
   constructor(
-    @InjectModel(ArchiveRecord.name) private readonly archiveRecordModel: Model<ArchiveRecord>,
+    @InjectModel(ArchiveRecord.name) private readonly archiveRecordModel: Model<ArchiveRecord>
   ) {}
 
   async createRunning(payload: {
@@ -43,33 +43,37 @@ export class ArchiveRecordRepository {
       contentType: string;
       contentLength: number;
       checksumSha256: string;
-    },
+    }
   ): Promise<ArchiveRecord | null> {
-    return this.archiveRecordModel.findByIdAndUpdate(
-      id,
-      {
-        status: 'completed',
-        documentCount: payload.documentCount,
-        rangeFrom: payload.rangeFrom,
-        rangeTo: payload.rangeTo,
-        contentType: payload.contentType,
-        contentLength: payload.contentLength,
-        checksumSha256: payload.checksumSha256,
-        errorMessage: undefined,
-      },
-      { new: true },
-    ).exec();
+    return this.archiveRecordModel
+      .findByIdAndUpdate(
+        id,
+        {
+          status: 'completed',
+          documentCount: payload.documentCount,
+          rangeFrom: payload.rangeFrom,
+          rangeTo: payload.rangeTo,
+          contentType: payload.contentType,
+          contentLength: payload.contentLength,
+          checksumSha256: payload.checksumSha256,
+          errorMessage: undefined,
+        },
+        { new: true }
+      )
+      .exec();
   }
 
   async markFailed(id: string, errorMessage: string): Promise<ArchiveRecord | null> {
-    return this.archiveRecordModel.findByIdAndUpdate(
-      id,
-      {
-        status: 'failed',
-        errorMessage,
-      },
-      { new: true },
-    ).exec();
+    return this.archiveRecordModel
+      .findByIdAndUpdate(
+        id,
+        {
+          status: 'failed',
+          errorMessage,
+        },
+        { new: true }
+      )
+      .exec();
   }
 
   async findById(id: string): Promise<ArchiveRecord | null> {
@@ -91,12 +95,7 @@ export class ArchiveRecordRepository {
     const limit = Math.min(Math.max(filters.limit || 20, 1), 200);
 
     const [data, total] = await Promise.all([
-      this.archiveRecordModel
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
+      this.archiveRecordModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
       this.archiveRecordModel.countDocuments(query),
     ]);
 

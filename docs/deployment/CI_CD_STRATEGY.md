@@ -3,6 +3,7 @@
 ## Mục đích
 
 Tự động hóa:
+
 1. Build và test sau mỗi lần commit
 2. Triển khai lên môi trường staging/production
 3. Rollback nhanh nếu phát sinh sự cố
@@ -11,13 +12,13 @@ Tự động hóa:
 
 ## Các sự kiện kích hoạt
 
-| Sự kiện | Hành động | Workflow |
-|---------|-----------|----------|
-| Push lên `main` | Build → Test → Triển khai lên Staging | `build-and-test.yml` |
-| Push lên `develop` | Build → Test → Triển khai lên Dev | `build-and-test.yml` |
-| Tạo release tag | Build → Test → Triển khai lên Production | `release.yml` |
-| Pull Request | Build → Test → Báo cáo coverage | `pr-check.yml` |
-| Chạy thủ công | Triển khai một phiên bản cụ thể | `deploy-manual.yml` |
+| Sự kiện            | Hành động                                | Workflow             |
+| ------------------ | ---------------------------------------- | -------------------- |
+| Push lên `main`    | Build → Test → Triển khai lên Staging    | `build-and-test.yml` |
+| Push lên `develop` | Build → Test → Triển khai lên Dev        | `build-and-test.yml` |
+| Tạo release tag    | Build → Test → Triển khai lên Production | `release.yml`        |
+| Pull Request       | Build → Test → Báo cáo coverage          | `pr-check.yml`       |
+| Chạy thủ công      | Triển khai một phiên bản cụ thể          | `deploy-manual.yml`  |
 
 ---
 
@@ -37,25 +38,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Lint
         run: npm run lint
-      
+
       - name: Build
         run: npm run build
-      
+
       - name: Test
         run: npm run test -- --coverage
-        
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -79,17 +80,17 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build Docker images
         run: |
           docker build -f infrastructure/Dockerfile.api -t signalops-api:${{ github.ref_name }} .
           docker build -f infrastructure/Dockerfile.worker -t signalops-worker:${{ github.ref_name }} .
-      
+
       - name: Push to Docker registry
         run: |
           docker push signalops-api:${{ github.ref_name }}
           docker push signalops-worker:${{ github.ref_name }}
-      
+
       - name: Deploy to production
         run: |
           ./scripts/deploy-prod.sh ${{ github.ref_name }}
@@ -104,6 +105,7 @@ jobs:
 **Khi nào kích hoạt**: phát hiện lỗi trên production
 
 **Quy trình**:
+
 ```bash
 # 1. Xác định phiên bản lỗi
 kubectl get deployment -A | grep signalops
@@ -123,13 +125,14 @@ kubectl rollout status deployment/signalops-api -n production
 ### Kịch bản 2: Triển khai Blue-Green
 
 **Thiết lập**:
+
 ```yaml
 # Blue (hiện tại)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: signalops-api-blue
-  
+
 # Green (phiên bản mới)
 apiVersion: apps/v1
 kind: Deployment
@@ -147,6 +150,7 @@ spec:
 ```
 
 **Quy trình rollout**:
+
 ```bash
 # 1. Triển khai lên Green trong khi Blue vẫn phục vụ traffic
 kubectl apply -f deploy-green.yml
@@ -202,24 +206,24 @@ npm run test:load -- --rps=1000 --duration=60
 
 ### Kiểm tra sau khi deploy
 
-| Chỉ số | Ngưỡng cảnh báo | Hành động |
-|-------|-----------------|-----------|
-| Tỷ lệ lỗi | > 1% | Rollback ngay |
-| Độ trễ p99 | > 10s | Báo ops xử lý |
-| Mức dùng bộ nhớ | > 80% | Scale ngang |
-| Độ sâu queue | > 10K jobs | Cảnh báo để kiểm tra |
+| Chỉ số          | Ngưỡng cảnh báo | Hành động            |
+| --------------- | --------------- | -------------------- |
+| Tỷ lệ lỗi       | > 1%            | Rollback ngay        |
+| Độ trễ p99      | > 10s           | Báo ops xử lý        |
+| Mức dùng bộ nhớ | > 80%           | Scale ngang          |
+| Độ sâu queue    | > 10K jobs      | Cảnh báo để kiểm tra |
 
 ---
 
 ## Ngưỡng rollback
 
-| Điều kiện | Mức độ | Hành động |
-|-----------|--------|----------|
-| HTTP 5xx > 5% | CRITICAL | Auto-rollback |
-| Tất cả replica ngừng hoạt động | CRITICAL | Kiểm tra thủ công |
-| Kết nối database thất bại | CRITICAL | Auto-rollback |
-| Rò rỉ bộ nhớ (OOM) | HIGH | Auto-rollback sau 3 phút |
-| Suy giảm hiệu năng > 50% | MEDIUM | Xem xét thủ công |
+| Điều kiện                      | Mức độ   | Hành động                |
+| ------------------------------ | -------- | ------------------------ |
+| HTTP 5xx > 5%                  | CRITICAL | Auto-rollback            |
+| Tất cả replica ngừng hoạt động | CRITICAL | Kiểm tra thủ công        |
+| Kết nối database thất bại      | CRITICAL | Auto-rollback            |
+| Rò rỉ bộ nhớ (OOM)             | HIGH     | Auto-rollback sau 3 phút |
+| Suy giảm hiệu năng > 50%       | MEDIUM   | Xem xét thủ công         |
 
 ---
 
@@ -227,6 +231,7 @@ npm run test:load -- --rps=1000 --duration=60
 
 ```markdown
 ## Trước khi deploy
+
 - [ ] Code review đã được duyệt
 - [ ] Tất cả test đều pass (CI/CD xanh)
 - [ ] Changelog đã cập nhật
@@ -234,6 +239,7 @@ npm run test:load -- --rps=1000 --duration=60
 - [ ] Đã ghi chú kế hoạch rollback
 
 ## Trong lúc deploy
+
 - [ ] Health check pass
 - [ ] Không có spike tỷ lệ lỗi
 - [ ] Kết nối WebSocket ổn định
@@ -241,6 +247,7 @@ npm run test:load -- --rps=1000 --duration=60
 - [ ] Dashboard monitoring hiển thị xanh
 
 ## Sau khi deploy
+
 - [ ] Smoke test pass
 - [ ] Business metrics bình thường
 - [ ] Không có cảnh báo mới
@@ -269,7 +276,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN }}
-      
+
       - name: Triển khai với secrets
         env:
           MONGODB_PASSWORD: ${{ secrets.PROD_MONGODB_PASSWORD }}
@@ -279,6 +286,7 @@ jobs:
 ```
 
 **Lưu secrets trong GitHub**:
+
 - Organization Settings → Secrets and variables
 - Tham chiếu bằng `${{ secrets.SECRET_NAME }}`
 - Luân chuyển thông tin xác thực theo quý
@@ -295,6 +303,7 @@ v1.0.0 = MAJOR.MINOR.PATCH
 ```
 
 **Ví dụ**:
+
 - v0.1.0 → v0.1.1: Sửa lỗi
 - v0.1.0 → v0.2.0: Tính năng mới
 - v0.2.0 → v1.0.0: Breaking change (đã sẵn sàng cho production)
@@ -317,6 +326,7 @@ git push origin main --tags
 ## Theo dõi triển khai
 
 **Dashboard thời gian thực**:
+
 ```bash
 # Xem trạng thái deployment
 watch kubectl get deployment -A
@@ -332,12 +342,12 @@ kubectl rollout history deployment/signalops-api -n production
 
 ## Xử lý sự cố
 
-| Vấn đề | Nguyên nhân | Giải pháp |
-|-------|-------------|-----------|
-| Deploy bị kẹt | Pod chưa sẵn sàng | `kubectl describe pod POD_NAME` |
-| Rollback thất bại | Phiên bản trước cũng lỗi | Khôi phục thủ công từ backup |
-| Không tìm thấy image | Xác thực registry thất bại | Kiểm tra secrets, chạy lại auth |
-| Health check thất bại | Service chưa sẵn sàng | Tăng thời gian grace cho startup probe |
+| Vấn đề                | Nguyên nhân                | Giải pháp                              |
+| --------------------- | -------------------------- | -------------------------------------- |
+| Deploy bị kẹt         | Pod chưa sẵn sàng          | `kubectl describe pod POD_NAME`        |
+| Rollback thất bại     | Phiên bản trước cũng lỗi   | Khôi phục thủ công từ backup           |
+| Không tìm thấy image  | Xác thực registry thất bại | Kiểm tra secrets, chạy lại auth        |
+| Health check thất bại | Service chưa sẵn sàng      | Tăng thời gian grace cho startup probe |
 
 ---
 

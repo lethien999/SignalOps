@@ -2,16 +2,16 @@
 
 /**
  * M13: Evaluate AI Anomaly Scoring against Historical Data
- * 
+ *
  * This script:
  * 1. Queries historical events from MongoDB
  * 2. Scores each event using the anomaly scoring function
  * 3. Compares against actual alerts created
  * 4. Calculates precision/recall/F1 metrics
  * 5. Generates evaluation report
- * 
+ *
  * Usage: node eval-ai-scoring.mjs
- * 
+ *
  * Environment variables:
  *  - MONGODB_URI: MongoDB connection string
  *  - EVAL_DAYS: Days of historical data to evaluate (default: 30)
@@ -37,7 +37,7 @@ const EventSchema = new Schema(
     createdAt: { type: Date, default: Date.now },
     alertId: { type: Schema.Types.ObjectId, ref: 'Alert' },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const AlertSchema = new Schema(
@@ -48,7 +48,7 @@ const AlertSchema = new Schema(
     severity: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
     createdAt: { type: Date, default: Date.now },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 mongoose.model('Event', EventSchema);
@@ -91,7 +91,10 @@ let sessionPromise = null;
 async function ensureSession() {
   if (!sessionPromise) {
     sessionPromise = ort.InferenceSession.create(MODEL_PATH).catch((error) => {
-      console.warn(`⚠ Unable to load ONNX model at ${MODEL_PATH}; falling back to heuristic scoring`, error.message);
+      console.warn(
+        `⚠ Unable to load ONNX model at ${MODEL_PATH}; falling back to heuristic scoring`,
+        error.message
+      );
       return null;
     });
   }
@@ -101,9 +104,10 @@ async function ensureSession() {
 
 // Connect to MongoDB
 async function connectDB() {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://user:password@localhost:27017/signalops-db';
+  const mongoUri =
+    process.env.MONGODB_URI || 'mongodb://user:password@localhost:27017/signalops-db';
   console.log(`Connecting to MongoDB: ${mongoUri.split('@')[1]}`);
-  
+
   try {
     await mongoose.connect(mongoUri);
     console.log('✓ Connected to MongoDB');
@@ -137,12 +141,15 @@ async function scoreEventAnomaly(metrics) {
   const features = buildFeatureVector(metrics);
   const input = new ort.Tensor('float32', Float32Array.from(features), [1, 6]);
   const inputName = session.inputNames[0];
-  const outputName = session.outputNames.find((name) => name.toLowerCase().includes('prob')) ?? session.outputNames[0];
+  const outputName =
+    session.outputNames.find((name) => name.toLowerCase().includes('prob')) ??
+    session.outputNames[0];
   const output = await session.run({ [inputName]: input });
   const raw = output[outputName];
 
   const values = Array.from(raw.data).map((value) => Number(value));
-  const probability = values.length > 1 ? softmax(values)[1] : Math.min(Math.max(values[0] ?? 0, 0), 1);
+  const probability =
+    values.length > 1 ? softmax(values)[1] : Math.min(Math.max(values[0] ?? 0, 0), 1);
   const anomalyScore = Math.round(probability * 100);
 
   return {
@@ -330,7 +337,7 @@ async function evaluateAnomalyScoring() {
   try {
     await connectDB();
     const report = await evaluateAnomalyScoring();
-    
+
     console.log(`\n✓ Evaluation complete`);
     process.exit(0);
   } catch (error) {

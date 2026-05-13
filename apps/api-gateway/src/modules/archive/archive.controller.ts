@@ -1,4 +1,14 @@
-import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Post, Query, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ArchiveService } from './archive.service';
@@ -27,7 +37,7 @@ export class ArchiveController {
     @Query('source') source?: 'events' | 'alerts',
     @Query('status') status?: 'running' | 'completed' | 'failed',
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip?: number,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number
   ) {
     return this.archiveService.listRecords({ source, status, skip, limit });
   }

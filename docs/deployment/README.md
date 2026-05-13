@@ -5,23 +5,27 @@ Tài liệu về triển khai, CI/CD, checklists, và kế hoạch rollout.
 ## Các thư mục trong mục này
 
 ### [checklists/](checklists/)
+
 Danh sách kiểm tra cho các giai đoạn triển khai:
+
 - `STAGING-MONITORING-CHECKLIST.md` — Kiểm tra hàng ngày trong staging (48-72h)
 - `PRODUCTION-READY-CHECKLIST.md` — Chuẩn bị trước khi triển khai production
 
 ### [plans/](plans/)
+
 Kế hoạch triển khai chi tiết:
+
 - `PRODUCTION-ROLLOUT-PLAN.md` — 5 giai đoạn rollout từ 0% → 100%
 - `PRODUCTION-SHADOW-MODE-DEPLOYMENT.md` — Triển khai shadow mode (giai đoạn 1)
 - `STAGING-AB-REPORT.md` — Hướng dẫn A/B test trong staging
 
 ## Các file trong mục này
 
-| File | Mô tả |
-|------|-------|
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Hướng dẫn triển khai local, staging, production |
-| [CI_CD_STRATEGY.md](CI_CD_STRATEGY.md) | Chiến lược CI/CD: Jenkins pipeline, stages, rollback |
-| [ARCHIVE_STRATEGY.md](ARCHIVE_STRATEGY.md) | Chiến lược lưu trữ: TTL index, backup, retention |
+| File                                       | Mô tả                                                |
+| ------------------------------------------ | ---------------------------------------------------- |
+| [DEPLOYMENT.md](DEPLOYMENT.md)             | Hướng dẫn triển khai local, staging, production      |
+| [CI_CD_STRATEGY.md](CI_CD_STRATEGY.md)     | Chiến lược CI/CD: Jenkins pipeline, stages, rollback |
+| [ARCHIVE_STRATEGY.md](ARCHIVE_STRATEGY.md) | Chiến lược lưu trữ: TTL index, backup, retention     |
 
 ## Quy trình triển khai
 

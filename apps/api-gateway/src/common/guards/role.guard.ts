@@ -7,7 +7,7 @@ import { AUTHORIZE_KEY } from '../decorators/authorize.decorator';
 export class RoleGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly authService: AuthService,
+    private readonly authService: AuthService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,7 +29,9 @@ export class RoleGuard implements CanActivate {
     // Check if user role matches required role
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     if (!roles.includes(user.roleId)) {
-      throw new ForbiddenException(`Insufficient permissions. Required role: ${roles.join(' or ')}`);
+      throw new ForbiddenException(
+        `Insufficient permissions. Required role: ${roles.join(' or ')}`
+      );
     }
 
     return true;

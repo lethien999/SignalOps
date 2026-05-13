@@ -45,7 +45,9 @@ export function PwaInstallPrompt() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-blue-900">Cài SignalOps Mobile</p>
-          <p className="mt-0.5 text-xs text-blue-700">Thêm ứng dụng vào màn hình chính để theo dõi cảnh báo nhanh hơn.</p>
+          <p className="mt-0.5 text-xs text-blue-700">
+            Thêm ứng dụng vào màn hình chính để theo dõi cảnh báo nhanh hơn.
+          </p>
           <div className="mt-2 flex items-center gap-2">
             <button
               type="button"

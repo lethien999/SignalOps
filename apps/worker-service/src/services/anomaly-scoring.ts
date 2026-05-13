@@ -6,14 +6,17 @@ type Metrics = {
   signalStrength?: number;
 };
 
-type ThresholdProfile = {
-  latencyWarningMs: number;
-  latencyCriticalMs: number;
-  packetLossWarningPercent: number;
-  packetLossCriticalPercent: number;
-  signalWarningDbm: number;
-  signalCriticalDbm: number;
-} | null | undefined;
+type ThresholdProfile =
+  | {
+      latencyWarningMs: number;
+      latencyCriticalMs: number;
+      packetLossWarningPercent: number;
+      packetLossCriticalPercent: number;
+      signalWarningDbm: number;
+      signalCriticalDbm: number;
+    }
+  | null
+  | undefined;
 
 type AnomalyScoreResult = {
   aiModelVersion: string;
@@ -63,7 +66,7 @@ function buildFeatureVector(metrics: Metrics) {
 
   const latencyNorm = latency / 500;
   const packetLossNorm = packetLoss / 20;
-  const signalStrengthNorm = (signalStrength - (-120)) / 80;
+  const signalStrengthNorm = (signalStrength - -120) / 80;
   const overallQuality = 1 - (latencyNorm + packetLossNorm + signalStrengthNorm) / 3;
   const now = new Date();
 
@@ -85,7 +88,10 @@ async function ensureOnnxSession() {
         onnxSession = await ort.InferenceSession.create(MODEL_PATH);
         console.log(`✓ ML model loaded from ${MODEL_PATH}`);
       } catch (error) {
-        console.warn(`⚠ Unable to load ML model at ${MODEL_PATH}; falling back to deterministic scoring`, error);
+        console.warn(
+          `⚠ Unable to load ML model at ${MODEL_PATH}; falling back to deterministic scoring`,
+          error
+        );
         onnxSession = null;
       }
     })();
@@ -107,17 +113,32 @@ async function scoreWithMlModel(metrics: Metrics): Promise<AnomalyScoreResult | 
   const tensor = new ort.Tensor('float32', Float32Array.from(features), [1, features.length]);
 
   const inputName = session.inputNames[0];
-  const outputName = session.outputNames.find((name) => name.toLowerCase().includes('prob')) ?? session.outputNames[0];
+  const outputName =
+    session.outputNames.find((name) => name.toLowerCase().includes('prob')) ??
+    session.outputNames[0];
   const results = await session.run({ [inputName]: tensor });
   const rawOutput = results[outputName] as ort.Tensor | undefined;
 
   if (!rawOutput) return null;
 
-  const outputValues = Array.from(rawOutput.data as Float32Array | Float64Array | Int32Array | Uint32Array).map((value) => Number(value));
-  const anomalyProbability = outputValues.length > 1 ? softmax(outputValues)[1] : Math.min(Math.max(outputValues[0] ?? 0, 0), 1);
+  const outputValues = Array.from(
+    rawOutput.data as Float32Array | Float64Array | Int32Array | Uint32Array
+  ).map((value) => Number(value));
+  const anomalyProbability =
+    outputValues.length > 1
+      ? softmax(outputValues)[1]
+      : Math.min(Math.max(outputValues[0] ?? 0, 0), 1);
   const anomalyScore = clamp(Math.round(anomalyProbability * 100), 0, 100);
-  const mlDecisionThreshold = parseInt(process.env.ANOMALY_THRESHOLD || process.env.AI_ANOMALY_THRESHOLD || '80', 10);
-  const anomalyLabel = anomalyScore >= mlDecisionThreshold ? 'anomalous' : anomalyScore >= 35 ? 'suspicious' : 'normal';
+  const mlDecisionThreshold = parseInt(
+    process.env.ANOMALY_THRESHOLD || process.env.AI_ANOMALY_THRESHOLD || '80',
+    10
+  );
+  const anomalyLabel =
+    anomalyScore >= mlDecisionThreshold
+      ? 'anomalous'
+      : anomalyScore >= 35
+        ? 'suspicious'
+        : 'normal';
 
   return {
     aiModelVersion: AI_MODEL_VERSION,
@@ -131,7 +152,10 @@ async function scoreWithMlModel(metrics: Metrics): Promise<AnomalyScoreResult | 
   };
 }
 
-function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdProfile: ThresholdProfile): AnomalyScoreResult {
+function scoreWithDeterministic(
+  metrics: Metrics | null | undefined,
+  thresholdProfile: ThresholdProfile
+): AnomalyScoreResult {
   const thresholds = normalizeThresholdProfile(thresholdProfile);
   const reasons: string[] = [];
   let score = 5;
@@ -152,9 +176,17 @@ function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdPr
 
   if (latency !== null) {
     if (latency >= thresholds.latencyCriticalMs) {
-      score += pushReason(reasons, `Latency ${latency}ms vượt ngưỡng critical ${thresholds.latencyCriticalMs}ms`, 35);
+      score += pushReason(
+        reasons,
+        `Latency ${latency}ms vượt ngưỡng critical ${thresholds.latencyCriticalMs}ms`,
+        35
+      );
     } else if (latency >= thresholds.latencyWarningMs) {
-      score += pushReason(reasons, `Latency ${latency}ms vượt ngưỡng warning ${thresholds.latencyWarningMs}ms`, 18);
+      score += pushReason(
+        reasons,
+        `Latency ${latency}ms vượt ngưỡng warning ${thresholds.latencyWarningMs}ms`,
+        18
+      );
     } else if (latency >= thresholds.latencyWarningMs * 0.8) {
       score += pushReason(reasons, `Latency ${latency}ms tiến gần ngưỡng warning`, 8);
     }
@@ -162,9 +194,17 @@ function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdPr
 
   if (packetLoss !== null) {
     if (packetLoss >= thresholds.packetLossCriticalPercent) {
-      score += pushReason(reasons, `Packet loss ${packetLoss}% vượt ngưỡng critical ${thresholds.packetLossCriticalPercent}%`, 32);
+      score += pushReason(
+        reasons,
+        `Packet loss ${packetLoss}% vượt ngưỡng critical ${thresholds.packetLossCriticalPercent}%`,
+        32
+      );
     } else if (packetLoss >= thresholds.packetLossWarningPercent) {
-      score += pushReason(reasons, `Packet loss ${packetLoss}% vượt ngưỡng warning ${thresholds.packetLossWarningPercent}%`, 16);
+      score += pushReason(
+        reasons,
+        `Packet loss ${packetLoss}% vượt ngưỡng warning ${thresholds.packetLossWarningPercent}%`,
+        16
+      );
     } else if (packetLoss >= thresholds.packetLossWarningPercent * 0.75) {
       score += pushReason(reasons, `Packet loss ${packetLoss}% tăng cao bất thường`, 8);
     }
@@ -172,25 +212,44 @@ function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdPr
 
   if (signalStrength !== null) {
     if (signalStrength <= thresholds.signalCriticalDbm) {
-      score += pushReason(reasons, `Signal ${signalStrength} dBm thấp hơn ngưỡng critical ${thresholds.signalCriticalDbm} dBm`, 30);
+      score += pushReason(
+        reasons,
+        `Signal ${signalStrength} dBm thấp hơn ngưỡng critical ${thresholds.signalCriticalDbm} dBm`,
+        30
+      );
     } else if (signalStrength <= thresholds.signalWarningDbm) {
-      score += pushReason(reasons, `Signal ${signalStrength} dBm thấp hơn ngưỡng warning ${thresholds.signalWarningDbm} dBm`, 15);
+      score += pushReason(
+        reasons,
+        `Signal ${signalStrength} dBm thấp hơn ngưỡng warning ${thresholds.signalWarningDbm} dBm`,
+        15
+      );
     } else if (signalStrength <= thresholds.signalWarningDbm + 5) {
       score += pushReason(reasons, `Signal ${signalStrength} dBm tiến gần ngưỡng warning`, 6);
     }
   }
 
-  if (latency !== null && packetLoss !== null && latency >= thresholds.latencyWarningMs && packetLoss >= thresholds.packetLossWarningPercent) {
+  if (
+    latency !== null &&
+    packetLoss !== null &&
+    latency >= thresholds.latencyWarningMs &&
+    packetLoss >= thresholds.packetLossWarningPercent
+  ) {
     score += pushReason(reasons, 'Latency và packet loss cùng tăng đồng thời', 12);
   }
 
-  if (latency !== null && signalStrength !== null && latency >= thresholds.latencyWarningMs && signalStrength <= thresholds.signalWarningDbm) {
+  if (
+    latency !== null &&
+    signalStrength !== null &&
+    latency >= thresholds.latencyWarningMs &&
+    signalStrength <= thresholds.signalWarningDbm
+  ) {
     score += pushReason(reasons, 'Latency cao đi kèm tín hiệu yếu', 8);
   }
 
   const anomalyScore = clamp(Math.round(score), 0, 100);
   const confidence = clamp(Math.round(anomalyScore * 0.9), 0, 100);
-  const anomalyLabel = anomalyScore >= 70 ? 'anomalous' : anomalyScore >= 35 ? 'suspicious' : 'normal';
+  const anomalyLabel =
+    anomalyScore >= 70 ? 'anomalous' : anomalyScore >= 35 ? 'suspicious' : 'normal';
 
   if (reasons.length === 0) {
     reasons.push('Chưa thấy tín hiệu bất thường rõ rệt, chỉ số đang ổn định');
@@ -207,7 +266,7 @@ function scoreWithDeterministic(metrics: Metrics | null | undefined, thresholdPr
 
 export async function scoreEventAnomaly(
   metrics: Metrics | null | undefined,
-  thresholdProfile?: ThresholdProfile,
+  thresholdProfile?: ThresholdProfile
 ): Promise<AnomalyScoreResult> {
   const mlResult = metrics ? await scoreWithMlModel(metrics) : null;
   if (mlResult) {

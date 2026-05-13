@@ -68,7 +68,9 @@ describe('ApiKeyGuard', () => {
     apiKeyAdminService.hasActiveKeys.mockResolvedValue(true);
     const guard = new ApiKeyGuard(apiKeyAdminService as never);
 
-    await expect(guard.canActivate(createContext('POST', 'wrong-key'))).rejects.toBeInstanceOf(HttpException);
+    await expect(guard.canActivate(createContext('POST', 'wrong-key'))).rejects.toBeInstanceOf(
+      HttpException
+    );
 
     try {
       await guard.canActivate(createContext('POST', 'wrong-key'));

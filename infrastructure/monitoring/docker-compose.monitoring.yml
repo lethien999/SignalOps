@@ -11,7 +11,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - '9090:9090'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=30d'
@@ -31,7 +31,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana-dashboard.json:/var/lib/grafana/dashboards/signalops.json:ro
     ports:
-      - "3003:3000"
+      - '3003:3000'
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
     image: prom/node-exporter:v1.7.0
     container_name: signalops-node-exporter
     ports:
-      - "9100:9100"
+      - '9100:9100'
     restart: unless-stopped
     networks:
       - signalops-monitoring

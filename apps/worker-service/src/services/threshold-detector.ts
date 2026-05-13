@@ -36,12 +36,20 @@ const defaultThresholdProfile: ThresholdProfile = {
 
 function normalizeThresholdProfile(profile?: Partial<ThresholdProfile> | null): ThresholdProfile {
   return {
-    latencyWarningMs: toFiniteNumber(profile?.latencyWarningMs) ?? defaultThresholdProfile.latencyWarningMs,
-    latencyCriticalMs: toFiniteNumber(profile?.latencyCriticalMs) ?? defaultThresholdProfile.latencyCriticalMs,
-    packetLossWarningPercent: toFiniteNumber(profile?.packetLossWarningPercent) ?? defaultThresholdProfile.packetLossWarningPercent,
-    packetLossCriticalPercent: toFiniteNumber(profile?.packetLossCriticalPercent) ?? defaultThresholdProfile.packetLossCriticalPercent,
-    signalWarningDbm: toFiniteNumber(profile?.signalWarningDbm) ?? defaultThresholdProfile.signalWarningDbm,
-    signalCriticalDbm: toFiniteNumber(profile?.signalCriticalDbm) ?? defaultThresholdProfile.signalCriticalDbm,
+    latencyWarningMs:
+      toFiniteNumber(profile?.latencyWarningMs) ?? defaultThresholdProfile.latencyWarningMs,
+    latencyCriticalMs:
+      toFiniteNumber(profile?.latencyCriticalMs) ?? defaultThresholdProfile.latencyCriticalMs,
+    packetLossWarningPercent:
+      toFiniteNumber(profile?.packetLossWarningPercent) ??
+      defaultThresholdProfile.packetLossWarningPercent,
+    packetLossCriticalPercent:
+      toFiniteNumber(profile?.packetLossCriticalPercent) ??
+      defaultThresholdProfile.packetLossCriticalPercent,
+    signalWarningDbm:
+      toFiniteNumber(profile?.signalWarningDbm) ?? defaultThresholdProfile.signalWarningDbm,
+    signalCriticalDbm:
+      toFiniteNumber(profile?.signalCriticalDbm) ?? defaultThresholdProfile.signalCriticalDbm,
   };
 }
 
@@ -59,7 +67,10 @@ function toFiniteNumber(value: unknown): number | null {
 }
 
 export class ThresholdDetector {
-  static detectAnomalies(eventData: EventData | null | undefined, thresholdProfile?: Partial<ThresholdProfile> | null): DetectedAlert[] {
+  static detectAnomalies(
+    eventData: EventData | null | undefined,
+    thresholdProfile?: Partial<ThresholdProfile> | null
+  ): DetectedAlert[] {
     const alerts: DetectedAlert[] = [];
 
     const thresholds = normalizeThresholdProfile(thresholdProfile);
@@ -76,7 +87,7 @@ export class ThresholdDetector {
     if (latency !== null && latency > thresholds.latencyWarningMs) {
       let severity: 'warning' | 'high' | 'critical' = 'high';
       let message = `High latency detected: ${latency}ms (ngưỡng: ${thresholds.latencyWarningMs}ms)`;
-      
+
       if (latency <= thresholds.latencyWarningMs) {
         severity = 'warning';
         message = `Latency tăng: ${latency}ms (cảnh báo: ${thresholds.latencyWarningMs}ms)`;
@@ -84,14 +95,14 @@ export class ThresholdDetector {
         severity = 'critical';
         message = `Latency tới hạn: ${latency}ms (tới hạn: ${thresholds.latencyCriticalMs}ms)`;
       }
-      
+
       alerts.push({ type: 'latency', severity, message });
     }
 
     if (packetLoss !== null && packetLoss > thresholds.packetLossWarningPercent) {
       let severity: 'warning' | 'high' | 'critical' = 'high';
       let message = `High packet loss detected: ${packetLoss}% (ngưỡng: ${thresholds.packetLossWarningPercent}%)`;
-      
+
       if (packetLoss <= thresholds.packetLossWarningPercent) {
         severity = 'warning';
         message = `Packet loss tăng: ${packetLoss}% (cảnh báo: ${thresholds.packetLossWarningPercent}%)`;
@@ -99,14 +110,14 @@ export class ThresholdDetector {
         severity = 'critical';
         message = `Packet loss tới hạn: ${packetLoss}% (tới hạn: ${thresholds.packetLossCriticalPercent}%)`;
       }
-      
+
       alerts.push({ type: 'packet_loss', severity, message });
     }
 
     if (signalStrength !== null && signalStrength < thresholds.signalWarningDbm) {
       let severity: 'warning' | 'medium' | 'critical' = 'medium';
       let message = `Low signal strength detected: ${signalStrength}dBm (ngưỡng: ${thresholds.signalWarningDbm}dBm)`;
-      
+
       if (signalStrength < thresholds.signalCriticalDbm) {
         severity = 'critical';
         message = `Signal strength tới hạn: ${signalStrength}dBm (tới hạn: ${thresholds.signalCriticalDbm}dBm)`;
@@ -114,7 +125,7 @@ export class ThresholdDetector {
         severity = 'warning';
         message = `Signal strength yếu: ${signalStrength}dBm (cảnh báo: ${thresholds.signalWarningDbm}dBm)`;
       }
-      
+
       alerts.push({ type: 'signal', severity, message });
     }
 
@@ -124,7 +135,7 @@ export class ThresholdDetector {
   static isMetricNormal(
     alertType: AlertMetricType,
     metrics: EventMetrics | undefined,
-    thresholdProfile?: Partial<ThresholdProfile> | null,
+    thresholdProfile?: Partial<ThresholdProfile> | null
   ): boolean {
     if (!metrics) {
       return false;

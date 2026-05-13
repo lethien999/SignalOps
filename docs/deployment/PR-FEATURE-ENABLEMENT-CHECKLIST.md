@@ -10,14 +10,14 @@
 
 ## 📋 Tóm tắt các thay đổi
 
-| Thành phần | Thay đổi | Tác động | Trạng thái |
-|-----------|---------|---------|-----------|
-| `infrastructure/Dockerfile.worker` | CMD → ENTRYPOINT, Debian base, libstdc++6/libgomp1 | Tương thích ONNX runtime ✅ | Hoạt động |
-| `apps/worker-service/src/repositories/alert.repository.ts` | Thêm trường metadata AI | Cảnh báo có thể lưu điểm ML/nhãn | Hoạt động |
-| `apps/worker-service/src/main.ts` | Logic rollout A/B (AI_ROLLOUT_PERCENT) | Chế độ shadow + triển khai từng giai đoạn | Hoạt động @ 10% |
-| `apps/api-gateway/src/modules/event/event.controller.ts` | ApiKeyGuard trên POST /api/events | Yêu cầu API key khi nhập sự kiện | Hoạt động |
-| `apps/dashboard/components/AlertTable.tsx` | Fallback config nghiêm trọng + tìm kiếm biểu tượng an toàn | Giao diện Dashboard ổn định | Hoạt động |
-| `test_events.ps1` | DTO chuẩn hóa (deviceId, location, metrics) | Script kiểm tra tạo payload hợp lệ | Sẵn sàng |
+| Thành phần                                                 | Thay đổi                                                   | Tác động                                  | Trạng thái      |
+| ---------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- | --------------- |
+| `infrastructure/Dockerfile.worker`                         | CMD → ENTRYPOINT, Debian base, libstdc++6/libgomp1         | Tương thích ONNX runtime ✅               | Hoạt động       |
+| `apps/worker-service/src/repositories/alert.repository.ts` | Thêm trường metadata AI                                    | Cảnh báo có thể lưu điểm ML/nhãn          | Hoạt động       |
+| `apps/worker-service/src/main.ts`                          | Logic rollout A/B (AI_ROLLOUT_PERCENT)                     | Chế độ shadow + triển khai từng giai đoạn | Hoạt động @ 10% |
+| `apps/api-gateway/src/modules/event/event.controller.ts`   | ApiKeyGuard trên POST /api/events                          | Yêu cầu API key khi nhập sự kiện          | Hoạt động       |
+| `apps/dashboard/components/AlertTable.tsx`                 | Fallback config nghiêm trọng + tìm kiếm biểu tượng an toàn | Giao diện Dashboard ổn định               | Hoạt động       |
+| `test_events.ps1`                                          | DTO chuẩn hóa (deviceId, location, metrics)                | Script kiểm tra tạo payload hợp lệ        | Sẵn sàng        |
 
 ---
 
@@ -27,17 +27,19 @@ Mỗi giai đoạn dưới đây bao gồm điều kiện tiên quyết, cấu h
 
 ---
 
-### **Giai đoạn 1: Bật lại Redis & WebSocket** *(Hiện tại: Tắt trong môi trường local)*
+### **Giai đoạn 1: Bật lại Redis & WebSocket** _(Hiện tại: Tắt trong môi trường local)_
 
 **Dịch vụ bị ảnh hưởng**: API Gateway, Worker Service  
-**Trạng thái hiện tại**: 🔴 Tắt trong môi trường phát triển cục bộ  
+**Trạng thái hiện tại**: 🔴 Tắt trong môi trường phát triển cục bộ
 
 #### 1.1 Điều kiện tiên quyết
+
 - [ ] Redis cluster/instance đang chạy (hiện tại là `redis:7.0-alpine`)
 - [ ] Dịch vụ Redis của Docker Compose được xác minh sức khỏe
 - [ ] Triển khai API Gateway được cập nhật
 
 #### 1.2 Thay đổi cấu hình
+
 ```bash
 # .env.production — không cần thay đổi (mặc định giả định Redis được bật)
 # Khi REDIS_HOST được đặt và không phải 'localhost', trình nghe WebSocket sẽ kích hoạt:
@@ -47,6 +49,7 @@ REDIS_DB=1                         # Không gian tên cho pubsub + hàng đợi 
 ```
 
 #### 1.3 Các bước triển khai
+
 ```bash
 # Bước 1: Xác minh Redis đang chạy
 docker compose exec redis redis-cli ping
@@ -64,6 +67,7 @@ docker logs signalops-worker --tail 30 | grep -i "redis\|queue"
 ```
 
 #### 1.4 Kiểm tra sức khỏe
+
 ```bash
 # Kiểm tra 1: Trình nghe WebSocket Pub/Sub của API Gateway đã bắt đầu
 docker logs signalops-api-gateway | grep -E "WebSocket Pub/Sub listener" | head -1
@@ -86,6 +90,7 @@ docker compose exec redis redis-cli -n 1 LLEN "bull:event-processing:queue"
 ```
 
 #### 1.5 Kế hoạch quay lại
+
 ```bash
 # Nếu phát hiện vấn đề WebSocket/Redis:
 docker compose down redis api-gateway worker-service
@@ -95,22 +100,23 @@ docker compose up -d api-gateway worker-service
 
 ---
 
-### **Giai đoạn 2: Tiến trình triển khai AI** *(Hiện tại: 10%)*
+### **Giai đoạn 2: Tiến trình triển khai AI** _(Hiện tại: 10%)_
 
 **Dịch vụ bị ảnh hưởng**: Worker Service  
-**Trạng thái hiện tại**: 🟡 Chế độ shadow @ 10% (Giai đoạn nhận dùng sớm)  
+**Trạng thái hiện tại**: 🟡 Chế độ shadow @ 10% (Giai đoạn nhận dùng sớm)
 
 #### 2.1 Lịch triển khai
 
-| Giai đoạn | Ngày | AI_ROLLOUT_PERCENT | Mô tả | Thời gian |
-|--------|------|-------------------|-------|----------|
-| Shadow | 14-21/05 | 0% | Điểm ML được ghi lại, không có cảnh báo | 1 tuần |
-| **Sớm** | **21-28/05** | **5-10%** | Cảnh báo ML cho 5-10% sự kiện | 1 tuần |
-| Tỷ lệ | 28-04/06 | 25% | 25% sự kiện sử dụng ML | 1 tuần |
-| Dần dần | 04-11/06 | 50→75→90% | Tăng lên từng bước | 1 tuần |
-| Toàn bộ | 11/06+ | 100% | Tất cả sự kiện sử dụng ML | Vĩnh viễn |
+| Giai đoạn | Ngày         | AI_ROLLOUT_PERCENT | Mô tả                                   | Thời gian |
+| --------- | ------------ | ------------------ | --------------------------------------- | --------- |
+| Shadow    | 14-21/05     | 0%                 | Điểm ML được ghi lại, không có cảnh báo | 1 tuần    |
+| **Sớm**   | **21-28/05** | **5-10%**          | Cảnh báo ML cho 5-10% sự kiện           | 1 tuần    |
+| Tỷ lệ     | 28-04/06     | 25%                | 25% sự kiện sử dụng ML                  | 1 tuần    |
+| Dần dần   | 04-11/06     | 50→75→90%          | Tăng lên từng bước                      | 1 tuần    |
+| Toàn bộ   | 11/06+       | 100%               | Tất cả sự kiện sử dụng ML               | Vĩnh viễn |
 
 #### 2.2 Thay đổi cấu hình
+
 ```bash
 # .env.production — Cập nhật AI_ROLLOUT_PERCENT
 AI_AB_TEST=true                    # Hạ tầng kiểm tra A/B được bật
@@ -121,6 +127,7 @@ ANOMALY_THRESHOLD=80               # Ngưỡng quyết định ML (0-100)
 **Tiến trình**: Để chuyển sang giai đoạn tiếp theo, cập nhật `AI_ROLLOUT_PERCENT` → `{5, 10, 25, 50, 75, 90, 100}` và triển khai lại worker.
 
 #### 2.3 Các bước triển khai
+
 ```bash
 # Ví dụ: Tăng từ 10% → 25%
 # Bước 1: Cập nhật .env.production
@@ -136,6 +143,7 @@ docker exec signalops-worker env | grep AI_ROLLOUT_PERCENT
 ```
 
 #### 2.4 Kiểm tra sức khỏe
+
 ```bash
 # Kiểm tra 1: Mô hình ML được tải khi khởi động
 docker logs signalops-worker | grep "ML model loaded" | tail -1
@@ -161,6 +169,7 @@ docker logs signalops-worker | grep -E "Branch: ML|Branch: deterministic" | tail
 ```
 
 #### 2.5 Kế hoạch dừng / Hủy bỏ
+
 ```bash
 # Nếu độ chính xác hoặc độ nhạy cảm giảm dưới ngưỡng:
 # 1. Đặt triển khai thành 0%
@@ -178,17 +187,19 @@ docker compose up -d --force-recreate worker-service
 
 ---
 
-### **Giai đoạn 3: OpenTelemetry / Tracing** *(Hiện tại: Tắt theo mặc định)*
+### **Giai đoạn 3: OpenTelemetry / Tracing** _(Hiện tại: Tắt theo mặc định)_
 
 **Dịch vụ bị ảnh hưởng**: API Gateway, Worker Service, Dashboard  
-**Trạng thái hiện tại**: 🔴 Tắt (chọn tham gia, yêu cầu các gói bổ sung)  
+**Trạng thái hiện tại**: 🔴 Tắt (chọn tham gia, yêu cầu các gói bổ sung)
 
 #### 3.1 Điều kiện tiên quyết
+
 - [ ] Các gói OpenTelemetry được cài đặt (`npm install --save @opentelemetry/api @opentelemetry/sdk-node`)
 - [ ] Điểm cuối Jaeger hoặc Zipkin được cấu hình
 - [ ] Dịch vụ bộ sưu tập Span đang chạy
 
 #### 3.2 Thay đổi cấu hình
+
 ```bash
 # .env.production — Thêm cấu hình tracing
 TRACING_ENABLED=true                # Bật công cụ OpenTelemetry
@@ -202,6 +213,7 @@ export OTEL_SERVICE_NAME="signalops"
 ```
 
 #### 3.3 Các bước triển khai
+
 ```bash
 # Bước 1: Cài đặt các gói (nếu chưa thực hiện)
 npm install --save \
@@ -220,6 +232,7 @@ docker compose up -d --force-recreate api-gateway worker-service
 ```
 
 #### 3.4 Kiểm tra sức khỏe
+
 ```bash
 # Kiểm tra 1: Xác minh middleware tracing được tải
 docker logs signalops-api-gateway | grep -i "opentelemetry\|tracing" | head -3
@@ -235,6 +248,7 @@ curl http://localhost:3000/api/health
 ```
 
 #### 3.5 Kế hoạch tắt
+
 ```bash
 # Nếu tracing gây ra vấn đề về hiệu suất:
 # Bỏ ghi chú tracing trong libs/common/src/tracing.config.ts
@@ -245,16 +259,18 @@ docker compose up -d --force-recreate api-gateway worker-service
 
 ---
 
-### **Giai đoạn 4: Kiểm soát AI theo Tenant** *(Tương lai: Không có trong PR này)*
+### **Giai đoạn 4: Kiểm soát AI theo Tenant** _(Tương lai: Không có trong PR này)_
 
 **Dịch vụ bị ảnh hưởng**: API Gateway, Tenant Module  
-**Trạng thái hiện tại**: 🟢 Sẵn sàng (trường schema tồn tại, backend sẵn sàng)  
+**Trạng thái hiện tại**: 🟢 Sẵn sàng (trường schema tồn tại, backend sẵn sàng)
 
 #### 4.1 Chuẩn bị
+
 - [ ] Schema Tenant đã được mở rộng với trường `aiEnabled` boolean
 - [ ] Điểm cuối giao diện người dùng quản trị được chuẩn bị để chuyển đổi
 
 #### 4.2 Triển khai tương lai (sau M13)
+
 ```bash
 # Đặt aiEnabled cho mỗi tenant trong MongoDB:
 db.tenants.updateOne(
@@ -290,16 +306,17 @@ Trước khi hợp nhất `feat/ml-ab-rollout` vào `main`:
 
 ### Số liệu chính để theo dõi
 
-| Chỉ số | Truy vấn | Mục tiêu | Cảnh báo nếu |
-|--------|---------|---------|-------------|
-| **Khối lượng cảnh báo** | `count(alerts) by (aiModelVersion)` | ML: 10% tổng số | Giảm dưới 5% hoặc trên 15% |
-| **Độ chính xác** | TP/(TP+FP) trên tập kiểm tra | > 80% | Giảm dưới 70% |
-| **Độ nhạy cảm** | TP/(TP+FN) trên tập kiểm tra | > 75% | Giảm dưới 65% |
-| **Độ trễ (p95)** | Thời gian phản hồi cho `/api/events` | < 200ms | Vượt quá 500ms |
-| **Độ sâu hàng đợi Worker** | Độ dài `bull:event-processing:queue` | < 100 công việc | Vượt quá 1000 |
-| **Thời gian suy luận ONNX** | Nhật ký Worker `ml_inference_ms` | 10-50ms | Vượt quá 100ms |
+| Chỉ số                      | Truy vấn                             | Mục tiêu        | Cảnh báo nếu               |
+| --------------------------- | ------------------------------------ | --------------- | -------------------------- |
+| **Khối lượng cảnh báo**     | `count(alerts) by (aiModelVersion)`  | ML: 10% tổng số | Giảm dưới 5% hoặc trên 15% |
+| **Độ chính xác**            | TP/(TP+FP) trên tập kiểm tra         | > 80%           | Giảm dưới 70%              |
+| **Độ nhạy cảm**             | TP/(TP+FN) trên tập kiểm tra         | > 75%           | Giảm dưới 65%              |
+| **Độ trễ (p95)**            | Thời gian phản hồi cho `/api/events` | < 200ms         | Vượt quá 500ms             |
+| **Độ sâu hàng đợi Worker**  | Độ dài `bull:event-processing:queue` | < 100 công việc | Vượt quá 1000              |
+| **Thời gian suy luận ONNX** | Nhật ký Worker `ml_inference_ms`     | 10-50ms         | Vượt quá 100ms             |
 
 ### Bảng điều khiển Grafana
+
 ```
 Nhập: docs/ml/STAGING-AB-REPORT.md → Bảng điều khiển "A/B Test Rollout"
 Bảng điều khiển:
@@ -317,6 +334,7 @@ Bảng điều khiển:
 
 **Triệu chứng**: Tỷ lệ dương tính giả cao, độ chính xác < 70%  
 **Hành động**:
+
 ```bash
 # Quay lại AI_ROLLOUT_PERCENT thành 0
 echo "AI_ROLLOUT_PERCENT=0" >> .env.production
@@ -328,6 +346,7 @@ docker compose up -d --force-recreate worker-service
 
 **Triệu chứng**: Worker sập, nhật ký hiển thị lỗi "ld-linux" hoặc "ONNX"  
 **Hành động**:
+
 ```bash
 # Quay lại cơ sở Alpine hoặc xác minh các phụ thuộc Debian
 docker compose pull
@@ -340,6 +359,7 @@ docker compose up -d --force-recreate worker-service
 
 **Triệu chứng**: Dashboard ngắt kết nối, sự kiện xếp hàng  
 **Hành động**:
+
 ```bash
 # Khởi động lại Redis
 docker compose restart redis
@@ -352,13 +372,13 @@ docker compose restart redis
 
 ## 📝 Phê duyệt triển khai ký tên
 
-| Vai trò | Tên | Ngày | Trạng thái |
-|--------|-----|------|----------|
-| **Tác giả** | AI Agent | 2026-05-12 | ✅ Sẵn sàng |
-| **Người xem xét mã** | *Chờ xử lý* | - | ⏳ |
-| **Người dẫn dắt QA** | *Chờ xử lý* | - | ⏳ |
-| **Ops / DevOps** | *Chờ xử lý* | - | ⏳ |
-| **Người dẫn dắt sản phẩm** | *Chờ xử lý* | - | ⏳ |
+| Vai trò                    | Tên         | Ngày       | Trạng thái  |
+| -------------------------- | ----------- | ---------- | ----------- |
+| **Tác giả**                | AI Agent    | 2026-05-12 | ✅ Sẵn sàng |
+| **Người xem xét mã**       | _Chờ xử lý_ | -          | ⏳          |
+| **Người dẫn dắt QA**       | _Chờ xử lý_ | -          | ⏳          |
+| **Ops / DevOps**           | _Chờ xử lý_ | -          | ⏳          |
+| **Người dẫn dắt sản phẩm** | _Chờ xử lý_ | -          | ⏳          |
 
 **Cổng phê duyệt**: Tất cả 5 vai trò phải ký tên trước khi hợp nhất vào `main`.
 

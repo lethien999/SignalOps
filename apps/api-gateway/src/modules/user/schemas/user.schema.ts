@@ -66,4 +66,7 @@ export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ email: 1 });
 UserSchema.index({ tenantId: 1 });
 UserSchema.index({ tenantId: 1, roleId: 1 });
-UserSchema.index({ 'oauthProviders.provider': 1, 'oauthProviders.providerId': 1 }, { unique: true, sparse: true });
+UserSchema.index(
+  { 'oauthProviders.provider': 1, 'oauthProviders.providerId': 1 },
+  { unique: true, sparse: true }
+);

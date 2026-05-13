@@ -20,7 +20,7 @@ describe('buildAlertDocument', () => {
         type: 'latency',
         severity: 'high',
         message: 'High latency detected: 240ms (threshold: 200ms)',
-      },
+      }
     );
 
     expect(alert).toEqual({
@@ -51,7 +51,7 @@ describe('buildAlertDocument', () => {
         type: 'packet_loss',
         severity: 'high',
         message: 'High packet loss detected: 8% (threshold: 5%)',
-      },
+      }
     );
 
     expect(alert.location).toEqual({ lat: 11, lng: 107 });

@@ -13,10 +13,13 @@ export type DeviceMaintenanceUpdateInput = {
 export class DeviceMaintenanceRepository {
   constructor(
     @InjectModel(DeviceMaintenance.name)
-    private readonly deviceMaintenanceModel: Model<DeviceMaintenance>,
+    private readonly deviceMaintenanceModel: Model<DeviceMaintenance>
   ) {}
 
-  async setByDeviceId(deviceId: string, input: DeviceMaintenanceUpdateInput): Promise<DeviceMaintenance> {
+  async setByDeviceId(
+    deviceId: string,
+    input: DeviceMaintenanceUpdateInput
+  ): Promise<DeviceMaintenance> {
     const updatePayload = {
       enabled: input.enabled,
       ...(input.reason !== undefined ? { reason: input.reason } : {}),
@@ -30,7 +33,7 @@ export class DeviceMaintenanceRepository {
           $set: updatePayload,
           $setOnInsert: { deviceId },
         },
-        { upsert: true, new: true, runValidators: true },
+        { upsert: true, new: true, runValidators: true }
       )
       .exec() as Promise<DeviceMaintenance>;
   }

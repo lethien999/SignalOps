@@ -34,7 +34,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private readonly lastEmissionAt = new Map<string, number>();
   private readonly emitMinIntervalMs = parseInt(
     process.env.WEBSOCKET_EMIT_MIN_INTERVAL_MS || '100',
-    10,
+    10
   );
 
   afterInit(server: Namespace) {
@@ -104,16 +104,20 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private isAuthorized(client: Socket): boolean {
     const expectedToken = process.env.WEBSOCKET_AUTH_TOKEN;
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     // In production, authentication is always required
     if (nodeEnv === 'production' && !expectedToken) {
-      Logger.warn('WebSocket auth not configured but NODE_ENV=production. This is a security risk.');
+      Logger.warn(
+        'WebSocket auth not configured but NODE_ENV=production. This is a security risk.'
+      );
       return false;
     }
 
     // In development without token configured, allow all connections (insecure)
     if (!expectedToken) {
-      Logger.warn('WebSocket running without authentication. This is insecure and should only be used in development.');
+      Logger.warn(
+        'WebSocket running without authentication. This is insecure and should only be used in development.'
+      );
       return true;
     }
 
@@ -123,7 +127,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       (client.handshake.query.token as string | undefined);
 
     const isValid = authToken === expectedToken;
-    
+
     if (!isValid) {
       Logger.warn(`WebSocket authentication failed for client ${client.id}`, {
         provided: authToken ? 'yes' : 'no',

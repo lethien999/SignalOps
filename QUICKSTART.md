@@ -1,6 +1,7 @@
 # Quick Start - SignalOps Bootstrap
 
 ## Prerequisites
+
 - Docker & Docker Compose installed
 - Node.js 18+ (for local development)
 - Git
@@ -8,16 +9,19 @@
 ## Local Development Setup
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Setup Environment
+
 ```bash
 cp .env.example .env
 ```
 
 ### 3. Start All Services with Docker
+
 ```bash
 # Build images
 npm run docker:build
@@ -30,6 +34,7 @@ npm run docker:logs
 ```
 
 ### 4. Verify Services
+
 ```bash
 # Check API Gateway health
 curl http://localhost:3000/api/health
@@ -118,15 +123,18 @@ Key variables in `.env.example`:
 ## Troubleshooting
 
 ### Services not starting
+
 ```bash
 docker-compose logs -f
 ```
 
 ### MongoDB connection error
+
 - Ensure MongoDB container is running: `docker ps`
 - Check MongoDB credentials in `.env`
 
 ### Worker not processing events
+
 - Check Redis queue status
 - Verify MongoDB is connected
 - Check worker service logs
@@ -138,6 +146,7 @@ See [IMPLEMENTATION_CHECKLIST.md](docs/IMPLEMENTATION_CHECKLIST.md) for the full
 ## Support
 
 For issues, check:
+
 - Docker logs: `npm run docker:logs`
 - Service-specific logs in container output
 - MongoDB and Redis connectivity

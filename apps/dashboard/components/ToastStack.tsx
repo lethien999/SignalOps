@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React from "react";
-import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
+import React from 'react';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
-export type ToastType = "success" | "error" | "info";
+export type ToastType = 'success' | 'error' | 'info';
 
 export interface ToastItem {
   id: number;
@@ -17,9 +17,9 @@ interface ToastStackProps {
 }
 
 const toastStyles: Record<ToastType, string> = {
-  success: "border-green-200 bg-green-50 text-green-800",
-  error: "border-red-200 bg-red-50 text-red-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
+  success: 'border-green-200 bg-green-50 text-green-800',
+  error: 'border-red-200 bg-red-50 text-red-800',
+  info: 'border-blue-200 bg-blue-50 text-blue-800',
 };
 
 const toastIcons: Record<ToastType, React.ReactNode> = {

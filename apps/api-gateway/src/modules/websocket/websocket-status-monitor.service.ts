@@ -20,7 +20,8 @@ export class WebSocketStatusMonitorService implements OnModuleInit, OnModuleDest
   private timer: NodeJS.Timeout | null = null;
   private previousCompleted = 0;
   private previousEmitAt = Date.now();
-  private readonly redisEnabled = String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
+  private readonly redisEnabled =
+    String(process.env.REDIS_ENABLED || 'false').toLowerCase() === 'true';
 
   constructor(private readonly statusGateway: StatusGateway) {}
 
@@ -78,7 +79,7 @@ export class WebSocketStatusMonitorService implements OnModuleInit, OnModuleDest
         'active',
         'completed',
         'failed',
-        'delayed',
+        'delayed'
       );
 
       const normalized: QueueCounts = {

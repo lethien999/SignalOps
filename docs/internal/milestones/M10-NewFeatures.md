@@ -64,11 +64,13 @@
 - [x] Bổ sung giám sát chi phí và auto-scaling (đã hoàn thành ở M11)
 
 **Quy tắc**
+
 1. Tất cả feature mới phải được thêm vào docs trước khi code.
 2. Chỉ bắt đầu khi bạn xác nhận rõ: "OK, đi code đi".
 3. Khi tách task nhỏ hơn, giữ nguyên tên feature gốc để dễ trace.
 
 **Trạng thái**
+
 - **Tổng số hạng mục**: 9
 - **Đang thực hiện**: 0
 - **Đã hoàn thành**: 9 (P0) + 3 hạng mục mở rộng đã hoàn thành ở M11

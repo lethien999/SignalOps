@@ -6,23 +6,36 @@ import { UpsertThresholdProfileDto } from '../dto/upsert-threshold-profile.dto';
 
 @Injectable()
 export class ThresholdProfileRepository {
-  constructor(@InjectModel(ThresholdProfile.name) private readonly thresholdProfileModel: Model<ThresholdProfile>) {}
+  constructor(
+    @InjectModel(ThresholdProfile.name)
+    private readonly thresholdProfileModel: Model<ThresholdProfile>
+  ) {}
 
   async findAll(): Promise<ThresholdProfile[]> {
-    return this.thresholdProfileModel.find().sort({ scopeType: 1, scopeId: 1 }).lean().exec() as unknown as ThresholdProfile[];
+    return this.thresholdProfileModel
+      .find()
+      .sort({ scopeType: 1, scopeId: 1 })
+      .lean()
+      .exec() as unknown as ThresholdProfile[];
   }
 
   async findEffective(deviceId?: string): Promise<ThresholdProfile[]> {
     const profiles: ThresholdProfile[] = [];
 
     if (deviceId) {
-      const deviceProfile = await this.thresholdProfileModel.findOne({ scopeType: 'device', scopeId: deviceId }).lean().exec();
+      const deviceProfile = await this.thresholdProfileModel
+        .findOne({ scopeType: 'device', scopeId: deviceId })
+        .lean()
+        .exec();
       if (deviceProfile) {
         profiles.push(deviceProfile as unknown as ThresholdProfile);
       }
     }
 
-    const globalProfile = await this.thresholdProfileModel.findOne({ scopeType: 'global', scopeId: 'global' }).lean().exec();
+    const globalProfile = await this.thresholdProfileModel
+      .findOne({ scopeType: 'global', scopeId: 'global' })
+      .lean()
+      .exec();
     if (globalProfile) {
       profiles.push(globalProfile as unknown as ThresholdProfile);
     }
@@ -35,11 +48,19 @@ export class ThresholdProfileRepository {
       scopeType: input.scopeType,
       scopeId: input.scopeId,
       ...(input.latencyWarningMs !== undefined ? { latencyWarningMs: input.latencyWarningMs } : {}),
-      ...(input.latencyCriticalMs !== undefined ? { latencyCriticalMs: input.latencyCriticalMs } : {}),
-      ...(input.packetLossWarningPercent !== undefined ? { packetLossWarningPercent: input.packetLossWarningPercent } : {}),
-      ...(input.packetLossCriticalPercent !== undefined ? { packetLossCriticalPercent: input.packetLossCriticalPercent } : {}),
+      ...(input.latencyCriticalMs !== undefined
+        ? { latencyCriticalMs: input.latencyCriticalMs }
+        : {}),
+      ...(input.packetLossWarningPercent !== undefined
+        ? { packetLossWarningPercent: input.packetLossWarningPercent }
+        : {}),
+      ...(input.packetLossCriticalPercent !== undefined
+        ? { packetLossCriticalPercent: input.packetLossCriticalPercent }
+        : {}),
       ...(input.signalWarningDbm !== undefined ? { signalWarningDbm: input.signalWarningDbm } : {}),
-      ...(input.signalCriticalDbm !== undefined ? { signalCriticalDbm: input.signalCriticalDbm } : {}),
+      ...(input.signalCriticalDbm !== undefined
+        ? { signalCriticalDbm: input.signalCriticalDbm }
+        : {}),
       ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       ...(input.note !== undefined ? { note: input.note } : {}),
       ...(input.updatedBy !== undefined ? { updatedBy: input.updatedBy } : {}),
@@ -49,7 +70,7 @@ export class ThresholdProfileRepository {
       .findOneAndUpdate(
         { scopeType: input.scopeType, scopeId: input.scopeId },
         { $set: update, $setOnInsert: { scopeType: input.scopeType, scopeId: input.scopeId } },
-        { upsert: true, new: true, runValidators: true },
+        { upsert: true, new: true, runValidators: true }
       )
       .exec() as Promise<ThresholdProfile>;
   }

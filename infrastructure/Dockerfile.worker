@@ -32,21 +32,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 libgomp1 ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the worker package.json (avoid root workspaces during runtime)
+# Copy the worker package.json (kept for metadata and parity with builder stage)
 COPY --from=builder /app/apps/worker-service/package.json ./package.json
 
-# Install production dependencies for worker service
-RUN npm install --production --no-audit --omit=dev && npm cache clean --force
-
-# Provide internal workspace libs in runtime image for Node module resolution
-RUN mkdir -p /app/node_modules/@signalops/common /app/node_modules/@signalops/models
-COPY --from=builder /app/libs/common/package.json /app/node_modules/@signalops/common/package.json
-COPY --from=builder /app/libs/common/dist /app/node_modules/@signalops/common/dist
-COPY --from=builder /app/libs/models/package.json /app/node_modules/@signalops/models/package.json
-COPY --from=builder /app/libs/models/dist /app/node_modules/@signalops/models/dist
+# Copy workspace dependencies and libs so runtime can resolve shared packages
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/libs ./libs
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-service/dist ./dist
+# worker-service tsconfig emits to /app/dist/apps/worker-service
+COPY --from=builder --chown=nodejs:nodejs /app/dist/apps/worker-service ./dist
 
 # Copy runtime ML assets referenced by the worker
 COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-service/src/assets ./src/assets

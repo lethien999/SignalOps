@@ -23,34 +23,41 @@ export type RunArchiveInput = {
 
 @Injectable()
 export class ArchiveService {
-  private readonly archiveEnabled = String(process.env.ARCHIVE_S3_ENABLED || 'false').toLowerCase() === 'true';
+  private readonly archiveEnabled =
+    String(process.env.ARCHIVE_S3_ENABLED || 'false').toLowerCase() === 'true';
   private readonly bucket = process.env.ARCHIVE_S3_BUCKET || '';
   private readonly endpoint = process.env.ARCHIVE_S3_ENDPOINT || '';
   private readonly region = process.env.ARCHIVE_S3_REGION || 'auto';
-  private readonly forcePathStyle = String(process.env.ARCHIVE_S3_FORCE_PATH_STYLE || 'true').toLowerCase() === 'true';
+  private readonly forcePathStyle =
+    String(process.env.ARCHIVE_S3_FORCE_PATH_STYLE || 'true').toLowerCase() === 'true';
   private readonly keyId = process.env.ARCHIVE_S3_ACCESS_KEY_ID || '';
   private readonly secretKey = process.env.ARCHIVE_S3_SECRET_ACCESS_KEY || '';
-  private readonly prefix = (process.env.ARCHIVE_S3_PREFIX || 'signalops/archive').replace(/^\/+|\/+$/g, '');
+  private readonly prefix = (process.env.ARCHIVE_S3_PREFIX || 'signalops/archive').replace(
+    /^\/+|\/+$/g,
+    ''
+  );
   private readonly retentionDays = parseInt(process.env.ARCHIVE_RETENTION_DAYS || '180', 10);
-  private readonly deleteSource = String(process.env.ARCHIVE_DELETE_SOURCE || 'false').toLowerCase() === 'true';
+  private readonly deleteSource =
+    String(process.env.ARCHIVE_DELETE_SOURCE || 'false').toLowerCase() === 'true';
 
   private readonly s3Client: S3Client;
 
   constructor(
     @InjectModel(Event.name) private readonly eventModel: Model<Event>,
     @InjectModel(Alert.name) private readonly alertModel: Model<Alert>,
-    private readonly archiveRecordRepository: ArchiveRecordRepository,
+    private readonly archiveRecordRepository: ArchiveRecordRepository
   ) {
     this.s3Client = new S3Client({
       endpoint: this.endpoint || undefined,
       region: this.region,
       forcePathStyle: this.forcePathStyle,
-      credentials: this.keyId && this.secretKey
-        ? {
-            accessKeyId: this.keyId,
-            secretAccessKey: this.secretKey,
-          }
-        : undefined,
+      credentials:
+        this.keyId && this.secretKey
+          ? {
+              accessKeyId: this.keyId,
+              secretAccessKey: this.secretKey,
+            }
+          : undefined,
     });
   }
 
@@ -120,10 +127,12 @@ export class ArchiveService {
       throw new NotFoundException(`Archive record ${recordId} đã hết hạn retention`);
     }
 
-    const response = await this.s3Client.send(new GetObjectCommand({
-      Bucket: record.bucket,
-      Key: record.objectKey,
-    }));
+    const response = await this.s3Client.send(
+      new GetObjectCommand({
+        Bucket: record.bucket,
+        Key: record.objectKey,
+      })
+    );
 
     if (!response.Body) {
       throw new NotFoundException(`Không tìm thấy object ${record.objectKey}`);
@@ -139,7 +148,7 @@ export class ArchiveService {
   private async archiveOneSource(
     source: ArchiveSource,
     cutoffDate: Date,
-    maxDocumentsPerSource: number,
+    maxDocumentsPerSource: number
   ): Promise<{
     source: ArchiveSource;
     archivedDocuments: number;
@@ -148,18 +157,21 @@ export class ArchiveService {
     skipped: boolean;
     message?: string;
   }> {
-    const model: Model<Record<string, unknown>> = (
-      source === 'events' ? this.eventModel : this.alertModel
-    ) as unknown as Model<Record<string, unknown>>;
+    const model: Model<Record<string, unknown>> = (source === 'events'
+      ? this.eventModel
+      : this.alertModel) as unknown as Model<Record<string, unknown>>;
 
-    const docs = await model.find({
-      createdAt: { $lte: cutoffDate },
-      archivedAt: { $exists: false },
-    })
+    const docs = (await model
+      .find({
+        createdAt: { $lte: cutoffDate },
+        archivedAt: { $exists: false },
+      })
       .sort({ createdAt: 1 })
       .limit(maxDocumentsPerSource)
       .lean()
-      .exec() as Array<Record<string, unknown> & { _id: Types.ObjectId | string; createdAt?: Date | string }>;
+      .exec()) as Array<
+      Record<string, unknown> & { _id: Types.ObjectId | string; createdAt?: Date | string }
+    >;
 
     if (docs.length === 0) {
       return {
@@ -187,17 +199,22 @@ export class ArchiveService {
       const buffer = gzipSync(Buffer.from(ndjson, 'utf-8'));
       const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
 
-      await this.s3Client.send(new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: objectKey,
-        Body: buffer,
-        ContentType: 'application/x-ndjson',
-        ContentEncoding: 'gzip',
-      }));
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: objectKey,
+          Body: buffer,
+          ContentType: 'application/x-ndjson',
+          ContentEncoding: 'gzip',
+        })
+      );
 
       const ids = docs
         .map((doc) => doc._id)
-        .filter((id): id is Types.ObjectId | string => id instanceof Types.ObjectId || typeof id === 'string')
+        .filter(
+          (id): id is Types.ObjectId | string =>
+            id instanceof Types.ObjectId || typeof id === 'string'
+        )
         .map((id) => (id instanceof Types.ObjectId ? id : new Types.ObjectId(id)));
 
       if (this.deleteSource) {
@@ -238,7 +255,7 @@ export class ArchiveService {
     } catch (error) {
       await this.archiveRecordRepository.markFailed(
         record._id.toString(),
-        error instanceof Error ? error.message : 'Unknown archive error',
+        error instanceof Error ? error.message : 'Unknown archive error'
       );
       throw error;
     }
@@ -253,14 +270,18 @@ export class ArchiveService {
 
     for (const record of expiredRecords) {
       try {
-        await this.s3Client.send(new DeleteObjectCommand({
-          Bucket: record.bucket,
-          Key: record.objectKey,
-        }));
+        await this.s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: record.bucket,
+            Key: record.objectKey,
+          })
+        );
         await this.archiveRecordRepository.markDeleted(record._id.toString());
         deleted += 1;
       } catch (error) {
-        errors.push(`${record._id?.toString()}: ${error instanceof Error ? error.message : 'unknown error'}`);
+        errors.push(
+          `${record._id?.toString()}: ${error instanceof Error ? error.message : 'unknown error'}`
+        );
       }
     }
 
@@ -281,7 +302,9 @@ export class ArchiveService {
 
   private assertArchiveReady() {
     if (!this.archiveEnabled) {
-      throw new BadRequestException('Archive pipeline đang tắt. Set ARCHIVE_S3_ENABLED=true để sử dụng.');
+      throw new BadRequestException(
+        'Archive pipeline đang tắt. Set ARCHIVE_S3_ENABLED=true để sử dụng.'
+      );
     }
 
     if (!this.bucket) {

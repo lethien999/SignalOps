@@ -1,7 +1,7 @@
 /**
  * Integration Test: API -> Queue -> Worker -> Database Flow
  * Tests the entire event ingestion and processing pipeline
- * 
+ *
  * Prerequisites:
  * - MongoDB running (test database)
  * - Redis running (test queue)
@@ -22,7 +22,7 @@ describe('Event Processing Pipeline (Integration)', () => {
 
   describe('Event Ingestion and Queuing', () => {
     it('should ingest event and queue for processing', async () => {
-      // TODO: 
+      // TODO:
       // 1. Create event via API (POST /api/events)
       // 2. Assert event saved to MongoDB
       // 3. Assert event queued to Redis

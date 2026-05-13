@@ -12,24 +12,25 @@ Hướng dẫn này bao gồm chuẩn bị dữ liệu lịch sử cho huấn lu
 
 Tất cả các chỉ số được chuẩn hóa thành phạm vi 0-1 cho huấn luyện ML:
 
-| Chỉ số | Tỷ lệ | Phạm vi Chuẩn hóa |
-|--------|--------|------------------|
-| Độ trễ | 0-500ms | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
-| Mất gói | 0-20% | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
+| Chỉ số           | Tỷ lệ            | Phạm vi Chuẩn hóa                 |
+| ---------------- | ---------------- | --------------------------------- |
+| Độ trễ           | 0-500ms          | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
+| Mất gói          | 0-20%            | 0.0 (hoàn hảo) đến 1.0 (xấu nhất) |
 | Độ mạnh tín hiệu | -40 đến -120 dBm | 0.0 (tốt nhất) đến 1.0 (xấu nhất) |
 
 **Hàm Chuẩn hóa** (trong `apps/worker-service/src/common/data-normalization.ts`):
+
 ```typescript
-normalizeLatency(500) // = 1.0
-normalizeLatency(250) // = 0.5
-normalizeLatency(0)   // = 0.0
+normalizeLatency(500); // = 1.0
+normalizeLatency(250); // = 0.5
+normalizeLatency(0); // = 0.0
 
-normalizePacketLoss(20) // = 1.0
-normalizePacketLoss(10) // = 0.5
+normalizePacketLoss(20); // = 1.0
+normalizePacketLoss(10); // = 0.5
 
-normalizeSignalStrength(-120) // = 1.0 (xấu nhất)
-normalizeSignalStrength(-80)  // = 0.5
-normalizeSignalStrength(-40)  // = 0.0 (tốt nhất)
+normalizeSignalStrength(-120); // = 1.0 (xấu nhất)
+normalizeSignalStrength(-80); // = 0.5
+normalizeSignalStrength(-40); // = 0.0 (tốt nhất)
 ```
 
 ### Trích xuất Tính năng
@@ -37,20 +38,24 @@ normalizeSignalStrength(-40)  // = 0.0 (tốt nhất)
 Tính năng được trích xuất cho mỗi sự kiện:
 
 **Chỉ số Chuẩn hóa:**
+
 - `latency_norm`: 0-1 (chuẩn hóa độ trễ)
 - `packetLoss_norm`: 0-1 (chuẩn hóa mất gói)
 - `signalStrength_norm`: 0-1 (chuẩn hóa độ mạnh tín hiệu)
 - `overall_quality`: 0-1 (nghịch đảo của suy giảm trung bình)
 
 **Tính năng Dựa trên Thời gian:**
+
 - `hour_of_day`: 0-23 (dị thường có thể khác nhau theo thời gian)
 - `day_of_week`: 0-6 (mẫu khác nhau vào ngày làm việc so với cuối tuần)
 
 **Tính năng Phát hiện Thay đổi** (tùy chọn, được tính toán từ ngữ cảnh):
+
 - `metric_volatility`: Độ lệch chuẩn của các chỉ số gần đây
 - `change_magnitude`: Thay đổi tuyệt đối giữa các sự kiện liên tiếp
 
 **Nhãn:**
+
 - `anomalous`: 0 (bình thường, không có cảnh báo) hoặc 1 (dị thường, tạo cảnh báo)
 
 ### Tạo Bộ dữ liệu Huấn luyện
@@ -252,14 +257,15 @@ joblib.dump(model, 'anomaly-model-xgb.pkl')
 
 Sau khi huấn luyện, đánh giá trên tập kiểm thử:
 
-| Chỉ số | Mục tiêu | Mục đích |
-|--------|---------|---------|
-| **Precision (Độ chính xác)** | ≥ 80% | Giảm thiểu cảnh báo giả |
-| **Recall (Tái tìm kiếm)** | ≥ 75% | Bắt được hầu hết dị thường |
-| **F1 Score** | ≥ 77 | Hiệu suất cân bằng |
-| **ROC-AUC** | ≥ 0.85 | Khả năng phân biệt |
+| Chỉ số                       | Mục tiêu | Mục đích                   |
+| ---------------------------- | -------- | -------------------------- |
+| **Precision (Độ chính xác)** | ≥ 80%    | Giảm thiểu cảnh báo giả    |
+| **Recall (Tái tìm kiếm)**    | ≥ 75%    | Bắt được hầu hết dị thường |
+| **F1 Score**                 | ≥ 77     | Hiệu suất cân bằng         |
+| **ROC-AUC**                  | ≥ 0.85   | Khả năng phân biệt         |
 
 **Ví dụ Đầu ra:**
+
 ```
               precision    recall  f1-score   support
 
@@ -292,10 +298,10 @@ export async function initMLModel() {
   try {
     // Tùy chọn 1: TensorFlow
     mlModel = await tf.loadLayersModel('file://./anomaly-model.h5');
-    
+
     // Tùy chọn 2: ONNX
     // mlModel = await ort.InferenceSession.create('./anomaly-model.onnx');
-    
+
     console.log('✓ Mô hình ML được tải');
   } catch (error) {
     console.error('Không thể tải mô hình ML, dùng điểm tính xác định:', error);
@@ -308,7 +314,7 @@ export async function initMLModel() {
  */
 export function scoreEventAnomaly(
   metrics: { latency: number; packetLoss: number; signalStrength: number },
-  thresholdProfile?: any,
+  thresholdProfile?: any
 ) {
   if (mlModel) {
     return scoreWithMLModel(metrics);
@@ -320,7 +326,7 @@ export function scoreEventAnomaly(
 function scoreWithMLModel(metrics: any) {
   // Chuẩn hóa tính năng đầu vào
   const features = normalizeMetricsForML(metrics);
-  
+
   // Chạy suy diễn
   const input = tf.tensor2d([
     [
@@ -335,7 +341,7 @@ function scoreWithMLModel(metrics: any) {
 
   const prediction = mlModel.predict(input) as any;
   const anomalyConfidence = (prediction.data()[0] * 100).toFixed(0);
-  
+
   input.dispose();
   prediction.dispose();
 
@@ -360,7 +366,7 @@ const ML_ENDPOINT = process.env.ML_SERVICE_ENDPOINT || 'https://ml-service.examp
 export async function scoreEventAnomaly(metrics: any) {
   try {
     const features = normalizeMetricsForML(metrics);
-    
+
     const response = await axios.post(ML_ENDPOINT, {
       features: [
         features.latency_norm,
@@ -373,7 +379,7 @@ export async function scoreEventAnomaly(metrics: any) {
     });
 
     const { anomalyScore, confidence } = response.data;
-    
+
     return {
       score: anomalyScore,
       anomalyConfidence: confidence,
@@ -399,10 +405,11 @@ Theo dõi metrics trong production:
 // Ghi lại độ chính xác dự đoán để đánh giá mô hình
 function logPredictionForEvaluation(event: any, prediction: any, actualAlert: boolean) {
   const timestamp = new Date().toISOString();
-  const correct = (prediction.score > 65) === actualAlert ? 1 : 0;
-  
+  const correct = prediction.score > 65 === actualAlert ? 1 : 0;
+
   // Ghi cho phân tích sau
-  fs.appendFileSync('ml-predictions.jsonl', 
+  fs.appendFileSync(
+    'ml-predictions.jsonl',
     JSON.stringify({
       timestamp,
       eventId: event._id,
@@ -435,13 +442,13 @@ npm run eval:ai
 
 ## Tham chiếu File
 
-| File | Mục đích |
-|------|---------|
-| `apps/worker-service/src/common/data-normalization.ts` | Tiện ích chuẩn hóa chỉ số |
-| `apps/worker-service/src/common/feature-extraction.ts` | Trích xuất tính năng cho ML |
-| `scripts/gen-training-dataset.mjs` | Tạo dữ liệu huấn luyện CSV |
-| `scripts/train-model.py` | Huấn luyện mô hình ML (để tạo) |
-| `apps/worker-service/src/services/anomaly-scoring.ts` | Điểm tích hợp cho mô hình ML |
+| File                                                   | Mục đích                       |
+| ------------------------------------------------------ | ------------------------------ |
+| `apps/worker-service/src/common/data-normalization.ts` | Tiện ích chuẩn hóa chỉ số      |
+| `apps/worker-service/src/common/feature-extraction.ts` | Trích xuất tính năng cho ML    |
+| `scripts/gen-training-dataset.mjs`                     | Tạo dữ liệu huấn luyện CSV     |
+| `scripts/train-model.py`                               | Huấn luyện mô hình ML (để tạo) |
+| `apps/worker-service/src/services/anomaly-scoring.ts`  | Điểm tích hợp cho mô hình ML   |
 
 ---
 
@@ -452,6 +459,7 @@ npm run eval:ai
 **Vấn đề**: Tỷ lệ mất cân bằng lớp > 1:20 khiến huấn luyện khó
 
 **Giải pháp**:
+
 - Dùng `class_weight='balanced'` trong scikit-learn
 - Dùng `scale_pos_weight` trong XGBoost
 - Cân nhắc oversampling dị thường hoặc undersampling sự kiện bình thường
@@ -462,6 +470,7 @@ npm run eval:ai
 **Vấn đề**: Overfitting hoặc data drift
 
 **Giải pháp**:
+
 - Giảm độ phức tạp mô hình (tính năng ít hơn, cây nhỏ hơn)
 - Thêm regularization (L1/L2, dropout)
 - Thu thập dữ liệu huấn luyện gần đây hơn
@@ -472,6 +481,7 @@ npm run eval:ai
 **Vấn đề**: Mô hình không nắm bắt được mẫu
 
 **Giải pháp**:
+
 - Kiểm tra phân phối tính năng (đảm bảo không bị lệch)
 - Thử các thuật toán khác (Random Forest → XGBoost → Neural Networks)
 - Thêm nhiều tính năng hơn (volatility, time-based interactions)

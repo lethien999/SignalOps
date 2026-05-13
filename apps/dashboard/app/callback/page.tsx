@@ -64,7 +64,9 @@ export default function CallbackPage() {
                 </svg>
               </div>
               <p className="text-green-600 dark:text-green-400 font-medium">{message}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Redirecting to dashboard...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                Redirecting to dashboard...
+              </p>
             </>
           )}
 

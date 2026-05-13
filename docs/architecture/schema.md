@@ -6,12 +6,12 @@ Tài liệu này mô tả các collection, cấu trúc tài liệu mẫu và cá
 
 ## Các Collection
 
-| Collection | Mục đích | Ghi chú |
-|-----------|---------|---------|
-| `events` | Sự kiện telemetry thô | Lưu trữ ngắn hạn, có thể TTL/archive |
-| `alerts` | Cảnh báo được tạo từ events | Lưu trữ lâu dài |
-| `failed_events` | DLQ / xử lý thất bại | Cho phép replay thủ công |
-| `api_keys` | Khóa API cho ingestion | Seed demo local |
+| Collection      | Mục đích                    | Ghi chú                              |
+| --------------- | --------------------------- | ------------------------------------ |
+| `events`        | Sự kiện telemetry thô       | Lưu trữ ngắn hạn, có thể TTL/archive |
+| `alerts`        | Cảnh báo được tạo từ events | Lưu trữ lâu dài                      |
+| `failed_events` | DLQ / xử lý thất bại        | Cho phép replay thủ công             |
+| `api_keys`      | Khóa API cho ingestion      | Seed demo local                      |
 
 ---
 
@@ -105,46 +105,43 @@ Tài liệu này mô tả các collection, cấu trúc tài liệu mẫu và cá
 
 ```javascript
 // Index cho query thiết bị theo thời gian
-db.events.createIndex({ deviceId: 1, timestamp: -1 })
+db.events.createIndex({ deviceId: 1, timestamp: -1 });
 
 // Index cho query mọi event theo thời gian (ví dụ dashboard)
-db.events.createIndex({ timestamp: -1 })
+db.events.createIndex({ timestamp: -1 });
 
 // TTL index: tự xóa events sau 30 ngày
-db.events.createIndex(
-  { timestamp: 1 },
-  { expireAfterSeconds: 60 * 60 * 24 * 30 }
-)
+db.events.createIndex({ timestamp: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 ```
 
 ### Alerts
 
 ```javascript
 // Index chính: query theo trạng thái, thiết bị, thời gian
-db.alerts.createIndex({ status: 1, deviceId: 1, createdAt: -1 })
+db.alerts.createIndex({ status: 1, deviceId: 1, createdAt: -1 });
 
 // Index cho query alerts đã xử lý
-db.alerts.createIndex({ resolvedAt: 1 })
+db.alerts.createIndex({ resolvedAt: 1 });
 
 // Full-text search trên thông báo
-db.alerts.createIndex({ message: 'text' })
+db.alerts.createIndex({ message: 'text' });
 ```
 
 ### Failed Events (DLQ)
 
 ```javascript
 // Index cho retry queue
-db.failed_events.createIndex({ retryCount: 1 })
+db.failed_events.createIndex({ retryCount: 1 });
 
 // Index cho scheduled retry
-db.failed_events.createIndex({ nextRetryAt: 1 })
+db.failed_events.createIndex({ nextRetryAt: 1 });
 ```
 
 ### API Keys
 
 ```javascript
 // Unique index trên khóa
-db.api_keys.createIndex({ key: 1 }, { unique: true })
+db.api_keys.createIndex({ key: 1 }, { unique: true });
 ```
 
 ---

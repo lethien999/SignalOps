@@ -3,7 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { PasswordResetToken, PasswordResetTokenDocument } from '../schemas/password-reset-token.schema';
+import {
+  PasswordResetToken,
+  PasswordResetTokenDocument,
+} from '../schemas/password-reset-token.schema';
 import { User, UserDocument } from '../schemas/user.schema';
 import { EmailService } from '../../../common/email';
 
@@ -14,7 +17,7 @@ export class PasswordResetService {
     private resetTokenModel: Model<PasswordResetTokenDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
-    private emailService: EmailService,
+    private emailService: EmailService
   ) {}
 
   /**

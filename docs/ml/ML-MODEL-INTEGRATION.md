@@ -4,12 +4,12 @@
 
 ### Kết quả Huấn luyện
 
-| Chỉ số | Giá trị | Mục tiêu | Trạng thái |
-|--------|--------|---------|-----------|
-| Precision (Độ chính xác) | 83.33% | ≥80% | ✅ ĐẠT |
-| Recall (Tái tìm kiếm) | 71.43% | ≥75% | ⚠️ Kém 0.36% |
-| F1 Score | 76.92% | ≥77% | ⚠️ Kém 0.08% |
-| ROC-AUC | 91.90% | ≥85% | ✅ ĐẠT |
+| Chỉ số                   | Giá trị | Mục tiêu | Trạng thái   |
+| ------------------------ | ------- | -------- | ------------ |
+| Precision (Độ chính xác) | 83.33%  | ≥80%     | ✅ ĐẠT       |
+| Recall (Tái tìm kiếm)    | 71.43%  | ≥75%     | ⚠️ Kém 0.36% |
+| F1 Score                 | 76.92%  | ≥77%     | ⚠️ Kém 0.08% |
+| ROC-AUC                  | 91.90%  | ≥85%     | ✅ ĐẠT       |
 
 **Mô hình**: scikit-learn Random Forest  
 **Dữ liệu Huấn luyện**: 29.305 sự kiện (30 ngày), class_weight='balanced'  
@@ -24,6 +24,7 @@
 Với sự mất cân bằng lớp cực đoan (1:813), Random Forest với trọng số lớp cân bằng là **bảo thủ** - nó tránh dương tính giả với chi phí bỏ lỡ một số dị thường. Điều này thực sự **an toàn hơn cho production** (cảnh báo giả ít hơn).
 
 **Các tùy chọn để cải thiện Recall:**
+
 - Thử XGBoost với điều chỉnh siêu tham số
 - Huấn luyện lại với điều chỉnh ngưỡng (hạ ngưỡng quyết định)
 - Sử dụng tổng hợp nhiều mô hình
@@ -84,10 +85,10 @@ import { initMLModel } from './services/anomaly-scoring';
 
 async function bootstrap() {
   // ... setup hiện có ...
-  
+
   // Khởi tạo mô hình ML (fallback thành deterministic nếu thất bại)
   await initMLModel();
-  
+
   // ... phần còn lại của bootstrap ...
 }
 ```
@@ -100,6 +101,7 @@ npm run -w worker-service dev
 ```
 
 Đầu ra mong đợi:
+
 ```
 ✓ Mô hình ML được tải (định dạng ONNX)
 📊 Dịch vụ Worker khởi động trên cổng 3002
@@ -111,6 +113,7 @@ AI Model Version: shadow-heuristic-v1 (ML-enabled)
 ## Hành vi Fallback
 
 Nếu tải mô hình ML thất bại:
+
 - Worker quay lại điểm tính toán xác định (heuristic-v1)
 - Không có gián đoạn dịch vụ
 - Cả hai phương pháp trả về cùng cấu trúc `AnomalyScoreResult`
@@ -123,7 +126,7 @@ export async function initMLModel() {
     mlModelReady = true;
   } catch (error) {
     console.error('Không thể tải mô hình ML, dùng xác định:', error);
-    mlModelReady = false;  // Fallback thành xác định
+    mlModelReady = false; // Fallback thành xác định
   }
 }
 ```
@@ -134,14 +137,14 @@ export async function initMLModel() {
 
 Đây là những chỉ số mà mô hình học được quan trọng nhất để phát hiện dị thường:
 
-| Tính năng | Tầm quan trọng | Diễn giải |
-|---------|-----------|-----------------|
-| packetLoss_norm | ~35% | Mất gói là chỉ báo dị thường mạnh nhất |
-| signalStrength_norm | ~30% | Suy giảm độ mạnh tín hiệu là quan trọng |
-| latency_norm | ~25% | Độ trễ quan trọng nhưng ít hơn loss/signal |
-| overall_quality | ~7% | Điểm tổng hợp có tác động tối thiểu |
-| day_of_week | ~2% | Mẫu ngày có tác động tối thiểu |
-| hour_of_day | ~1% | Mẫu thời gian trong ngày tối thiểu |
+| Tính năng           | Tầm quan trọng | Diễn giải                                  |
+| ------------------- | -------------- | ------------------------------------------ |
+| packetLoss_norm     | ~35%           | Mất gói là chỉ báo dị thường mạnh nhất     |
+| signalStrength_norm | ~30%           | Suy giảm độ mạnh tín hiệu là quan trọng    |
+| latency_norm        | ~25%           | Độ trễ quan trọng nhưng ít hơn loss/signal |
+| overall_quality     | ~7%            | Điểm tổng hợp có tác động tối thiểu        |
+| day_of_week         | ~2%            | Mẫu ngày có tác động tối thiểu             |
+| hour_of_day         | ~1%            | Mẫu thời gian trong ngày tối thiểu         |
 
 **Nhận xét**: Kết nối mạng (mất gói + độ mạnh tín hiệu) thúc đẩy dị thường nhiều hơn độ trễ.
 
@@ -156,12 +159,14 @@ npm run eval:ai
 ```
 
 Điều này sẽ hiển thị:
+
 - Precision/Recall/F1 với mô hình ML
 - Precision/Recall/F1 với ngưỡng rule-based
 - So sánh song song
 - Khuyến nghị cho triển khai production
 
 Đầu ra mong đợi:
+
 ```
 📊 Báo cáo Đánh giá Mô hình AI
 ================================
@@ -169,7 +174,7 @@ Rule-Based (Hiện tại):
   Precision: 78%
   Recall: 82%
   F1: 80%
-  
+
 ML Model (Được huấn luyện):
   Precision: 83%
   Recall: 71%
@@ -204,6 +209,7 @@ Triển khai sang staging để A/B test ✓
 **Lỗi**: `Failed to load ML model using deterministic scoring`
 
 **Giải pháp**:
+
 1. Xác minh file ONNX tồn tại: `ls -la apps/worker-service/src/assets/anomaly-model.onnx`
 2. Kiểm tra quyền: `chmod 644 anomaly-model.onnx`
 3. Xác minh kích thước file: Nên khoảng ~500KB (không bị hỏng)
@@ -212,6 +218,7 @@ Triển khai sang staging để A/B test ✓
 ### Vấn đề: Dự đoán mô hình dường như sai
 
 **Debug**:
+
 ```typescript
 // Thêm logging trong anomaly-scoring.ts
 console.log('Tính năng đầu vào ML:', features);
@@ -222,8 +229,9 @@ console.log('Độ tin cậy dị thường:', anomalyConfidence);
 ### Vấn đề: Cần Recall cao, sẵn sàng chấp nhận cảnh báo giả
 
 **Giải pháp**: Hạ ngưỡng quyết định trong scoreWithMLModel():
+
 ```typescript
-const threshold = 0.4;  // Mặc định 0.5, thấp hơn = cảnh báo nhiều hơn
+const threshold = 0.4; // Mặc định 0.5, thấp hơn = cảnh báo nhiều hơn
 const anomalyConfidence = confidence > threshold ? 1 : 0;
 ```
 
@@ -231,19 +239,20 @@ const anomalyConfidence = confidence > threshold ? 1 : 0;
 
 ## Tham chiếu File
 
-| File | Mục đích | Trạng thái |
-|------|---------|--------|
-| `anomaly-model.pkl` | Mô hình scikit-learn được huấn luyện | Sẵn sàng |
-| `training-metrics.json` | Metrics đánh giá huấn luyện | Sẵn sàng |
-| `anomaly-model.onnx` | Định dạng ONNX (sau chuyển đổi) | Chờ xử lý |
-| `apps/worker-service/src/services/anomaly-scoring.ts` | Mã tích hợp ML (được comment) | Sẵn sàng |
-| `apps/worker-service/src/main.ts` | Khởi tạo ML tại khởi động | Sẵn sàng (chờ cập nhật) |
+| File                                                  | Mục đích                             | Trạng thái              |
+| ----------------------------------------------------- | ------------------------------------ | ----------------------- |
+| `anomaly-model.pkl`                                   | Mô hình scikit-learn được huấn luyện | Sẵn sàng                |
+| `training-metrics.json`                               | Metrics đánh giá huấn luyện          | Sẵn sàng                |
+| `anomaly-model.onnx`                                  | Định dạng ONNX (sau chuyển đổi)      | Chờ xử lý               |
+| `apps/worker-service/src/services/anomaly-scoring.ts` | Mã tích hợp ML (được comment)        | Sẵn sàng                |
+| `apps/worker-service/src/main.ts`                     | Khởi tạo ML tại khởi động            | Sẵn sàng (chờ cập nhật) |
 
 ---
 
 ## Các Bước Tiếp theo
 
 **Ngay lập tức**:
+
 1. ✅ Huấn luyện mô hình ML (HOÀN THÀNH - 83% Precision, 72% Recall, 92% ROC-AUC)
 2. ⏳ Chuyển đổi mô hình sang định dạng ONNX
 3. ⏳ Cập nhật dịch vụ worker để tải mô hình

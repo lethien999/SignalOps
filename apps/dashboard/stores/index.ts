@@ -98,7 +98,13 @@ export const useSystemStore = create<SystemStore>((set) => ({
     set((state) => ({
       stats: state.stats
         ? { ...state.stats, queueDepth: depth }
-        : { totalEvents: 0, activeAlerts: 0, eventsPerMinute: 0, activeDevices: 0, queueDepth: depth },
+        : {
+            totalEvents: 0,
+            activeAlerts: 0,
+            eventsPerMinute: 0,
+            activeDevices: 0,
+            queueDepth: depth,
+          },
     })),
   updateWorkerStats: (workerStats) =>
     set((state) => ({

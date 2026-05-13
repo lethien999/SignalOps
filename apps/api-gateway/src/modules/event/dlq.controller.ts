@@ -11,9 +11,7 @@ export class DlqController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiOkResponse({ description: 'List of failed jobs in DLQ' })
   @Get('failed-jobs')
-  async getFailedJobs(
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-  ) {
+  async getFailedJobs(@Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number) {
     return this.eventBrokerService.getFailedJobs(limit);
   }
 }

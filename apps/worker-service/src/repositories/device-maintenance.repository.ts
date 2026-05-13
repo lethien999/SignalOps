@@ -15,12 +15,12 @@ const deviceMaintenanceSchema = new mongoose.Schema(
     reason: { type: String, trim: true },
     updatedBy: { type: String, trim: true },
   },
-  { timestamps: true, strict: 'throw', minimize: false },
+  { timestamps: true, strict: 'throw', minimize: false }
 );
 
 const DeviceMaintenanceModel = mongoose.model<DeviceMaintenanceRecord>(
   'DeviceMaintenance',
-  deviceMaintenanceSchema,
+  deviceMaintenanceSchema
 );
 
 export class DeviceMaintenanceRepository {

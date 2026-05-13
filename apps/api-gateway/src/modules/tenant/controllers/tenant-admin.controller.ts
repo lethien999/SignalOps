@@ -36,7 +36,7 @@ export class TenantAdminController {
     @Param('tenantId') tenantId: string,
     @Query('skip') skip: string = '0',
     @Query('limit') limit: string = '50',
-    @Request() req: any,
+    @Request() req: any
   ) {
     // Verify requester belongs to this tenant
     if (!validateTenantAccess(req.user.tenantId, tenantId)) {
@@ -59,7 +59,7 @@ export class TenantAdminController {
   async addUser(
     @Param('tenantId') tenantId: string,
     @Body() dto: { email: string; roleId?: string },
-    @Request() req: any,
+    @Request() req: any
   ) {
     // Verify requester belongs to this tenant
     if (!validateTenantAccess(req.user.tenantId, tenantId)) {
@@ -88,7 +88,7 @@ export class TenantAdminController {
   async removeUser(
     @Param('tenantId') tenantId: string,
     @Param('userId') userId: string,
-    @Request() req: any,
+    @Request() req: any
   ) {
     // Verify requester belongs to this tenant
     if (!validateTenantAccess(req.user.tenantId, tenantId)) {
@@ -97,7 +97,7 @@ export class TenantAdminController {
 
     return this.userService.removeUserFromTenant(
       new Types.ObjectId(tenantId),
-      new Types.ObjectId(userId),
+      new Types.ObjectId(userId)
     );
   }
 
@@ -112,7 +112,7 @@ export class TenantAdminController {
     @Param('tenantId') tenantId: string,
     @Param('userId') userId: string,
     @Body() dto: { roleId: string },
-    @Request() req: any,
+    @Request() req: any
   ) {
     // Verify requester belongs to this tenant
     if (!validateTenantAccess(req.user.tenantId, tenantId)) {
@@ -130,7 +130,7 @@ export class TenantAdminController {
     return this.userService.updateUserRole(
       new Types.ObjectId(tenantId),
       new Types.ObjectId(userId),
-      dto.roleId,
+      dto.roleId
     );
   }
 }

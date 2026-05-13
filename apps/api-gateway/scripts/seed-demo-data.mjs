@@ -8,7 +8,12 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(scriptDir, '../../../.env') });
 
 function isRunningInDocker() {
-  return Boolean(process.env.DOCKER_CONTAINER || process.env.container || process.env.KUBERNETES_SERVICE_HOST || process.env.CI);
+  return Boolean(
+    process.env.DOCKER_CONTAINER ||
+    process.env.container ||
+    process.env.KUBERNETES_SERVICE_HOST ||
+    process.env.CI
+  );
 }
 
 function buildMongoUri() {
@@ -84,8 +89,20 @@ function buildEvent(device, index) {
 }
 
 function buildAlert(event, index) {
-  const severity = event.metrics.latency > 280 || event.metrics.packetLoss > 8 || event.metrics.signalStrength < -100 ? 'high' : event.metrics.latency > 180 || event.metrics.packetLoss > 4 ? 'medium' : 'low';
-  const type = event.metrics.latency > 280 ? 'latency' : event.metrics.packetLoss > 8 ? 'packet_loss' : 'signal';
+  const severity =
+    event.metrics.latency > 280 ||
+    event.metrics.packetLoss > 8 ||
+    event.metrics.signalStrength < -100
+      ? 'high'
+      : event.metrics.latency > 180 || event.metrics.packetLoss > 4
+        ? 'medium'
+        : 'low';
+  const type =
+    event.metrics.latency > 280
+      ? 'latency'
+      : event.metrics.packetLoss > 8
+        ? 'packet_loss'
+        : 'signal';
   const state = index % 6 === 0 ? 'resolved' : index % 3 === 0 ? 'acknowledged' : 'open';
 
   return {
@@ -98,7 +115,8 @@ function buildAlert(event, index) {
     status: state,
     acknowledgedBy: state !== 'open' ? 'seed-runner' : undefined,
     acknowledgedAt: state !== 'open' ? new Date(event.timestamp.getTime() + 60 * 1000) : undefined,
-    resolvedAt: state === 'resolved' ? new Date(event.timestamp.getTime() + 5 * 60 * 1000) : undefined,
+    resolvedAt:
+      state === 'resolved' ? new Date(event.timestamp.getTime() + 5 * 60 * 1000) : undefined,
     resolvedBy: state === 'resolved' ? 'seed-runner' : undefined,
     eventId: undefined,
   };
@@ -115,11 +133,18 @@ async function main() {
   await db.collection('events').deleteMany({ deviceId: /^seed-device-/ });
   await db.collection('alerts').deleteMany({ alertId: /^seed-alert-/ });
 
-  const events = Array.from({ length: eventsCount }, (_, index) => buildEvent(deviceSet[index % deviceSet.length], index));
+  const events = Array.from({ length: eventsCount }, (_, index) =>
+    buildEvent(deviceSet[index % deviceSet.length], index)
+  );
   const insertedEvents = await db.collection('events').insertMany(events, { ordered: false });
 
   const alertEvents = events
-    .filter((event) => event.metrics.latency > 180 || event.metrics.packetLoss > 4 || event.metrics.signalStrength < -90)
+    .filter(
+      (event) =>
+        event.metrics.latency > 180 ||
+        event.metrics.packetLoss > 4 ||
+        event.metrics.signalStrength < -90
+    )
     .slice(0, alertsCount);
 
   const alerts = alertEvents.map((event, index) => buildAlert(event, index));
@@ -127,7 +152,9 @@ async function main() {
     await db.collection('alerts').insertMany(alerts, { ordered: false });
   }
 
-  console.log(`Seeded ${Object.keys(insertedEvents.insertedIds).length} events and ${alerts.length} alerts`);
+  console.log(
+    `Seeded ${Object.keys(insertedEvents.insertedIds).length} events and ${alerts.length} alerts`
+  );
   await client.close();
 }
 

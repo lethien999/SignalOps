@@ -157,7 +157,7 @@ export function handleOAuthCallback(): { success: boolean; provider?: string; er
  * Get OAuth login URL for a provider
  */
 export function getOAuthLoginUrl(provider: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
   return `${baseUrl}/auth/oauth/${provider}`;
 }
 
@@ -165,7 +165,7 @@ export function getOAuthLoginUrl(provider: string): string {
  * Get OAuth link URL for a provider (requires authentication)
  */
 export function getOAuthLinkUrl(provider: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
   return `${baseUrl}/auth/oauth/link/${provider}`;
 }
 
@@ -184,9 +184,12 @@ export async function getLinkedProviders(): Promise<LinkedProvider[]> {
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/me`, {
-    headers: getAuthHeader(),
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/auth/me`,
+    {
+      headers: getAuthHeader(),
+    }
+  );
 
   if (!response.ok) {
     throw new Error('Failed to fetch user info');
@@ -206,7 +209,7 @@ export async function unlinkOAuthProvider(provider: string, password: string): P
   }
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/oauth/${provider}/unlink`,
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/auth/oauth/${provider}/unlink`,
     {
       method: 'POST',
       headers: {
@@ -214,7 +217,7 @@ export async function unlinkOAuthProvider(provider: string, password: string): P
         ...getAuthHeader(),
       },
       body: JSON.stringify({ password }),
-    },
+    }
   );
 
   if (!response.ok) {

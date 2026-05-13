@@ -1,6 +1,7 @@
 import { Worker, Queue } from 'bullmq';
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
+import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { Logger } from './common/logger';
 import { buildAlertDocument } from './services/alert-factory';
 import { ThresholdDetector } from './services/threshold-detector';
@@ -11,7 +12,13 @@ import { NotificationWebhookRepository } from './repositories/notification-webho
 import { NotificationWebhookService } from './services/notification-webhook.service';
 import { ThresholdProfileRepository } from './repositories/threshold-profile.repository';
 import { initMLModel, scoreEventAnomaly } from './services/anomaly-scoring';
-import { getRedisQueueConfig, createRedisPubSubClient, CorrelationContextManager, initializeTracing } from '@signalops/common';
+import {
+  getRedisQueueConfig,
+  createRedisPubSubClient,
+  CorrelationContextManager,
+  initializeTracing,
+  shutdownTracing,
+} from '@signalops/common';
 
 type WorkerJobPayload = {
   _id: string;
@@ -28,7 +35,6 @@ type WorkerJobPayload = {
   };
   eventData?: unknown;
 };
-
 type WorkerAlertResult = {
   type: 'latency' | 'packet_loss' | 'signal';
   severity: 'low' | 'warning' | 'medium' | 'high' | 'critical';
@@ -60,8 +66,6 @@ function resolveQueueName(): string {
 }
 
 function createRedisConnection(): Redis {
-  // BullMQ expects maxRetriesPerRequest to be null for worker connections.
-  // Use shared config from common lib
   return new Redis(getRedisQueueConfig());
 }
 
@@ -82,12 +86,15 @@ async function handleAlertCreation(
   alertRepository: AlertRepository,
   eventRepository: EventRepository,
   pubSubRedis: Redis,
-  notificationWebhookService: NotificationWebhookService,
+  notificationWebhookService: NotificationWebhookService
 ): Promise<number> {
   let createdCount = 0;
 
   for (const alertType of detectedAlerts) {
-    const existingAlert = await alertRepository.findOpenDuplicate(eventData.deviceId, alertType.type);
+    const existingAlert = await alertRepository.findOpenDuplicate(
+      eventData.deviceId,
+      alertType.type
+    );
 
     if (existingAlert) {
       Logger.info(`Skipping duplicate open alert for ${eventData.deviceId}/${alertType.type}`);
@@ -105,7 +112,6 @@ async function handleAlertCreation(
     };
     const savedAlert = await alertRepository.create(aiTaggedAlert);
 
-    // Link the originating event to the newly created alert for traceability.
     await eventRepository.linkAlert(eventId, savedAlert._id.toString());
 
     await pubSubRedis.publish(
@@ -119,7 +125,7 @@ async function handleAlertCreation(
         message: savedAlert.message,
         timestamp: new Date().toISOString(),
         deviceId: savedAlert.deviceId,
-      }),
+      })
     );
 
     await notificationWebhookService.notifyAlertCreated({
@@ -129,9 +135,9 @@ async function handleAlertCreation(
       type: savedAlert.type,
       severity: savedAlert.severity,
       message: savedAlert.message,
-        anomalyScore: aiAnomaly.anomalyScore,
-        anomalyConfidence: aiAnomaly.anomalyConfidence,
-        anomalyLabel: aiAnomaly.anomalyLabel,
+      anomalyScore: aiAnomaly.anomalyScore,
+      anomalyConfidence: aiAnomaly.anomalyConfidence,
+      anomalyLabel: aiAnomaly.anomalyLabel,
       location: savedAlert.location
         ? {
             lat: savedAlert.location.lat,
@@ -161,42 +167,50 @@ async function handleAutoResolve(
     packetLossCriticalPercent: number;
     signalWarningDbm: number;
     signalCriticalDbm: number;
-  } | null,
+  } | null
 ): Promise<number> {
-  // If no anomalies detected, check if there are open alerts for this device that can be auto-resolved
   if (detectedAlerts.length > 0) return 0;
 
   const minOpenMinutes = parseInt(process.env.AUTO_RESOLVE_MIN_OPEN_MINUTES || '2', 10);
-
-  const openAlerts = await alertRepository.findOpenAlertsByDevice(eventData.deviceId, minOpenMinutes);
+  const openAlerts = await alertRepository.findOpenAlertsByDevice(
+    eventData.deviceId,
+    minOpenMinutes
+  );
   if (!openAlerts || openAlerts.length === 0) return 0;
 
   let resolvedCount = 0;
   for (const alert of openAlerts) {
-    // Check if the specific metric for this alert type is now normal
     const alertType = alert.type as 'latency' | 'packet_loss' | 'signal';
-    const isNormal = ThresholdDetector.isMetricNormal(alertType, eventData.metrics, thresholdProfile);
+    const isNormal = ThresholdDetector.isMetricNormal(
+      alertType,
+      eventData.metrics,
+      thresholdProfile
+    );
 
     if (isNormal) {
       const resolvedAlert = await alertRepository.autoResolve(alert._id.toString());
-      await pubSubRedis.publish('alerts:resolved', JSON.stringify({
-        id: alert._id.toString(),
-        alertId: alert.alertId,
-        type: alert.type,
-        severity: alert.severity,
-        status: 'resolved',
-        resolvedBy: 'system-auto',
-        resolvedAt: resolvedAlert?.resolvedAt || new Date().toISOString(),
-        resolutionNote: `Tự động đóng: chỉ số ổn định tối thiểu ${minOpenMinutes} phút`,
-        message: 'Tự động đóng: chỉ số đã trở về bình thường',
-        timestamp: new Date().toISOString(),
-        deviceId: eventData.deviceId,
-        autoResolved: true,
-      }));
+      await pubSubRedis.publish(
+        'alerts:resolved',
+        JSON.stringify({
+          id: alert._id.toString(),
+          alertId: alert.alertId,
+          type: alert.type,
+          severity: alert.severity,
+          status: 'resolved',
+          resolvedBy: 'system-auto',
+          resolvedAt: resolvedAlert?.resolvedAt || new Date().toISOString(),
+          resolutionNote: `Auto-resolved after ${minOpenMinutes} minutes of healthy metrics`,
+          message: 'Auto-resolved: metric returned to normal',
+          timestamp: new Date().toISOString(),
+          deviceId: eventData.deviceId,
+          autoResolved: true,
+        })
+      );
       Logger.info(`Auto-resolved alert ${alert._id} for ${eventData.deviceId}/${alertType}`);
       resolvedCount++;
     }
   }
+
   return resolvedCount;
 }
 
@@ -207,37 +221,134 @@ function createWorker(
   eventRepository: EventRepository,
   deviceMaintenanceRepository: DeviceMaintenanceRepository,
   thresholdProfileRepository: ThresholdProfileRepository,
-  notificationWebhookService: NotificationWebhookService,
+  notificationWebhookService: NotificationWebhookService
 ): Worker {
   return new Worker(
     resolveQueueName(),
     async (job) => {
-      // Use event ID or job ID as correlation ID for tracing
       const correlationId = job.data?._id || job.id || 'unknown';
+      const tracer = trace.getTracer('signalops-worker-service');
 
       return CorrelationContextManager.runAsync(correlationId, async () => {
-        Logger.info(`Processing job ${job.id}`, job.data);
+        return tracer.startActiveSpan('worker.process-event', async (span) => {
+          span.setAttribute('messaging.system', 'bullmq');
+          span.setAttribute('messaging.destination', resolveQueueName());
+          span.setAttribute('signalops.correlation_id', correlationId);
+          span.setAttribute('signalops.job_id', String(job.id || 'unknown'));
 
-        try {
-          const eventData = (job.data?.eventData || job.data) as WorkerJobPayload;
+          Logger.info(`Processing job ${job.id}`, job.data);
 
-          if (!eventData._id) {
-            throw new Error('Event job payload missing _id');
-          }
+          try {
+            const eventData = (job.data?.eventData || job.data) as WorkerJobPayload;
 
-          const eventId = eventData._id;
+            if (!eventData._id) {
+              throw new Error('Event job payload missing _id');
+            }
 
-          await eventRepository.updateProcessedTime(eventId);
+            const eventId = eventData._id;
+            await eventRepository.updateProcessedTime(eventId);
 
-          const thresholdProfile = await thresholdProfileRepository.findEffective(eventData.deviceId);
-          const aiAnomaly = await scoreEventAnomaly(eventData.metrics, thresholdProfile || undefined);
+            const thresholdProfile = await thresholdProfileRepository.findEffective(
+              eventData.deviceId
+            );
+            const aiAnomaly = await scoreEventAnomaly(
+              eventData.metrics,
+              thresholdProfile || undefined
+            );
 
-          const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(eventData.deviceId);
-          if (activeMaintenance) {
-            Logger.info('Bỏ qua phát sinh alert do thiết bị đang bảo trì', {
-              deviceId: eventData.deviceId,
-              reason: activeMaintenance.reason,
-            });
+            const activeMaintenance = await deviceMaintenanceRepository.findEnabledByDeviceId(
+              eventData.deviceId
+            );
+            if (activeMaintenance) {
+              Logger.info('Skipping alert creation because the device is under maintenance', {
+                deviceId: eventData.deviceId,
+                reason: activeMaintenance.reason,
+              });
+
+              const eventProcessedPayload = JSON.stringify({
+                id: eventData._id,
+                deviceId: eventData.deviceId,
+                location: eventData.location,
+                metrics: eventData.metrics,
+                timestamp: new Date().toISOString(),
+                alertsCreated: 0,
+                alertsSuppressed: true,
+                suppressionReason: activeMaintenance.reason,
+              });
+              await pubSubRedis.publish('events:processed', eventProcessedPayload);
+
+              span.setStatus({ code: SpanStatusCode.OK });
+              return { success: true, alertsCreated: 0, alertsSuppressed: true };
+            }
+
+            let detectedAlerts = ThresholdDetector.detectAnomalies(
+              eventData,
+              thresholdProfile || undefined
+            );
+            const rolloutPercent = parseInt(process.env.AI_ROLLOUT_PERCENT || '0', 10);
+            const aiAbTestEnabled =
+              String(process.env.AI_AB_TEST || 'false').toLowerCase() === 'true';
+            const inRollout =
+              aiAbTestEnabled && rolloutPercent > 0 && Math.random() * 100 < rolloutPercent;
+
+            if (inRollout) {
+              if (aiAnomaly && aiAnomaly.anomalyLabel === 'anomalous') {
+                const reasonsText = (aiAnomaly.anomalyReasons || []).join(' ').toLowerCase();
+                const inferType = () => {
+                  if (reasonsText.includes('latency')) return 'latency';
+                  if (reasonsText.includes('packet')) return 'packet_loss';
+                  if (reasonsText.includes('signal')) return 'signal';
+                  return 'latency';
+                };
+                const severityForScore = (score: number) => {
+                  if (score >= 90) return 'critical';
+                  if (score >= 75) return 'high';
+                  if (score >= 55) return 'medium';
+                  if (score >= 35) return 'warning';
+                  return 'low';
+                };
+
+                detectedAlerts = [
+                  {
+                    type: inferType() as 'latency' | 'packet_loss' | 'signal',
+                    severity: severityForScore(aiAnomaly.anomalyScore) as any,
+                    message: `AI-driven alert (A/B) - score ${aiAnomaly.anomalyScore}`,
+                  },
+                ];
+                Logger.info('In A/B rollout: using AI decision for alert creation', {
+                  deviceId: eventData.deviceId,
+                  score: aiAnomaly.anomalyScore,
+                });
+              } else {
+                detectedAlerts = [];
+                Logger.info('In A/B rollout: ML classified event as normal, suppressing alerts', {
+                  deviceId: eventData.deviceId,
+                  score: aiAnomaly?.anomalyScore,
+                });
+              }
+            }
+
+            const createdCount = await handleAlertCreation(
+              eventId,
+              eventData,
+              detectedAlerts,
+              aiAnomaly,
+              alertRepository,
+              eventRepository,
+              pubSubRedis,
+              notificationWebhookService
+            );
+
+            const autoResolvedCount = await handleAutoResolve(
+              eventData,
+              detectedAlerts,
+              alertRepository,
+              pubSubRedis,
+              thresholdProfile || undefined
+            );
+            if (autoResolvedCount > 0) {
+              Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
+            }
 
             const eventProcessedPayload = JSON.stringify({
               id: eventData._id,
@@ -245,104 +356,33 @@ function createWorker(
               location: eventData.location,
               metrics: eventData.metrics,
               timestamp: new Date().toISOString(),
-              alertsCreated: 0,
-              alertsSuppressed: true,
-              suppressionReason: activeMaintenance.reason,
+              alertsCreated: createdCount,
+              aiModelVersion: aiAnomaly.aiModelVersion,
+              anomalyScore: aiAnomaly.anomalyScore,
+              anomalyConfidence: aiAnomaly.anomalyConfidence,
+              anomalyLabel: aiAnomaly.anomalyLabel,
+              anomalyReasons: aiAnomaly.anomalyReasons,
             });
             await pubSubRedis.publish('events:processed', eventProcessedPayload);
 
-            return { success: true, alertsCreated: 0, alertsSuppressed: true };
+            span.setStatus({ code: SpanStatusCode.OK });
+            return { success: true, alertsCreated: createdCount };
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            span.recordException(error instanceof Error ? error : new Error(errorMessage));
+            span.setStatus({ code: SpanStatusCode.ERROR, message: errorMessage });
+            Logger.error(`Job processing failed: ${errorMessage}`, error);
+            throw error;
+          } finally {
+            span.end();
           }
-
-          let detectedAlerts = ThresholdDetector.detectAnomalies(eventData, thresholdProfile || undefined);
-          // Simple A/B rollout: for a percentage of events, use ML decision as source of truth
-          const rolloutPercent = parseInt(process.env.AI_ROLLOUT_PERCENT || '0', 10);
-          const aiAbTestEnabled = String(process.env.AI_AB_TEST || 'false').toLowerCase() === 'true';
-          const inRollout = aiAbTestEnabled && rolloutPercent > 0 && Math.random() * 100 < rolloutPercent;
-
-          if (inRollout) {
-            // If ML marks anomalous, synthesize alerts based on ML reasons; otherwise treat as no alerts
-            if (aiAnomaly && aiAnomaly.anomalyLabel === 'anomalous') {
-              const reasonsText = (aiAnomaly.anomalyReasons || []).join(' ').toLowerCase();
-              const inferType = () => {
-                if (reasonsText.includes('latency')) return 'latency';
-                if (reasonsText.includes('packet')) return 'packet_loss';
-                if (reasonsText.includes('signal')) return 'signal';
-                return 'latency';
-              };
-              const severityForScore = (score: number) => {
-                if (score >= 90) return 'critical';
-                if (score >= 75) return 'high';
-                if (score >= 55) return 'medium';
-                if (score >= 35) return 'warning';
-                return 'low';
-              };
-
-              detectedAlerts = [
-                {
-                  type: inferType() as 'latency' | 'packet_loss' | 'signal',
-                  severity: severityForScore(aiAnomaly.anomalyScore) as any,
-                  message: `AI-driven alert (A/B) - score ${aiAnomaly.anomalyScore}`,
-                },
-              ];
-              Logger.info('In A/B rollout: using AI decision for alert creation', { deviceId: eventData.deviceId, score: aiAnomaly.anomalyScore });
-            } else {
-              // ML says normal: suppress deterministic alerts for this event in rollout group
-              detectedAlerts = [];
-              Logger.info('In A/B rollout: ML indicates normal, suppressing deterministic alerts', { deviceId: eventData.deviceId });
-            }
-          }
-          const createdCount = await handleAlertCreation(
-            eventId,
-            eventData,
-            detectedAlerts,
-            aiAnomaly,
-            alertRepository,
-            eventRepository,
-            pubSubRedis,
-            notificationWebhookService,
-          );
-
-          // E2: Auto-resolve if metrics are back to normal
-          const autoResolvedCount = await handleAutoResolve(
-            eventData,
-            detectedAlerts,
-            alertRepository,
-            pubSubRedis,
-            thresholdProfile || undefined,
-          );
-          if (autoResolvedCount > 0) {
-            Logger.info(`Auto-resolved ${autoResolvedCount} alerts for ${eventData.deviceId}`);
-          }
-
-          // Publish event:processed to Redis Pub/Sub for API Gateway to broadcast via WebSocket
-          const eventProcessedPayload = JSON.stringify({
-            id: eventData._id,
-            deviceId: eventData.deviceId,
-            location: eventData.location,
-            metrics: eventData.metrics,
-            timestamp: new Date().toISOString(),
-            alertsCreated: createdCount,
-            aiModelVersion: aiAnomaly.aiModelVersion,
-            anomalyScore: aiAnomaly.anomalyScore,
-            anomalyConfidence: aiAnomaly.anomalyConfidence,
-            anomalyLabel: aiAnomaly.anomalyLabel,
-            anomalyReasons: aiAnomaly.anomalyReasons,
-          });
-          await pubSubRedis.publish('events:processed', eventProcessedPayload);
-
-          return { success: true, alertsCreated: createdCount };
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          Logger.error(`Job processing failed: ${errorMessage}`, error);
-          throw error;
-        }
+        });
       });
     },
     {
       connection: redis,
       concurrency: parseInt(process.env.WORKER_CONCURRENCY || '5', 10),
-    },
+    }
   );
 }
 
@@ -382,7 +422,7 @@ function registerDlqMonitoring(dlq: Queue, pubSubRedis: Redis): NodeJS.Timeout {
               queue: dlq.name,
               failedJobs: count,
               timestamp: new Date().toISOString(),
-            }),
+            })
           );
         }
       } catch (error) {
@@ -392,7 +432,13 @@ function registerDlqMonitoring(dlq: Queue, pubSubRedis: Redis): NodeJS.Timeout {
   }, intervalMs);
 }
 
-function registerShutdown(worker: Worker, queue: Queue, dlq: Queue, redis: Redis, pubSubRedis: Redis): void {
+function registerShutdown(
+  worker: Worker,
+  queue: Queue,
+  dlq: Queue,
+  redis: Redis,
+  pubSubRedis: Redis
+): void {
   let dlqMonitorTimer: NodeJS.Timeout | null = null;
 
   const attachMonitor = () => {
@@ -403,8 +449,9 @@ function registerShutdown(worker: Worker, queue: Queue, dlq: Queue, redis: Redis
 
   attachMonitor();
 
-  process.on('SIGTERM', async () => {
-    Logger.info('SIGTERM received, shutting down worker...');
+  const shutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
+    Logger.info(`${signal} received, shutting down worker...`);
+    await shutdownTracing();
     if (dlqMonitorTimer) {
       clearInterval(dlqMonitorTimer);
       dlqMonitorTimer = null;
@@ -416,12 +463,20 @@ function registerShutdown(worker: Worker, queue: Queue, dlq: Queue, redis: Redis
     await pubSubRedis.quit();
     await mongoose.disconnect();
     process.exit(0);
+  };
+
+  process.on('SIGTERM', async () => {
+    await shutdown('SIGTERM');
+  });
+
+  process.on('SIGINT', async () => {
+    await shutdown('SIGINT');
   });
 }
 
 async function bootstrap() {
   // Initialize OpenTelemetry tracing first
-  initializeTracing();
+  await initializeTracing('signalops-worker-service');
 
   let context: WorkerContext | null = null;
 
@@ -441,7 +496,9 @@ async function bootstrap() {
     const eventRepository = new EventRepository();
     const deviceMaintenanceRepository = new DeviceMaintenanceRepository();
     const notificationWebhookRepository = new NotificationWebhookRepository();
-    const notificationWebhookService = new NotificationWebhookService(notificationWebhookRepository);
+    const notificationWebhookService = new NotificationWebhookService(
+      notificationWebhookRepository
+    );
     const thresholdProfileRepository = new ThresholdProfileRepository();
     await initMLModel();
     const worker = createWorker(
@@ -451,7 +508,7 @@ async function bootstrap() {
       eventRepository,
       deviceMaintenanceRepository,
       thresholdProfileRepository,
-      notificationWebhookService,
+      notificationWebhookService
     );
 
     context = { redis, pubSubRedis, queue, dlq, worker };

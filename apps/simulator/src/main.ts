@@ -1,5 +1,12 @@
 import axios from 'axios';
+import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { Logger } from './common/logger';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 // Simulate different device locations
 const DEVICES = [
@@ -28,13 +35,73 @@ type Metrics = {
   signalStrength: number;
 };
 
+let tracingSdk: NodeSDK | null = null;
+
+function isTracingEnabled(): boolean {
+  return String(process.env.TRACING_ENABLED || 'false').toLowerCase() === 'true';
+}
+
+function resolveExporter() {
+  const endpoint =
+    process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+
+  if (!endpoint || endpoint.trim().length === 0) {
+    return new ConsoleSpanExporter();
+  }
+
+  const normalized = endpoint.trim().replace(/\/$/, '');
+  const traceUrl = normalized.endsWith('/v1/traces') ? normalized : `${normalized}/v1/traces`;
+  return new OTLPTraceExporter({ url: traceUrl });
+}
+
+async function initializeTracing() {
+  if (!isTracingEnabled() || tracingSdk) {
+    return;
+  }
+
+  const exporter = resolveExporter();
+  tracingSdk = new NodeSDK({
+    resource: resourceFromAttributes({
+      [SemanticResourceAttributes.SERVICE_NAME]:
+        process.env.OTEL_SERVICE_NAME || 'signalops-simulator',
+      [SemanticResourceAttributes.SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
+      [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+    }),
+    traceExporter: exporter,
+    instrumentations: [getNodeAutoInstrumentations()],
+  });
+
+  await tracingSdk.start();
+  const exporterName = exporter instanceof ConsoleSpanExporter ? 'console' : 'otlp-http';
+  Logger.info(`Tracing initialized for simulator (${exporterName})`);
+
+  const shutdown = async () => {
+    if (!tracingSdk) {
+      return;
+    }
+    await tracingSdk.shutdown().catch((error) => Logger.error('Failed to shutdown tracing', error));
+    tracingSdk = null;
+  };
+
+  process.once('SIGTERM', () => {
+    void shutdown();
+  });
+  process.once('SIGINT', () => {
+    void shutdown();
+  });
+}
+
 function generateMetrics(): Metrics {
   // Generate realistic metrics with occasional anomalies
   const useAnomaly = Math.random() < 0.2; // 20% chance of anomaly
 
   return {
-    latency: useAnomaly ? Math.floor(Math.random() * 300 + 200) : Math.floor(Math.random() * 150 + 20),
-    packetLoss: useAnomaly ? Math.floor(Math.random() * 15 + 5) : Math.floor(Math.random() * 2 + 0.1),
+    latency: useAnomaly
+      ? Math.floor(Math.random() * 300 + 200)
+      : Math.floor(Math.random() * 150 + 20),
+    packetLoss: useAnomaly
+      ? Math.floor(Math.random() * 15 + 5)
+      : Math.floor(Math.random() * 2 + 0.1),
     signalStrength: useAnomaly
       ? Math.floor(Math.random() * 20 - 110)
       : Math.floor(Math.random() * 20 - 60),
@@ -42,6 +109,8 @@ function generateMetrics(): Metrics {
 }
 
 async function sendEvent(device: Device, metrics: Metrics) {
+  const tracer = trace.getTracer('signalops-simulator');
+
   try {
     const eventData = {
       deviceId: device.id,
@@ -57,14 +126,36 @@ async function sendEvent(device: Device, metrics: Metrics) {
       },
     };
 
-    const response = await axios.post(
-      `${process.env.SIMULATOR_API_URL || 'http://localhost:3000'}/api/events`,
-      eventData,
-    );
+    return await tracer.startActiveSpan('simulator.send-event', async (span) => {
+      span.setAttribute('signalops.device_id', device.id);
+      span.setAttribute('signalops.device_name', device.name);
+      span.setAttribute('messaging.system', 'http');
 
-    Logger.info(`Event sent for ${device.name}`, {
-      eventId: response.data.id,
-      metrics,
+      try {
+        const response = await axios.post(
+          `${process.env.SIMULATOR_API_URL || 'http://localhost:3000'}/api/events`,
+          eventData
+        );
+
+        span.setAttribute('http.status_code', response.status);
+        span.setStatus({ code: SpanStatusCode.OK });
+
+        Logger.info(`Event sent for ${device.name}`, {
+          eventId: response.data.id,
+          metrics,
+        });
+
+        return response;
+      } catch (error: unknown) {
+        span.recordException(error instanceof Error ? error : new Error(String(error)));
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      } finally {
+        span.end();
+      }
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -74,6 +165,8 @@ async function sendEvent(device: Device, metrics: Metrics) {
 
 async function simulate() {
   const updateIntervalMs = parseInt(process.env.SIMULATOR_INTERVAL_MS || '5000', 10);
+
+  await initializeTracing();
 
   Logger.info(`Simulator starting with ${DEVICES.length} devices`);
   Logger.info(`Update interval: ${updateIntervalMs}ms`);

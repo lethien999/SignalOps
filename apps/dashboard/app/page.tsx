@@ -1,23 +1,25 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  AlertTriangle, Activity, TrendingUp, AlertCircle,
-  Radio, Zap, Shield, ArrowRight, Wifi,
-} from "lucide-react";
-import Link from "next/link";
-import { MetricCard } from "@/components/MetricCard";
-import { AlertTable } from "@/components/AlertTable";
-import { AlertDetailModal } from "@/components/AlertDetailModal";
-import { EventMetricsChart } from "@/components/EventMetricsChart";
-import { ToastStack, type ToastItem, type ToastType } from "@/components/ToastStack";
-import {
-  useAlertStore,
-  useEventStore,
-  useSystemStore,
-  useDeviceStore,
-} from "@/stores";
-import { fetchAlerts, fetchEvents, fetchSystemStats } from "@/lib/api";
+  AlertTriangle,
+  Activity,
+  TrendingUp,
+  AlertCircle,
+  Radio,
+  Zap,
+  Shield,
+  ArrowRight,
+  Wifi,
+} from 'lucide-react';
+import Link from 'next/link';
+import { MetricCard } from '@/components/MetricCard';
+import { AlertTable } from '@/components/AlertTable';
+import { AlertDetailModal } from '@/components/AlertDetailModal';
+import { EventMetricsChart } from '@/components/EventMetricsChart';
+import { ToastStack, type ToastItem, type ToastType } from '@/components/ToastStack';
+import { useAlertStore, useEventStore, useSystemStore, useDeviceStore } from '@/stores';
+import { fetchAlerts, fetchEvents, fetchSystemStats } from '@/lib/api';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -48,24 +50,22 @@ export default function DashboardPage() {
         setStats(s);
         setError(null);
       } catch (err) {
-        console.error("Failed to load:", err);
-        setError(err instanceof Error ? err.message : "Không thể tải dữ liệu");
+        console.error('Failed to load:', err);
+        setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
       } finally {
         setLoading(false);
       }
     })();
   }, [setAlerts, setEvents, setStats]);
 
-  const activeAlerts = alerts.filter((a) => a.status === "open").length;
-  const criticalAlerts = alerts.filter(
-    (a) => a.severity === "high" && a.status === "open"
-  ).length;
+  const activeAlerts = alerts.filter((a) => a.status === 'open').length;
+  const criticalAlerts = alerts.filter((a) => a.severity === 'high' && a.status === 'open').length;
   const aiSuspiciousEvents = [...events]
     .filter((event) => (event.anomalyScore ?? 0) >= 35)
     .sort((left, right) => (right.anomalyScore ?? 0) - (left.anomalyScore ?? 0))
     .slice(0, 5);
 
-  const pushToast = (msg: string, type: ToastType = "info") => {
+  const pushToast = (msg: string, type: ToastType = 'info') => {
     const id = Date.now();
     setToasts((c) => [...c, { id, message: msg, type }]);
     setTimeout(() => setToasts((c) => c.filter((t) => t.id !== id)), 3500);
@@ -73,14 +73,20 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <ToastStack toasts={toasts} onDismiss={(id) => setToasts((c) => c.filter((t) => t.id !== id))} />
+      <ToastStack
+        toasts={toasts}
+        onDismiss={(id) => setToasts((c) => c.filter((t) => t.id !== id))}
+      />
 
       {/* ── Hero Banner ─────────────────────────── */}
       <div className="relative mb-8 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 p-8 text-white">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
-          backgroundSize: '24px 24px',
-        }} />
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
@@ -91,8 +97,8 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-bold">Hệ thống giám sát SignalOps</h1>
               </div>
               <p className="text-blue-200 text-sm max-w-xl leading-relaxed">
-                Giám sát chất lượng mạng viễn thông theo thời gian thực. Tự động phát hiện bất thường
-                về Latency, Packet Loss và Signal Strength từ các thiết bị đang kết nối.
+                Giám sát chất lượng mạng viễn thông theo thời gian thực. Tự động phát hiện bất
+                thường về Latency, Packet Loss và Signal Strength từ các thiết bị đang kết nối.
               </p>
             </div>
 
@@ -185,7 +191,7 @@ export default function DashboardPage() {
           title="Cảnh báo đang mở"
           value={activeAlerts}
           icon={AlertTriangle}
-          trend={activeAlerts > 0 ? "up" : "stable"}
+          trend={activeAlerts > 0 ? 'up' : 'stable'}
           trendValue={`${criticalAlerts} nghiêm trọng`}
           bgColor="bg-red-50"
         />
@@ -219,7 +225,10 @@ export default function DashboardPage() {
                 {activeAlerts} đang mở
               </span>
             )}
-            <Link href="/alerts" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            <Link
+              href="/alerts"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
               Xem tất cả <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -240,7 +249,9 @@ export default function DashboardPage() {
       <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm animate-fade-in">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">Sự kiện gần đây</h2>
-          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{events.length} đã tải</span>
+          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+            {events.length} đã tải
+          </span>
         </div>
 
         {events.length === 0 ? (
@@ -251,7 +262,8 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {events.slice(0, 5).map((event) => {
-              const isHigh = (event.metrics?.latency ?? 0) > 200 || (event.metrics?.packetLoss ?? 0) > 5;
+              const isHigh =
+                (event.metrics?.latency ?? 0) > 200 || (event.metrics?.packetLoss ?? 0) > 5;
               return (
                 <div
                   key={event.id}
@@ -264,24 +276,33 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-medium text-gray-900">Thiết bị {event.deviceId}</p>
                       <p className="text-sm text-gray-500">
-                        {event.location?.name || `${event.location?.lat ?? "?"}, ${event.location?.lng ?? "?"}`}
+                        {event.location?.name ||
+                          `${event.location?.lat ?? '?'}, ${event.location?.lng ?? '?'}`}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-4 text-sm">
                     {(event.anomalyScore ?? 0) > 0 && (
-                      <span className={`font-semibold ${event.anomalyScore && event.anomalyScore >= 70 ? 'text-purple-700' : 'text-purple-600'}`}>
+                      <span
+                        className={`font-semibold ${event.anomalyScore && event.anomalyScore >= 70 ? 'text-purple-700' : 'text-purple-600'}`}
+                      >
                         AI: {event.anomalyScore}%
                       </span>
                     )}
-                    <span className={`font-medium ${(event.metrics?.latency ?? 0) > 200 ? 'text-red-600' : 'text-gray-600'}`}>
-                      Latency: {event.metrics?.latency ?? "-"}ms
+                    <span
+                      className={`font-medium ${(event.metrics?.latency ?? 0) > 200 ? 'text-red-600' : 'text-gray-600'}`}
+                    >
+                      Latency: {event.metrics?.latency ?? '-'}ms
                     </span>
-                    <span className={`font-medium ${(event.metrics?.packetLoss ?? 0) > 5 ? 'text-red-600' : 'text-gray-600'}`}>
-                      Loss: {event.metrics?.packetLoss ?? "-"}%
+                    <span
+                      className={`font-medium ${(event.metrics?.packetLoss ?? 0) > 5 ? 'text-red-600' : 'text-gray-600'}`}
+                    >
+                      Loss: {event.metrics?.packetLoss ?? '-'}%
                     </span>
-                    <span className={`font-medium ${(event.metrics?.signalStrength ?? 0) < -90 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                      Signal: {event.metrics?.signalStrength ?? "-"} dBm
+                    <span
+                      className={`font-medium ${(event.metrics?.signalStrength ?? 0) < -90 ? 'text-yellow-600' : 'text-gray-600'}`}
+                    >
+                      Signal: {event.metrics?.signalStrength ?? '-'} dBm
                     </span>
                   </div>
                 </div>
@@ -295,7 +316,9 @@ export default function DashboardPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-purple-900">AI shadow mode</h2>
-            <p className="text-sm text-purple-700">Chấm điểm bất thường song song rule-based để chuẩn bị cho rollout M13.</p>
+            <p className="text-sm text-purple-700">
+              Chấm điểm bất thường song song rule-based để chuẩn bị cho rollout M13.
+            </p>
           </div>
           <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-purple-700 ring-1 ring-purple-200">
             {aiSuspiciousEvents.length} tín hiệu đáng chú ý
@@ -309,16 +332,25 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {aiSuspiciousEvents.map((event) => (
-              <div key={event.id} className="rounded-xl border border-purple-200 bg-white px-4 py-3">
+              <div
+                key={event.id}
+                className="rounded-xl border border-purple-200 bg-white px-4 py-3"
+              >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-semibold text-gray-900">Thiết bị {event.deviceId}</p>
                     <p className="text-sm text-gray-500">
-                      {event.anomalyLabel === 'anomalous' ? 'Bất thường cao' : event.anomalyLabel === 'suspicious' ? 'Đáng chú ý' : 'Ổn định'}
+                      {event.anomalyLabel === 'anomalous'
+                        ? 'Bất thường cao'
+                        : event.anomalyLabel === 'suspicious'
+                          ? 'Đáng chú ý'
+                          : 'Ổn định'}
                       {event.anomalyConfidence ? ` • độ tin cậy ${event.anomalyConfidence}%` : ''}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-sm font-bold ${event.anomalyScore && event.anomalyScore >= 70 ? 'bg-purple-100 text-purple-800' : 'bg-purple-50 text-purple-700'}`}>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-bold ${event.anomalyScore && event.anomalyScore >= 70 ? 'bg-purple-100 text-purple-800' : 'bg-purple-50 text-purple-700'}`}
+                  >
                     Score {event.anomalyScore ?? 0}/100
                   </span>
                 </div>
@@ -340,11 +372,11 @@ export default function DashboardPage() {
       <AlertDetailModal
         alert={selectedAlert}
         onClose={() => selectAlert(null)}
-        onActionComplete={(msg, type = "info") => pushToast(msg, type)}
+        onActionComplete={(msg, type = 'info') => pushToast(msg, type)}
       />
 
       <div className="mt-8 text-center text-sm text-gray-400">
-        <p>Cập nhật lần cuối: {new Date().toLocaleString("vi-VN")}</p>
+        <p>Cập nhật lần cuối: {new Date().toLocaleString('vi-VN')}</p>
       </div>
     </div>
   );

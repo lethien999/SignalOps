@@ -1,4 +1,13 @@
-import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { EventService } from './event.service';
 import { UpdateDeviceMaintenanceDto } from './dto/update-device-maintenance.dto';
@@ -29,7 +38,7 @@ export class DeviceController {
   @Get('maintenance')
   async getMaintenanceDevices(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
-    @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number
   ) {
     return this.eventService.getMaintenanceDevices(skip, limit);
   }
@@ -42,7 +51,7 @@ export class DeviceController {
   @Patch(':deviceId/maintenance')
   async updateDeviceMaintenance(
     @Param('deviceId') deviceId: string,
-    @Body() body: UpdateDeviceMaintenanceDto,
+    @Body() body: UpdateDeviceMaintenanceDto
   ) {
     return this.eventService.updateDeviceMaintenance(deviceId, body);
   }

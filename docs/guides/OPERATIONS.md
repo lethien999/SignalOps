@@ -15,16 +15,16 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
   (Mới tạo)    (Đã xác nhận)       (Đã xử lý xong)
 ```
 
-| Trạng thái | Ý nghĩa | Ai thực hiện |
-|-----------|---------|-------------|
-| **OPEN** | Cảnh báo mới, chưa ai xử lý | Hệ thống tự tạo |
+| Trạng thái       | Ý nghĩa                           | Ai thực hiện      |
+| ---------------- | --------------------------------- | ----------------- |
+| **OPEN**         | Cảnh báo mới, chưa ai xử lý       | Hệ thống tự tạo   |
 | **ACKNOWLEDGED** | Đã có người tiếp nhận, đang xử lý | Kỹ thuật viên NOC |
-| **RESOLVED** | Đã khắc phục xong | Kỹ thuật viên NOC |
+| **RESOLVED**     | Đã khắc phục xong                 | Kỹ thuật viên NOC |
 
 ### Bước xử lý chi tiết
 
 1. **Nhận cảnh báo**: Kiểm tra Dashboard → Trang "Cảnh báo" → Lọc trạng thái "Đang mở"
-2. **Đánh giá mức độ**: 
+2. **Đánh giá mức độ**:
    - 🔴 HIGH (Latency/Packet Loss) → Xử lý ngay, ảnh hưởng người dùng
    - 🟡 MEDIUM (Signal) → Xử lý trong ca trực
 3. **Xác nhận tiếp nhận**: Bấm "Xác nhận cảnh báo" → Nhập tên bạn
@@ -40,11 +40,13 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
 **Triệu chứng**: Phản hồi chậm, cuộc gọi giật, video lag
 
 **Nguyên nhân thường gặp**:
+
 - Quá tải trên thiết bị mạng
 - Đường truyền backhaul bị nghẽn
 - Lỗi phần cứng (CPU/RAM cao)
 
 **Cách khắc phục**:
+
 1. Kiểm tra tải CPU/RAM trên thiết bị bị ảnh hưởng
 2. Kiểm tra băng thông backhaul
 3. Kiểm tra có đang bị tấn công DDoS không
@@ -56,12 +58,14 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
 **Triệu chứng**: Cuộc gọi bị đứt, dữ liệu không đầy đủ
 
 **Nguyên nhân thường gặp**:
+
 - Cáp quang bị lỗi (suy hao cao)
 - Nhiễu tín hiệu RF
 - Buffer overflow trên thiết bị
 - Lỗi phần cứng card mạng
 
 **Cách khắc phục**:
+
 1. Kiểm tra cáp quang (đo suy hao bằng OTDR)
 2. Kiểm tra nhiễu RF trên băng tần
 3. Kiểm tra error counters trên interface
@@ -72,12 +76,14 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
 **Triệu chứng**: Vùng phủ sóng yếu, khó kết nối
 
 **Nguyên nhân thường gặp**:
+
 - Anten bị lệch hướng
 - Có vật cản mới (tòa nhà, cây cối)
 - Thiết bị phát sóng giảm công suất
 - Cần thêm trạm phát sóng
 
 **Cách khắc phục**:
+
 1. Kiểm tra hướng anten tại trạm
 2. Điều chỉnh tilt/azimuth của anten
 3. Kiểm tra công suất phát
@@ -88,25 +94,30 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
 ## 3. Cách sử dụng Dashboard
 
 ### Trang Tổng quan
+
 - Xem nhanh: tổng sự kiện, cảnh báo đang mở, thiết bị kết nối
 - Biểu đồ xu hướng
 - Sự kiện gần đây (highlight đỏ nếu vượt ngưỡng)
 
 ### Trang Bản đồ
+
 - Xem vị trí thiết bị trên bản đồ
 - Marker đỏ = đang cảnh báo, xanh = bình thường
 - Bấm vào marker để xem chi tiết
 
 ### Trang Cảnh báo
+
 - Lọc theo mức độ (Nghiêm trọng, Trung bình, Thấp)
 - Lọc theo trạng thái (Đang mở, Đã xác nhận, Đã xử lý)
 - Bấm vào cảnh báo để xem chi tiết và xử lý
 
 ### Trang Chỉ số
+
 - Biểu đồ Latency, Packet Loss, Signal Strength
 - Thống kê hiệu suất Worker
 
 ### Trang Cài đặt
+
 - Kiểm tra trạng thái kết nối
 - Xem ngưỡng cảnh báo đang áp dụng
 - Gửi event thử nghiệm để kiểm tra hệ thống
@@ -116,10 +127,12 @@ Tài liệu này hướng dẫn đội ngũ vận hành (NOC - Network Operation
 ## 4. Quy tắc chống trùng lặp
 
 Hệ thống tự động chống tạo cảnh báo trùng:
+
 - Nếu **cùng thiết bị** + **cùng loại cảnh báo** đã có 1 cảnh báo OPEN → **không tạo thêm**
 - Chỉ khi cảnh báo cũ được RESOLVED, event vi phạm tiếp theo mới tạo cảnh báo mới
 
 **Ví dụ**:
+
 ```
 14:00 — device-01 latency=300ms → Tạo cảnh báo #1 (OPEN)
 14:01 — device-01 latency=280ms → Bỏ qua (đã có cảnh báo OPEN)
@@ -131,12 +144,12 @@ Hệ thống tự động chống tạo cảnh báo trùng:
 
 ## 5. Escalation (Báo cấp trên)
 
-| Điều kiện | Hành động |
-|----------|----------|
-| Cảnh báo HIGH mở > 30 phút | Báo trưởng ca |
-| Cùng thiết bị lặp lại > 3 lần/ngày | Báo kỹ thuật trưởng, cần xem xét phần cứng |
+| Điều kiện                             | Hành động                                        |
+| ------------------------------------- | ------------------------------------------------ |
+| Cảnh báo HIGH mở > 30 phút            | Báo trưởng ca                                    |
+| Cùng thiết bị lặp lại > 3 lần/ngày    | Báo kỹ thuật trưởng, cần xem xét phần cứng       |
 | > 5 thiết bị cùng khu vực bị cảnh báo | Kiểm tra hạ tầng khu vực (cáp quang, nguồn điện) |
-| API Gateway không phản hồi | Kiểm tra Docker, restart service |
+| API Gateway không phản hồi            | Kiểm tra Docker, restart service                 |
 
 ---
 
@@ -179,11 +192,13 @@ curl http://localhost:3000/api/dlq/failed-jobs?limit=20
 ## 8. SSL/TLS Termination Setup
 
 ### Mô tả
+
 Nginx reverse proxy hỗ trợ SSL termination, tự động chuyển hướng HTTP → HTTPS và cấu hình bảo mật TLS.
 
 ### Chuẩn bị chứng chỉ
 
 #### Development (Self-signed)
+
 ```bash
 mkdir -p infrastructure/certs
 openssl req -x509 -newkey rsa:4096 -nodes \
@@ -194,6 +209,7 @@ openssl req -x509 -newkey rsa:4096 -nodes \
 ```
 
 #### Production (Let's Encrypt)
+
 ```bash
 # Sử dụng Certbot với DNS validation
 certbot certonly --dns-route53 \
@@ -249,18 +265,18 @@ docker exec signalops-nginx nginx -t
 
 Khi sử dụng SSL, Nginx tự động thêm các header bảo mật:
 
-| Header | Ý nghĩa |
-|--------|---------|
+| Header                      | Ý nghĩa                |
+| --------------------------- | ---------------------- |
 | `Strict-Transport-Security` | Bắt buộc HTTPS (1 năm) |
-| `X-Frame-Options` | Ngăn clickjacking |
-| `X-Content-Type-Options` | Ngăn MIME-sniffing |
-| `X-XSS-Protection` | Bảo vệ XSS |
+| `X-Frame-Options`           | Ngăn clickjacking      |
+| `X-Content-Type-Options`    | Ngăn MIME-sniffing     |
+| `X-XSS-Protection`          | Bảo vệ XSS             |
 
 ### Troubleshooting
 
-| Lỗi | Nguyên nhân | Giải pháp |
-|-----|-----------|----------|
-| `SSL_ERROR_BAD_CERT_DOMAIN` | Certificate domain không khớp | Kiểm tra Subject Name (CN) của cert |
-| `connection timed out` | Port 443 không mở | Kiểm tra firewall, docker port mapping |
-| `certificate verify failed` | Client không tin cert | Sử dụng ca-bundle hoặc disable verify (dev only) |
-| `nginx: [emerg] no key file` | Missing key.pem | Kiểm tra infrastructure/certs/key.pem |
+| Lỗi                          | Nguyên nhân                   | Giải pháp                                        |
+| ---------------------------- | ----------------------------- | ------------------------------------------------ |
+| `SSL_ERROR_BAD_CERT_DOMAIN`  | Certificate domain không khớp | Kiểm tra Subject Name (CN) của cert              |
+| `connection timed out`       | Port 443 không mở             | Kiểm tra firewall, docker port mapping           |
+| `certificate verify failed`  | Client không tin cert         | Sử dụng ca-bundle hoặc disable verify (dev only) |
+| `nginx: [emerg] no key file` | Missing key.pem               | Kiểm tra infrastructure/certs/key.pem            |

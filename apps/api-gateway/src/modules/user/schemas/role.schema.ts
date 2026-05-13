@@ -60,11 +60,6 @@ export const DEFAULT_ROLES: Partial<Role>[] = [
   {
     _id: 'viewer',
     name: 'Viewer',
-    permissions: [
-      'read:events',
-      'read:alerts',
-      'read:config',
-      'view:metrics',
-    ],
+    permissions: ['read:events', 'read:alerts', 'read:config', 'view:metrics'],
   },
 ];

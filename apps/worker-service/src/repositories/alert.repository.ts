@@ -34,7 +34,11 @@ const alertSchema = new mongoose.Schema(
     alertId: { type: String, required: true, unique: true, trim: true },
     deviceId: { type: String, required: true, trim: true },
     type: { type: String, required: true, enum: ['latency', 'packet_loss', 'signal'] },
-    severity: { type: String, required: true, enum: ['low', 'warning', 'medium', 'high', 'critical'] },
+    severity: {
+      type: String,
+      required: true,
+      enum: ['low', 'warning', 'medium', 'high', 'critical'],
+    },
     location: {
       lat: { type: Number, required: true, min: -90, max: 90 },
       lng: { type: Number, required: true, min: -180, max: 180 },
@@ -54,7 +58,7 @@ const alertSchema = new mongoose.Schema(
     anomalyLabel: { type: String, enum: ['normal', 'suspicious', 'anomalous'] },
     anomalyReasons: { type: [String], default: [] },
   },
-  { timestamps: true, strict: 'throw', minimize: false },
+  { timestamps: true, strict: 'throw', minimize: false }
 );
 
 export const AlertModel = mongoose.model('Alert', alertSchema);
@@ -85,7 +89,7 @@ export class AlertRepository {
         acknowledgedBy,
         acknowledgedAt: new Date(),
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   }
 
@@ -96,7 +100,7 @@ export class AlertRepository {
         status: 'resolved',
         resolvedAt: new Date(),
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   }
 
@@ -118,7 +122,7 @@ export class AlertRepository {
         resolvedBy: 'system-auto',
         resolutionNote: 'Tự động đóng: chỉ số đã trở về bình thường',
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
   }
 }

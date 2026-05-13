@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -11,8 +11,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import type { Event, SystemStats } from "@/types";
+} from 'recharts';
+import type { Event, SystemStats } from '@/types';
 
 interface EventMetricsChartProps {
   events: Event[];
@@ -30,12 +30,14 @@ type ChartPoint = {
 export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
   const chartData = useMemo<ChartPoint[]>(() => {
     return [...events]
-      .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime())
+      .sort(
+        (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+      )
       .slice(-20)
       .map((event) => ({
         label: new Date(event.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
+          hour: '2-digit',
+          minute: '2-digit',
         }),
         latency: event.metrics?.latency ?? 0,
         packetLoss: event.metrics?.packetLoss ?? 0,
@@ -45,7 +47,10 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
   }, [events]);
 
   const maxEventsPerMinute = Math.max(1, Math.ceil(stats?.eventsPerMinute || 1));
-  const refreshRate = Math.min(100, Math.round(((stats?.eventsPerMinute || 0) / maxEventsPerMinute) * 100));
+  const refreshRate = Math.min(
+    100,
+    Math.round(((stats?.eventsPerMinute || 0) / maxEventsPerMinute) * 100)
+  );
 
   return (
     <section className="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -75,7 +80,13 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <Tooltip />
-                <Line type="monotone" dataKey="latency" stroke="#2563eb" strokeWidth={3} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="latency"
+                  stroke="#2563eb"
+                  strokeWidth={3}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -96,7 +107,13 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <Tooltip />
-                <Area type="monotone" dataKey="packetLoss" stroke="#dc2626" fill="#fee2e2" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="packetLoss"
+                  stroke="#dc2626"
+                  fill="#fee2e2"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -117,7 +134,13 @@ export function EventMetricsChart({ events, stats }: EventMetricsChartProps) {
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" domain={[0, 100]} />
                 <Tooltip />
-                <Line type="monotone" dataKey="anomalyScore" stroke="#7c3aed" strokeWidth={3} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="anomalyScore"
+                  stroke="#7c3aed"
+                  strokeWidth={3}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}

@@ -9,16 +9,18 @@
 ## Giai đoạn Rollout
 
 ### Giai đoạn 1: Shadow Mode (Tuần 1)
+
 - **ML Rollout**: 0% (vẫn dùng rule-based cho tất cả alerts)
 - **AI Scoring**: ✅ Chạy ở background, lưu vào DB (không tạo alert từ ML)
 - **Purpose**: Thu thập metrics, xác nhận model hoạt động stable
 - **Duration**: 1 tuần
-- **Monitor**: 
+- **Monitor**:
   - Worker error rate < 0.1%
   - ML inference latency < 150ms (p99)
   - Model accuracy giữ nguyên vs staging
 
 **Env Config:**
+
 ```bash
 ANOMALY_THRESHOLD=80
 AI_AB_TEST=false          # Vẫn shadow mode, không tạo alert
@@ -26,6 +28,7 @@ AI_ROLLOUT_PERCENT=0
 ```
 
 ### Giai đoạn 2: Early Adopter (Tuần 2)
+
 - **ML Rollout**: 5-10% events (production traffic)
 - **A/B Split**: 5-10% events dùng ML, 90-95% rule-based
 - **Purpose**: Kiểm tra ML vs rule-based trên production data
@@ -40,6 +43,7 @@ AI_ROLLOUT_PERCENT=0
   - Model inference time
 
 **Env Config:**
+
 ```bash
 ANOMALY_THRESHOLD=80
 AI_AB_TEST=true
@@ -47,6 +51,7 @@ AI_ROLLOUT_PERCENT=5     # Bắt đầu 5%
 ```
 
 ### Giai đoạn 3: Scaled Pilot (Tuần 2-3)
+
 - **ML Rollout**: 25-50% events
 - **Purpose**: Mở rộng trên subset của production, thu thập more data
 - **Duration**: 3-5 ngày
@@ -56,18 +61,21 @@ AI_ROLLOUT_PERCENT=5     # Bắt đầu 5%
   - ❌ FAIL: Rollback xuống Giai đoạn 1, tune hyperparameter
 
 **Env Config:**
+
 ```bash
 AI_ROLLOUT_PERCENT=25    # Tăng lên 25%
 # hoặc 50% nếu 25% smooth
 ```
 
 ### Giai đoạn 4: Gradual Rollout (Tuần 3)
+
 - **ML Rollout**: 50% → 75% → 90% (từng bước 1-2 ngày)
 - **Purpose**: Reach mainstream users, collect more telemetry
 - **Duration**: 3-5 ngày
 - **Monitor**: Như trên
 
 **Env Config:**
+
 ```bash
 AI_ROLLOUT_PERCENT=50    # Day 1
 AI_ROLLOUT_PERCENT=75    # Day 2-3
@@ -75,16 +83,18 @@ AI_ROLLOUT_PERCENT=90    # Day 4+
 ```
 
 ### Giai đoạn 5: Full Rollout (Tuần 4)
+
 - **ML Rollout**: 100% events
 - **Rule-Based**: Lưu vào alert nhưng chỉ dùng cho fallback + comparison
 - **Purpose**: ML là primary, rule-based là secondary/fallback
 - **Duration**: ∞ (ongoing production)
-- **Monitor**: 
+- **Monitor**:
   - Precision, Recall, F1 score hàng tuần
   - Customer satisfaction (via NPS hoặc feedback)
   - False alert trend
 
 **Env Config:**
+
 ```bash
 AI_ROLLOUT_PERCENT=100
 # Tenant-level override: db.tenants.updateOne({ name: "xxx" }, { $set: { aiEnabled: false } })
@@ -113,13 +123,10 @@ METRICS_ENABLE=true                # Export Prometheus metrics
 
 ```javascript
 // MongoDB: Enable/disable AI per tenant
-db.tenants.updateOne(
-  { name: "production-tenant-1" },
-  { $set: { aiEnabled: true } }
-)
+db.tenants.updateOne({ name: 'production-tenant-1' }, { $set: { aiEnabled: true } });
 
 // Kiểm tra
-db.tenants.findOne({ name: "production-tenant-1" }, { aiEnabled: 1 })
+db.tenants.findOne({ name: 'production-tenant-1' }, { aiEnabled: 1 });
 ```
 
 ---
@@ -143,19 +150,20 @@ docker compose logs -f worker | grep -v "In A/B rollout"
 
 ## Decision Points & Metrics
 
-| Giai đoạn | Rollout % | Thời gian | KPI Targets | Go/No-Go |
-|-----------|-----------|----------|-------------|----------|
-| **Shadow** | 0% | 1 tuần | Latency < 150ms | ✅ Go (collect data) |
-| **Early** | 5-10% | 3-4 ngày | Precision ≥ 88%, FP rate < 3% | ✅ Go / ❌ Rollback |
-| **Scaled** | 25-50% | 3-5 ngày | Precision ≥ 87%, Recall ≥ 89% | ✅ Go / ❌ Rollback |
-| **Gradual** | 50% → 90% | 3-5 ngày | Maintain KPI | ✅ Go |
-| **Full** | 100% | ∞ | F1 ≥ 90%, FP rate < 2% | ✅ Sustain |
+| Giai đoạn   | Rollout % | Thời gian | KPI Targets                   | Go/No-Go             |
+| ----------- | --------- | --------- | ----------------------------- | -------------------- |
+| **Shadow**  | 0%        | 1 tuần    | Latency < 150ms               | ✅ Go (collect data) |
+| **Early**   | 5-10%     | 3-4 ngày  | Precision ≥ 88%, FP rate < 3% | ✅ Go / ❌ Rollback  |
+| **Scaled**  | 25-50%    | 3-5 ngày  | Precision ≥ 87%, Recall ≥ 89% | ✅ Go / ❌ Rollback  |
+| **Gradual** | 50% → 90% | 3-5 ngày  | Maintain KPI                  | ✅ Go                |
+| **Full**    | 100%      | ∞         | F1 ≥ 90%, FP rate < 2%        | ✅ Sustain           |
 
 ---
 
 ## Monitoring & Alerting
 
 ### Prometheus Metrics (if enabled)
+
 ```
 # Worker metrics
 signalops_ml_inference_duration_ms{quantile="p50,p95,p99"}  # Latency
@@ -165,6 +173,7 @@ signalops_false_positive_rate                                # FP tracking
 ```
 
 ### Dashboard (Grafana optional)
+
 - ML vs rule-based alert rates (line chart)
 - Inference latency over time (heatmap)
 - Precision/Recall trend (panel)
@@ -174,12 +183,14 @@ signalops_false_positive_rate                                # FP tracking
 ## Communication Plan
 
 **Stakeholders to notify:**
+
 1. **Operations**: Alert creation behavior may change (ML vs rule-based)
 2. **Support**: New "AI confidence" field in alerts
 3. **Customers**: (optional) "Better alert accuracy with ML" messaging
 4. **Engineering**: On-call for rollback if needed
 
 **Notification cadence:**
+
 - Giai đoạn 1: Status update hàng 3 ngày
 - Giai đoạn 2-4: Daily status update
 - Giai đoạn 5: Weekly KPI review
@@ -189,6 +200,7 @@ signalops_false_positive_rate                                # FP tracking
 ## Success Criteria (End of Rollout)
 
 ✅ **All must be true:**
+
 1. Precision ≥ 88% on production data (vs baseline)
 2. Recall ≥ 90% (catching most anomalies)
 3. F1 Score ≥ 90%
@@ -202,6 +214,7 @@ signalops_false_positive_rate                                # FP tracking
 ## Appendix: Tenant Flags
 
 ### Tenant Schema (MongoDB)
+
 ```javascript
 {
   name: "production-tenant-1",
@@ -213,6 +226,7 @@ signalops_false_positive_rate                                # FP tracking
 ```
 
 ### Disable AI for specific tenant
+
 ```bash
 # If issues detected for tenant-X
 db.tenants.updateOne(
@@ -226,5 +240,5 @@ db.tenants.findOne({ name: "tenant-x" }, { aiEnabled: 1 })
 
 ---
 
-*Kế hoạch được phê duyệt: 12/05/2026*  
-*Liên hệ: Backend Team / ML Engineer*
+_Kế hoạch được phê duyệt: 12/05/2026_  
+_Liên hệ: Backend Team / ML Engineer_

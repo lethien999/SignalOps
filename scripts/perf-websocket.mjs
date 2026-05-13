@@ -109,7 +109,7 @@ async function main() {
         clientCount,
         delivered,
         deliveryRate: delivered / clientCount,
-      }),
+      })
     );
   } finally {
     for (const socket of sockets) {
