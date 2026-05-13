@@ -35,7 +35,7 @@ jobs:
         run: git status --short
 
       - name: Commit autofixes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: apply lint and format autofixes'
           branch: ${{ github.ref_name }}
