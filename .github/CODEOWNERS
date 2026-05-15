@@ -1,9 +1,11 @@
-# CODEOWNERS file: update the entries below to point to your GitHub users or teams
-# Example:
-#  /apps/api-gateway/ @your-org/api-team
-#  /apps/dashboard/ @your-org/frontend-team
-#  /libs/ @your-org/core-team
-# For now, please replace placeholders with real team or user handles.
+# CODEOWNERS for SignalOps
+# Repository owner: @lethien999
 
-# Default: notify repo admins (update as appropriate)
-/* @your-org/maintainers
+# Default ownership for the whole repository.
+/* @lethien999
+
+# Core workspace areas.
+/apps/ @lethien999
+/libs/ @lethien999
+/infrastructure/ @lethien999
+/docs/ @lethien999
